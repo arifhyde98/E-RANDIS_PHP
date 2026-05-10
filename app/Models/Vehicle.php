@@ -1,0 +1,42 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Vehicle extends Model
+{
+    /** @use HasFactory<\Database\Factories\VehicleFactory> */
+    use HasFactory;
+
+    protected $fillable = [
+        'no_polisi',
+        'merk',
+        'tipe',
+        'jenis',
+        'tahun_pembuatan',
+        'tgl_perolehan',
+        'nilai_perolehan',
+        'stnk_ada',
+        'bpkb_ada',
+        'no_rangka',
+        'no_mesin',
+        'warna',
+        'tgl_stnk',
+        'opd',
+        'pemegang',
+        'status',
+        'keterangan',
+        'user_id',
+    ];
+
+    /**
+     * Get the user that owns the vehicle.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+}
