@@ -17,15 +17,24 @@
         <div class="container">
             <!-- Logo Replikasi Persis Referensi -->
             <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url('/') }}">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" style="width: 32px; height: 38px;">
-                    <!-- Shield outline -->
-                    <path d="M50 0 L90 20 V70 C90 95 50 120 50 120 C50 120 10 95 10 70 V20 Z" fill="#15803d" stroke="#facc15" stroke-width="6"/>
-                    <!-- Inner elements to match government crest look -->
-                    <circle cx="50" cy="30" r="8" fill="#facc15"/>
-                    <path d="M30 65 C40 50 60 50 70 65 Z" fill="#facc15"/>
-                    <path d="M40 85 L50 70 L60 85 Z" fill="#ffffff"/>
-                </svg>
-                <span class="fw-bold text-white fs-6" style="letter-spacing: 0.05em;">PEMERINTAH DAERAH</span>
+                @php
+                    $siteLogo = \App\Models\Setting::get('site_logo');
+                    $siteName = \App\Models\Setting::get('site_name', 'PEMERINTAH DAERAH');
+                @endphp
+                
+                @if($siteLogo)
+                    <img src="{{ Storage::url($siteLogo) }}" alt="Logo" style="height: 40px; width: auto;">
+                @else
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" style="width: 32px; height: 38px;">
+                        <!-- Shield outline -->
+                        <path d="M50 0 L90 20 V70 C90 95 50 120 50 120 C50 120 10 95 10 70 V20 Z" fill="#15803d" stroke="#facc15" stroke-width="6"/>
+                        <!-- Inner elements to match government crest look -->
+                        <circle cx="50" cy="30" r="8" fill="#facc15"/>
+                        <path d="M30 65 C40 50 60 50 70 65 Z" fill="#facc15"/>
+                        <path d="M40 85 L50 70 L60 85 Z" fill="#ffffff"/>
+                    </svg>
+                @endif
+                <span class="fw-bold text-white fs-6" style="letter-spacing: 0.05em;">{{ $siteName }}</span>
             </a>
             <button class="navbar-toggler shadow-none border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="bi bi-list fs-1"></span>
@@ -52,22 +61,35 @@
     </nav>
 
     <!-- Hero Section -->
-    <section id="hero-section">
+    <section id="hero-section" style="
+        @php
+            $heroBg = \App\Models\Setting::get('hero_bg_image', 'images/hero-illustration.png');
+            $bgUrl = Str::startsWith($heroBg, 'images/') ? asset($heroBg) : Storage::url($heroBg);
+        @endphp
+        background: linear-gradient(rgba(30, 64, 175, 0.85), rgba(30, 58, 138, 0.95)), url('{{ $bgUrl }}');
+        background-size: cover;
+        background-position: center;
+    ">
         <div class="container position-relative z-1">
             <div class="row align-items-center pt-3 pt-lg-0">
                 <div class="col-lg-7 mb-5 mb-lg-0 pe-lg-4">
                     <!-- Judul 1 baris persis seperti referensi -->
-                    <h1 class="mb-4 fw-bold text-white lh-sm" style="font-size: 2.85rem;">Sistem Monitoring Kendaraan Dinas</h1>
-                    <p class="lead mb-5 text-white opacity-90 fw-normal" style="max-width: 560px; font-size: 1.15rem; line-height: 1.6;">
-                        Platform monitoring kendaraan dinas untuk mendukung transparansi, pengawasan, dan efisiensi penggunaan kendaraan operasional pemerintah daerah.
+                    <h1 class="mb-4 fw-bold text-white lh-sm" style="font-size: 2.85rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">{{ \App\Models\Setting::get('hero_title', 'E-RANDIS') }}</h1>
+                    <p class="lead mb-5 text-white opacity-90 fw-normal" style="max-width: 560px; font-size: 1.15rem; line-height: 1.6; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+                        {{ \App\Models\Setting::get('hero_subtitle', 'Sistem Monitoring Kendaraan Dinas Pemerintah Daerah') }}
                     </p>
                     <div class="d-flex flex-wrap gap-3">
                         <a href="#search-section" class="btn btn-primary px-4 py-2 fs-6 fw-semibold">Cek Kendaraan</a>
                         <a href="#feature-section" class="btn btn-outline-white px-4 py-2 fs-6 fw-semibold">Pelajari Sistem</a>
                     </div>
                 </div>
-                <div class="col-lg-5 text-center text-lg-end">
-                    <img src="{{ asset('images/hero-illustration.png') }}" alt="Monitoring Illustration" class="img-fluid pe-lg-3" style="max-height: 380px; object-fit: contain;">
+                <div class="col-lg-5 text-center text-lg-end mt-4 mt-lg-0">
+                    <div class="hero-image-wrapper">
+                        @php
+                            $heroImage = \App\Models\Setting::get('hero_image', 'images/hero-illustration.png');
+                        @endphp
+                        <img src="{{ Str::startsWith($heroImage, 'images/') ? asset($heroImage) : Storage::url($heroImage) }}" alt="Monitoring Illustration" style="max-height: 400px; width: auto;">
+                    </div>
                 </div>
             </div>
         </div>
@@ -81,12 +103,13 @@
     </section>
 
     <!-- Search Section -->
-    <section id="search-section" class="search-section">
+    <section id="search-section" class="search-section mt-5">
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-lg-8 col-md-10">
                     <div class="text-center mb-4 mt-3">
                         <!-- Judul dengan garis bawah tipis persis referensi -->
+                         
                         <h3 class="fw-bold text-navy mb-2">Cek Status Kendaraan Anda</h3>
                         <div class="mx-auto" style="width: 240px; height: 1px; background-color: #cbd5e1;"></div>
                     </div>
@@ -225,13 +248,17 @@
         <div class="container text-center pt-2">
             <!-- Logo Replikasi Persis Referensi di Footer -->
             <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" style="width: 24px; height: 28px;">
-                    <path d="M50 0 L90 20 V70 C90 95 50 120 50 120 C50 120 10 95 10 70 V20 Z" fill="#15803d" stroke="#facc15" stroke-width="6"/>
-                    <circle cx="50" cy="30" r="8" fill="#facc15"/>
-                    <path d="M30 65 C40 50 60 50 70 65 Z" fill="#facc15"/>
-                    <path d="M40 85 L50 70 L60 85 Z" fill="#ffffff"/>
-                </svg>
-                <span class="fw-bold text-navy fs-6 letter-spacing-1">PEMERINTAH DAERAH</span>
+                @if($siteLogo)
+                    <img src="{{ Storage::url($siteLogo) }}" alt="Logo" style="height: 30px; width: auto;">
+                @else
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" style="width: 24px; height: 28px;">
+                        <path d="M50 0 L90 20 V70 C90 95 50 120 50 120 C50 120 10 95 10 70 V20 Z" fill="#15803d" stroke="#facc15" stroke-width="6"/>
+                        <circle cx="50" cy="30" r="8" fill="#facc15"/>
+                        <path d="M30 65 C40 50 60 50 70 65 Z" fill="#facc15"/>
+                        <path d="M40 85 L50 70 L60 85 Z" fill="#ffffff"/>
+                    </svg>
+                @endif
+                <span class="fw-bold text-navy fs-6 letter-spacing-1">{{ $siteName }}</span>
             </div>
             
             <!-- Garis pemisah di bawah logo persis referensi -->

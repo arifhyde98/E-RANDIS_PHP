@@ -75,7 +75,9 @@
         </li>
 
         <li>
-            <a href="#"><i class="bi bi-gear"></i> Pengaturan</a>
+            <a href="{{ route('settings.index') }}" class="{{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                <i class="bi bi-gear"></i> Pengaturan
+            </a>
         </li>
 
         <li>

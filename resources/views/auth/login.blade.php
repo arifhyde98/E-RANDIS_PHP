@@ -12,7 +12,11 @@
 
     <style>
         .login-side-bg {
-            background: linear-gradient(rgba(30, 64, 175, 0.85), rgba(30, 58, 138, 0.95)), url('{{ asset('images/hero-illustration.png') }}');
+            @php
+                $loginBg = \App\Models\Setting::get('login_bg_image', 'images/hero-illustration.png');
+                $bgUrl = Str::startsWith($loginBg, 'images/') ? asset($loginBg) : Storage::url($loginBg);
+            @endphp
+            background: linear-gradient(rgba(30, 64, 175, 0.85), rgba(30, 58, 138, 0.95)), url('{{ $bgUrl }}');
             background-size: cover;
             background-position: center;
             position: relative;
@@ -45,14 +49,14 @@
                 <div class="glass-card p-5 text-center shadow-lg" style="max-width: 500px;">
                     <div class="d-flex justify-content-center mb-4">
                         <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center shadow" style="width: 70px; height: 70px;">
-                            <i class="bi bi-shield-lock-fill fs-2"></i>
+                            <i class="bi {{ \App\Models\Setting::get('login_logo_icon', 'bi-shield-lock-fill') }} fs-2"></i>
                         </div>
                     </div>
-                    <h1 class="fw-bold mb-2">E-RANDIS</h1>
-                    <p class="fs-5 opacity-75 mb-4">Sistem Monitoring Kendaraan Dinas Pemerintah Daerah</p>
+                    <h1 class="fw-bold mb-2">{{ \App\Models\Setting::get('login_title', 'E-RANDIS') }}</h1>
+                    <p class="fs-5 opacity-75 mb-4">{{ \App\Models\Setting::get('login_subtitle', 'Sistem Monitoring Kendaraan Dinas') }}</p>
                     <hr class="border-white opacity-25 my-4">
                     <p class="small opacity-50 mb-0">
-                        Platform digital terintegrasi untuk efisiensi, transparansi, dan akuntabilitas manajemen aset daerah.
+                        {{ \App\Models\Setting::get('login_description', 'Platform digital terintegrasi untuk efisiensi, transparansi, dan akuntabilitas manajemen aset daerah.') }}
                     </p>
                 </div>
             </div>
