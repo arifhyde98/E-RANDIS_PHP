@@ -14,7 +14,7 @@ class VehicleExport implements FromCollection, WithHeadings, WithMapping
     */
     public function collection()
     {
-        return Vehicle::all();
+        return Vehicle::with('vehicleType')->get();
     }
 
     public function headings(): array
@@ -42,7 +42,7 @@ class VehicleExport implements FromCollection, WithHeadings, WithMapping
     public function map($vehicle): array
     {
         return [
-            $vehicle->jenis,
+            $vehicle->vehicleType->name ?? $vehicle->jenis,
             $vehicle->merk . ' ' . $vehicle->tipe,
             $vehicle->no_polisi,
             $vehicle->no_mesin,

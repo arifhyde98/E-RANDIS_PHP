@@ -15,5 +15,11 @@ Route::middleware('auth')->group(function () {
     Route::get('vehicles/export', [VehicleController::class, 'export'])->name('vehicles.export');
     Route::get('vehicles/template', [VehicleController::class, 'downloadTemplate'])->name('vehicles.template');
     Route::post('vehicles/import', [VehicleController::class, 'import'])->name('vehicles.import');
+    Route::post('vehicles/truncate', [VehicleController::class, 'truncate'])->name('vehicles.truncate');
     Route::resource('vehicles', VehicleController::class);
+
+    // Master Data Hub
+    Route::get('master-data', [\App\Http\Controllers\MasterDataController::class, 'index'])->name('master-data.index');
+    Route::post('vehicle-types/cleanup', [\App\Http\Controllers\VehicleTypeController::class, 'cleanup'])->name('vehicle-types.cleanup');
+    Route::resource('vehicle-types', \App\Http\Controllers\VehicleTypeController::class);
 });

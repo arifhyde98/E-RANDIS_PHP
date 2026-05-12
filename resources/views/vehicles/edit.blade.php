@@ -1,62 +1,104 @@
 @extends('layouts.app')
 
+@section('title', 'Edit Data Kendaraan')
+
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid px-0">
+    <!-- PAGE HEADER -->
     <div class="mb-4">
-        <h2 class="fw-bold mb-1">Edit <span class="text-gradient">Data Kendaraan</span></h2>
-        <p class="text-secondary mb-0">Memperbarui informasi untuk kendaraan <strong>{{ $vehicle->no_polisi }}</strong>.</p>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="{{ route('home') }}" class="text-decoration-none text-secondary">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('vehicles.index') }}" class="text-decoration-none text-secondary">Data Kendaraan</a></li>
+                <li class="breadcrumb-item active text-navy fw-medium" aria-current="page">Edit: {{ $vehicle->no_polisi }}</li>
+            </ol>
+        </nav>
+        <h3 class="fw-bold text-navy mb-0">Edit Data Kendaraan</h3>
+        <p class="text-secondary small">Perbarui informasi kendaraan operasional {{ $vehicle->no_polisi }}.</p>
     </div>
 
     <form action="{{ route('vehicles.update', $vehicle) }}" method="POST">
         @csrf
         @method('PUT')
         <div class="row g-4">
-            {{-- Data Utama --}}
+            <!-- Data Utama -->
             <div class="col-lg-8">
-                <div class="premium-card p-4 h-100">
-                    <h5 class="fw-bold mb-4">Informasi Kendaraan</h5>
-                    <div class="row g-3">
+                <div class="admin-card p-4 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-4 pb-2 border-bottom">
+                        <i class="bi bi-car-front-fill text-primary fs-5"></i>
+                        <h6 class="fw-bold text-navy mb-0">Informasi Kendaraan</h6>
+                    </div>
+                    
+                    <div class="row g-4">
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-uppercase">No. Polisi (Plat)</label>
-                            <input type="text" name="no_polisi" class="form-control @error('no_polisi') is-invalid @enderror" value="{{ old('no_polisi', $vehicle->no_polisi) }}">
+                            <label class="form-label small fw-semibold text-dark">No. Polisi (Plat)</label>
+                            <input type="text" name="no_polisi" class="form-control @error('no_polisi') is-invalid @enderror" value="{{ old('no_polisi', $vehicle->no_polisi) }}" required>
                             @error('no_polisi') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-uppercase">Jenis Kendaraan</label>
-                            <select name="jenis" class="form-select @error('jenis') is-invalid @enderror">
-                                @foreach(['Mobil', 'Motor', 'Bus', 'Truck'] as $jenis)
-                                    <option value="{{ $jenis }}" {{ old('jenis', $vehicle->jenis) == $jenis ? 'selected' : '' }}>{{ $jenis }}</option>
+                            <label class="form-label small fw-semibold text-dark">Jenis Kendaraan</label>
+                            <select name="vehicle_type_id" class="form-select @error('vehicle_type_id') is-invalid @enderror" required onchange="document.getElementById('jenis_text').value = this.options[this.selectedIndex].text">
+                                <option value="">Pilih Jenis</option>
+                                @foreach($vehicleTypes as $type)
+                                    <option value="{{ $type->id }}" {{ old('vehicle_type_id', $vehicle->vehicle_type_id) == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
                                 @endforeach
                             </select>
-                            @error('jenis') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <input type="hidden" name="jenis" id="jenis_text" value="{{ old('jenis', $vehicle->jenis) }}">
+                            @error('vehicle_type_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-uppercase">Merk</label>
-                            <input type="text" name="merk" class="form-control @error('merk') is-invalid @enderror" value="{{ old('merk', $vehicle->merk) }}">
+                            <label class="form-label small fw-semibold text-dark">Merk Kendaraan</label>
+                            <input type="text" name="merk" class="form-control @error('merk') is-invalid @enderror" value="{{ old('merk', $vehicle->merk) }}" required>
                             @error('merk') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-uppercase">Tipe / Model</label>
-                            <input type="text" name="tipe" class="form-control @error('tipe') is-invalid @enderror" value="{{ old('tipe', $vehicle->tipe) }}">
+                            <label class="form-label small fw-semibold text-dark">Tipe / Model</label>
+                            <input type="text" name="tipe" class="form-control @error('tipe') is-invalid @enderror" value="{{ old('tipe', $vehicle->tipe) }}" required>
                             @error('tipe') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold text-uppercase">Tahun Pembuatan</label>
+                            <label class="form-label small fw-semibold text-dark">Tahun Pembuatan</label>
                             <input type="number" name="tahun_pembuatan" class="form-control @error('tahun_pembuatan') is-invalid @enderror" value="{{ old('tahun_pembuatan', $vehicle->tahun_pembuatan) }}">
                             @error('tahun_pembuatan') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold text-uppercase">Warna</label>
+                            <label class="form-label small fw-semibold text-dark">Warna</label>
                             <input type="text" name="warna" class="form-control @error('warna') is-invalid @enderror" value="{{ old('warna', $vehicle->warna) }}">
                             @error('warna') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold text-uppercase">Tgl Jatuh Tempo STNK</label>
+                            <label class="form-label small fw-semibold text-dark">Tgl. Jatuh Tempo STNK</label>
                             <input type="date" name="tgl_stnk" class="form-control @error('tgl_stnk') is-invalid @enderror" value="{{ old('tgl_stnk', $vehicle->tgl_stnk) }}">
                             @error('tgl_stnk') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark">No. Rangka</label>
+                            <input type="text" name="no_rangka" class="form-control @error('no_rangka') is-invalid @enderror" value="{{ old('no_rangka', $vehicle->no_rangka) }}">
+                            @error('no_rangka') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark">No. Mesin</label>
+                            <input type="text" name="no_mesin" class="form-control @error('no_mesin') is-invalid @enderror" value="{{ old('no_mesin', $vehicle->no_mesin) }}">
+                            @error('no_mesin') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Dokumen STNK</label>
+                            <select name="stnk_ada" class="form-select @error('stnk_ada') is-invalid @enderror" required>
+                                <option value="Ada" {{ old('stnk_ada', $vehicle->stnk_ada) == 'Ada' ? 'selected' : '' }}>Ada</option>
+                                <option value="Tidak" {{ old('stnk_ada', $vehicle->stnk_ada) == 'Tidak' ? 'selected' : '' }}>Tidak Ada</option>
+                            </select>
+                            @error('stnk_ada') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Dokumen BPKB</label>
+                            <select name="bpkb_ada" class="form-select @error('bpkb_ada') is-invalid @enderror" required>
+                                <option value="Ada" {{ old('bpkb_ada', $vehicle->bpkb_ada) == 'Ada' ? 'selected' : '' }}>Ada</option>
+                                <option value="Tidak" {{ old('bpkb_ada', $vehicle->bpkb_ada) == 'Tidak' ? 'selected' : '' }}>Tidak Ada</option>
+                            </select>
+                            @error('bpkb_ada') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
                         <div class="col-md-12">
-                            <label class="form-label small fw-bold text-uppercase">Keterangan</label>
+                            <label class="form-label small fw-semibold text-dark">Keterangan Tambahan</label>
                             <textarea name="keterangan" class="form-control @error('keterangan') is-invalid @enderror" rows="3">{{ old('keterangan', $vehicle->keterangan) }}</textarea>
                             @error('keterangan') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
@@ -64,35 +106,45 @@
                 </div>
             </div>
 
-            {{-- Penanggung Jawab --}}
+            <!-- Penanggung Jawab & Status -->
             <div class="col-lg-4">
-                <div class="premium-card p-4 mb-4">
-                    <h5 class="fw-bold mb-4">Pemegang & OPD</h5>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-uppercase">OPD / Dinas</label>
-                        <input type="text" name="opd" class="form-control @error('opd') is-invalid @enderror" value="{{ old('opd', $vehicle->opd) }}">
+                <div class="admin-card p-4 mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-4 pb-2 border-bottom">
+                        <i class="bi bi-person-badge-fill text-primary fs-5"></i>
+                        <h6 class="fw-bold text-navy mb-0">Alokasi & Status</h6>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold text-dark">Unit Kerja / OPD</label>
+                        <input type="text" name="opd" class="form-control @error('opd') is-invalid @enderror" value="{{ old('opd', $vehicle->opd) }}" required>
                         @error('opd') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-uppercase">Nama Pemegang</label>
-                        <input type="text" name="pemegang" class="form-control @error('pemegang') is-invalid @enderror" value="{{ old('pemegang', $vehicle->pemegang) }}">
+                    
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold text-dark">Nama Penanggung Jawab</label>
+                        <input type="text" name="pemegang" class="form-control @error('pemegang') is-invalid @enderror" value="{{ old('pemegang', $vehicle->pemegang) }}" required>
                         @error('pemegang') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-uppercase">Status Kendaraan</label>
-                        <select name="status" class="form-select @error('status') is-invalid @enderror">
-                            @foreach(['Tersedia', 'Digunakan', 'Rusak', 'Dilelang'] as $status)
-                                <option value="{{ $status }}" {{ old('status', $vehicle->status) == $status ? 'selected' : '' }}>{{ $status }}</option>
+                    
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold text-dark">Status Kendaraan</label>
+                        <select name="status" class="form-select @error('status') is-invalid @enderror" required>
+                            @foreach($statuses as $value => $label)
+                                <option value="{{ $value }}" {{ old('status', $vehicle->status) == $value ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
                         @error('status') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                 </div>
 
-                <div class="premium-card p-4">
+                <div class="admin-card p-4">
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-premium py-3 fs-5">Simpan Perubahan</button>
-                        <a href="{{ route('vehicles.index') }}" class="btn btn-light py-2 fw-bold text-secondary">Batal</a>
+                        <button type="submit" class="btn btn-primary py-2 fw-medium d-flex justify-content-center align-items-center gap-2">
+                            <i class="bi bi-save"></i> Perbarui Data
+                        </button>
+                        <a href="{{ route('vehicles.index') }}" class="btn btn-light border py-2 fw-medium text-secondary">
+                            Batal & Kembali
+                        </a>
                     </div>
                 </div>
             </div>

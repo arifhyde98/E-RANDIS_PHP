@@ -25,6 +25,16 @@ class HomeController extends Controller implements HasMiddleware
      */
     public function index()
     {
-        return view('home');
+        $stats = [
+            'total' => \App\Models\Vehicle::count(),
+            'available' => \App\Models\Vehicle::whereIn('status', ['Tersedia', 'Aktif', 'aktif'])->count(),
+            'borrowed' => \App\Models\Vehicle::whereIn('status', ['Dipinjam', 'dipinjam'])->count(),
+            'damaged' => \App\Models\Vehicle::whereIn('status', ['Rusak', 'Maintenance', 'maintenance'])->count(),
+            'late' => 2, // Placeholder for now as late return logic might not exist yet
+        ];
+
+        $latestVehicles = \App\Models\Vehicle::latest()->take(6)->get();
+
+        return view('home', compact('stats', 'latestVehicles'));
     }
 }

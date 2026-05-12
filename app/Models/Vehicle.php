@@ -16,6 +16,7 @@ class Vehicle extends Model
         'merk',
         'tipe',
         'jenis',
+        'vehicle_type_id',
         'tahun_pembuatan',
         'tgl_perolehan',
         'nilai_perolehan',
@@ -38,5 +39,20 @@ class Vehicle extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function vehicleType(): BelongsTo
+    {
+        return $this->belongsTo(VehicleType::class);
+    }
+
+    public static function getStatuses(): array
+    {
+        return [
+            'Tersedia' => 'Aktif / Tersedia',
+            'Dipinjam' => 'Sedang Dipinjam',
+            'Rusak' => 'Maintenance / Rusak',
+            'Nonaktif' => 'Nonaktif / Dilelang',
+        ];
     }
 }

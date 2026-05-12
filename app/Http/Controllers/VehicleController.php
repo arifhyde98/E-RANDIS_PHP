@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Vehicle;
 use App\Models\User;
+use App\Models\VehicleType;
 use Illuminate\Http\Request;
 use App\Exports\VehicleExport;
 use App\Exports\VehicleTemplateExport;
@@ -15,10 +16,43 @@ class VehicleController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $vehicles = Vehicle::with('user')->latest()->paginate(10);
-        return view('vehicles.index', compact('vehicles'));
+        $query = Vehicle::with(['user', 'vehicleType'])->latest();
+
+        if ($request->filled('q')) {
+            $search = strtoupper(preg_replace('/\s+/', ' ', trim($request->q)));
+            $query->where(function($q) use ($search) {
+                $q->where('no_polisi', 'LIKE', "%{$search}%")
+                  ->orWhere('pemegang', 'LIKE', "%{$search}%")
+                  ->orWhere('merk', 'LIKE', "%{$search}%")
+                  ->orWhere('opd', 'LIKE', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('jenis')) {
+            $query->whereHas('vehicleType', function($q) use ($request) {
+                $q->where('name', $request->jenis);
+            })->orWhere('jenis', $request->jenis);
+        }
+
+        $vehicles = $query->paginate(10)->withQueryString();
+        
+        // Dynamic Stats
+        $stats = [
+            'total' => Vehicle::count(),
+            'available' => Vehicle::whereIn('status', ['Tersedia', 'Aktif', 'aktif'])->count(),
+            'damaged' => Vehicle::whereIn('status', ['Rusak', 'Maintenance', 'maintenance'])->count(),
+            'borrowed' => Vehicle::whereIn('status', ['Dipinjam', 'dipinjam'])->count(),
+        ];
+
+        $vehicleTypes = VehicleType::orderBy('name')->get();
+        
+        return view('vehicles.index', compact('vehicles', 'stats', 'vehicleTypes'));
     }
 
     /**
@@ -39,7 +73,12 @@ class VehicleController extends Controller
                 ->first();
         }
 
-        return view('welcome', compact('vehicle', 'query'));
+        // Stats for Landing Page Hero
+        $total = Vehicle::count();
+        $activeCount = Vehicle::whereIn('status', ['Tersedia', 'Aktif', 'aktif'])->count();
+        $activePercentage = $total > 0 ? round(($activeCount / $total) * 100) : 0;
+
+        return view('welcome', compact('vehicle', 'query', 'total', 'activePercentage'));
     }
 
     /**
@@ -48,7 +87,9 @@ class VehicleController extends Controller
     public function create()
     {
         $users = User::all();
-        return view('vehicles.create', compact('users'));
+        $vehicleTypes = VehicleType::orderBy('name')->get();
+        $statuses = Vehicle::getStatuses();
+        return view('vehicles.create', compact('users', 'vehicleTypes', 'statuses'));
     }
 
     /**
@@ -61,6 +102,7 @@ class VehicleController extends Controller
             'merk' => 'required',
             'tipe' => 'required',
             'jenis' => 'required',
+            'vehicle_type_id' => 'nullable|exists:vehicle_types,id',
             'tahun_pembuatan' => 'nullable|integer',
             'tgl_perolehan' => 'nullable|date',
             'nilai_perolehan' => 'nullable|numeric',
@@ -91,7 +133,9 @@ class VehicleController extends Controller
     public function edit(Vehicle $vehicle)
     {
         $users = User::all();
-        return view('vehicles.edit', compact('vehicle', 'users'));
+        $vehicleTypes = VehicleType::orderBy('name')->get();
+        $statuses = Vehicle::getStatuses();
+        return view('vehicles.edit', compact('vehicle', 'users', 'vehicleTypes', 'statuses'));
     }
 
     /**
@@ -104,6 +148,7 @@ class VehicleController extends Controller
             'merk' => 'required',
             'tipe' => 'required',
             'jenis' => 'required',
+            'vehicle_type_id' => 'nullable|exists:vehicle_types,id',
             'tahun_pembuatan' => 'nullable|integer',
             'tgl_perolehan' => 'nullable|date',
             'nilai_perolehan' => 'nullable|numeric',
@@ -135,6 +180,15 @@ class VehicleController extends Controller
     {
         $vehicle->delete();
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil dihapus.');
+    }
+
+    /**
+     * Remove all resources from storage.
+     */
+    public function truncate()
+    {
+        Vehicle::truncate();
+        return redirect()->route('vehicles.index')->with('success', 'Seluruh data kendaraan berhasil dikosongkan.');
     }
 
     /**

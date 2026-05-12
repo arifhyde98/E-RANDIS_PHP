@@ -1,75 +1,128 @@
-@extends('layouts.app')
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login | E-RANDIS Pemerintah Daerah</title>
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    @vite(['resources/css/app.scss', 'resources/js/app.js'])
 
-@section('content')
-<div class="container">
-    <div class="row justify-content-center align-items-center min-vh-75">
-        <div class="col-md-5">
-            <div class="premium-card p-4 p-lg-5">
-                <div class="text-center mb-5">
-                    <h2 class="fw-bold text-gradient">Admin Login</h2>
-                    <p class="text-secondary">Sistem Monitoring E-RANDIS PHP</p>
+    <style>
+        .login-side-bg {
+            background: linear-gradient(rgba(30, 64, 175, 0.85), rgba(30, 58, 138, 0.95)), url('{{ asset('images/hero-illustration.png') }}');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1.5rem;
+        }
+        .login-form-container {
+            background-color: var(--bg-color);
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body id="theme-root">
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.getElementById('theme-root').setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+
+    <div class="container-fluid p-0">
+        <div class="row g-0 min-vh-100">
+            
+            <!-- Left Section: Visual Branding -->
+            <div class="col-lg-6 d-none d-lg-flex login-side-bg flex-column justify-content-center align-items-center p-5 text-white">
+                <div class="glass-card p-5 text-center shadow-lg" style="max-width: 500px;">
+                    <div class="d-flex justify-content-center mb-4">
+                        <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center shadow" style="width: 70px; height: 70px;">
+                            <i class="bi bi-shield-lock-fill fs-2"></i>
+                        </div>
+                    </div>
+                    <h1 class="fw-bold mb-2">E-RANDIS</h1>
+                    <p class="fs-5 opacity-75 mb-4">Sistem Monitoring Kendaraan Dinas Pemerintah Daerah</p>
+                    <hr class="border-white opacity-25 my-4">
+                    <p class="small opacity-50 mb-0">
+                        Platform digital terintegrasi untuk efisiensi, transparansi, dan akuntabilitas manajemen aset daerah.
+                    </p>
                 </div>
+            </div>
 
-                <form method="POST" action="{{ route('login') }}">
-                    @csrf
-
-                    <div class="mb-4">
-                        <label for="email" class="form-label fw-semibold small text-uppercase tracking-wider">Email Address</label>
-                        <input id="email" type="email" class="form-control form-control-lg premium-card border-0 bg-light bg-opacity-50 @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email" autofocus placeholder="name@example.com">
-                        @error('email')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                        @enderror
-                    </div>
-
-                    <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <label for="password" class="form-label fw-semibold small text-uppercase tracking-wider mb-0">Password</label>
-                            @if (Route::has('password.request'))
-                                <a class="text-decoration-none small fw-medium" href="{{ route('password.request') }}">
-                                    Forgot Password?
-                                </a>
-                            @endif
+            <!-- Right Section: Login Form -->
+            <div class="col-lg-6 login-form-container d-flex align-items-center justify-content-center p-4 p-md-5">
+                <div class="w-100" style="max-width: 420px;">
+                    
+                    <div class="mb-5 text-center text-lg-start">
+                        <div class="d-lg-none mb-4">
+                            <i class="bi bi-shield-lock-fill text-primary display-4"></i>
+                            <h2 class="fw-bold text-navy mt-2">E-RANDIS</h2>
                         </div>
-                        <input id="password" type="password" class="form-control form-control-lg premium-card border-0 bg-light bg-opacity-50 @error('password') is-invalid @enderror" name="password" required autocomplete="current-password" placeholder="••••••••">
-                        @error('password')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                        @enderror
+                        <h2 class="fw-bold text-navy mb-2">Selamat Datang</h2>
+                        <p class="text-secondary">Masukkan kredensial Anda untuk melanjutkan ke dashboard.</p>
                     </div>
 
-                    <div class="mb-4">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
-                            <label class="form-check-label small" for="remember">
-                                Keep me logged in
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="d-grid mb-4">
-                        <button type="submit" class="btn btn-premium py-3 fs-5">
-                            Sign In to Dashboard
-                        </button>
-                    </div>
-
-                    @if (Route::has('register'))
-                        <div class="text-center">
-                            <span class="text-secondary small">Don't have an account?</span>
-                            <a href="{{ route('register') }}" class="text-decoration-none small fw-bold ms-1">Register Now</a>
+                    @if ($errors->any())
+                        <div class="alert alert-danger border-0 border-start border-danger border-4 rounded-3 shadow-sm mb-4">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-exclamation-circle-fill fs-5 me-3"></i>
+                                <div class="small fw-medium">Email atau kata sandi salah.</div>
+                            </div>
                         </div>
                     @endif
-                </form>
+
+                    <form method="POST" action="{{ route('login') }}">
+                        @csrf
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold small text-secondary">ALAMAT EMAIL</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-secondary"><i class="bi bi-envelope"></i></span>
+                                <input type="email" name="email" class="form-control form-control-lg fs-6 border-start-0 bg-light" placeholder="admin@pemda.go.id" required autofocus>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between mb-1">
+                                <label class="form-label fw-semibold small text-secondary">KATA SANDI</label>
+                                <a href="#" class="small text-decoration-none fw-bold">Lupa Sandi?</a>
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-secondary"><i class="bi bi-lock"></i></span>
+                                <input type="password" name="password" class="form-control form-control-lg fs-6 border-start-0 bg-light" placeholder="••••••••" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-4 d-flex justify-content-between align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                                <label class="form-check-label small text-secondary" for="remember">Ingat Saya</label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-3 shadow-sm mb-4">
+                            MASUK SEKARANG <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </form>
+
+                    <div class="text-center">
+                        <a href="{{ url('/') }}" class="text-secondary text-decoration-none small">
+                            <i class="bi bi-house-door me-1"></i> Kembali ke Beranda
+                        </a>
+                    </div>
+
+                </div>
             </div>
-            
-            <div class="text-center mt-4">
-                <a href="{{ url('/') }}" class="text-secondary text-decoration-none small">
-                    <i class="bi bi-arrow-left me-1"></i> Back to Homepage
-                </a>
-            </div>
+
         </div>
     </div>
-</div>
-@endsection
+</body>
+</html>

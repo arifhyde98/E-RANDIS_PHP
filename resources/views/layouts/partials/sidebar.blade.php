@@ -1,0 +1,87 @@
+<!-- Sidebar -->
+<nav id="sidebar">
+    <div class="sidebar-header d-flex align-items-center gap-2">
+        <i class="bi bi-shield-check fs-3"></i>
+        <div>
+            <div class="fw-bold fs-5 lh-1 text-white">E-RANDIS</div>
+            <small class="text-white-50" style="font-size: 0.75rem;">Panel Admin</small>
+        </div>
+    </div>
+
+    <ul class="list-unstyled components">
+        <li class="{{ Request::is('home') ? 'active' : '' }}">
+            <a href="{{ route('home') }}"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+        </li>
+        
+        <li class="mt-4 mb-2 ps-3">
+            <small class="text-uppercase fw-bold text-white-50" style="font-size: 0.7rem; letter-spacing: 0.5px;">Manajemen Data</small>
+        </li>
+        
+        <li class="{{ Request::is('vehicles*') ? 'active' : '' }}">
+            <a href="{{ route('vehicles.index') }}"><i class="bi bi-car-front"></i> Data Kendaraan</a>
+        </li>
+
+        <li class="{{ Request::is('master-data*') ? 'active' : '' }}">
+            <a href="javascript:void(0)" 
+               class="has-submenu {{ Request::is('master-data*') ? '' : 'collapsed' }}"
+               data-bs-toggle="collapse" 
+               data-bs-target="#masterDataSubmenu" 
+               aria-expanded="{{ Request::is('master-data*') ? 'true' : 'false' }}"
+               role="button">
+                <i class="bi bi-database"></i> Master Data
+            </a>
+            <ul class="collapse list-unstyled {{ Request::is('master-data*') ? 'show' : '' }}" id="masterDataSubmenu">
+                
+                <li class="{{ Request::is('vehicle-types*') ? 'active' : '' }}">
+                    <a href="{{ route('vehicle-types.index') }}"><i class="bi bi-grid small me-2"></i> Jenis Kendaraan</a>
+                </li>
+                <li>
+                    <a href="#"><i class="bi bi-people small me-2"></i> Data Pengguna</a>
+                </li>
+                <li>
+                    <a href="#"><i class="bi bi-building small me-2"></i> OPD / Instansi</a>
+                </li>
+                <li>
+                    <a href="#"><i class="bi bi-check-circle small me-2"></i> Status Kendaraan</a>
+                </li>
+                <li>
+                    <a href="#"><i class="bi bi-window-sidebar small me-2"></i> Landing Page Setting</a>
+                </li>
+            </ul>
+        </li>
+        
+        <li>
+            <a href="#"><i class="bi bi-people"></i> Pengguna Kendaraan</a>
+        </li>
+
+        <li>
+            <a href="#"><i class="bi bi-clock-history"></i> Riwayat Penggunaan</a>
+        </li>
+
+        <li class="mt-4 mb-2 ps-3">
+            <small class="text-uppercase fw-bold text-white-50" style="font-size: 0.7rem; letter-spacing: 0.5px;">Operasional</small>
+        </li>
+        
+        <li>
+            <a href="#"><i class="bi bi-tools"></i> Maintenance</a>
+        </li>
+
+        <li>
+            <a href="#"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
+        </li>
+
+        <li class="mt-4 mb-2 ps-3">
+            <small class="text-uppercase fw-bold text-white-50" style="font-size: 0.7rem; letter-spacing: 0.5px;">Sistem</small>
+        </li>
+
+        <li>
+            <a href="#"><i class="bi bi-gear"></i> Pengaturan</a>
+        </li>
+
+        <li>
+            <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="text-danger">
+                <i class="bi bi-box-arrow-left text-danger"></i> Logout
+            </a>
+        </li>
+    </ul>
+</nav>
