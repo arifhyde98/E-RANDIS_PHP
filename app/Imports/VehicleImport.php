@@ -17,7 +17,7 @@ class VehicleImport implements ToModel, WithStartRow
      */
     public function startRow(): int
     {
-        return 2;
+        return 4;
     }
 
     public function model(array $row)
@@ -134,7 +134,24 @@ class VehicleImport implements ToModel, WithStartRow
     private function transformCurrency($value)
     {
         if (empty($value)) return 0;
-        $clean = str_replace(['.', ','], ['', '.'], $value);
+        
+        // Jika sudah numeric, langsung kembalikan
+        if (is_numeric($value)) return (float) $value;
+
+        // Jika string, bersihkan karakter non-angka kecuali titik/koma desimal
+        // Menghapus Rp, spasi, dan titik ribuan
+        $clean = preg_replace('/[^0-9,.]/', '', $value);
+        
+        // Standarisasi format: jika ada koma desimal (format Indo), ubah ke titik
+        if (str_contains($clean, ',') && str_contains($clean, '.')) {
+            // Kasus 1.234.567,89 -> hapus titik, ubah koma ke titik
+            $clean = str_replace('.', '', $clean);
+            $clean = str_replace(',', '.', $clean);
+        } elseif (str_contains($clean, ',')) {
+            // Kasus 1234567,89 -> ubah koma ke titik
+            $clean = str_replace(',', '.', $clean);
+        }
+
         return (float) $clean;
     }
 }

@@ -39,6 +39,8 @@
         </div>
     </div>
 
+    @stack('modals')
+
     <!-- Theme Toggle & UI Interactivity JS -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {

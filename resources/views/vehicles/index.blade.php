@@ -166,9 +166,9 @@
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <div class="d-flex justify-content-center gap-2">
-                                    <button class="btn btn-sm btn-light border shadow-none text-secondary" data-bs-toggle="tooltip" title="Detail">
+                                    <a href="{{ route('vehicles.show', $vehicle) }}" class="btn btn-sm btn-light border shadow-none text-secondary" data-bs-toggle="tooltip" title="Lihat Detail Lengkap">
                                         <i class="bi bi-eye"></i>
-                                    </button>
+                                    </a>
                                     <a href="{{ route('vehicles.edit', $vehicle) }}" class="btn btn-sm btn-light border shadow-none text-primary" data-bs-toggle="tooltip" title="Edit Data">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
@@ -224,6 +224,7 @@
 
 </div>
 
+@push('modals')
 <!-- Import Modal -->
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -261,6 +262,7 @@
         </div>
     </div>
 </div>
+@endpush
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {

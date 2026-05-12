@@ -97,6 +97,16 @@
                             </select>
                             @error('bpkb_ada') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Tanggal Perolehan</label>
+                            <input type="date" name="tgl_perolehan" class="form-control @error('tgl_perolehan') is-invalid @enderror" value="{{ old('tgl_perolehan', $vehicle->tgl_perolehan) }}">
+                            @error('tgl_perolehan') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Nilai Perolehan (Rp)</label>
+                            <input type="number" name="nilai_perolehan" class="form-control @error('nilai_perolehan') is-invalid @enderror" value="{{ old('nilai_perolehan', $vehicle->nilai_perolehan) }}" placeholder="Contoh: 250000000">
+                            @error('nilai_perolehan') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
                         <div class="col-md-12">
                             <label class="form-label small fw-semibold text-dark">Keterangan Tambahan</label>
                             <textarea name="keterangan" class="form-control @error('keterangan') is-invalid @enderror" rows="3">{{ old('keterangan', $vehicle->keterangan) }}</textarea>

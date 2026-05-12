@@ -36,7 +36,14 @@ class VehicleController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $status = $request->status;
+            if ($status === 'Rusak') {
+                $query->whereIn('status', ['Rusak', 'Rusak Berat', 'Rusak Ringan', 'Maintenance', 'maintenance', 'rusak']);
+            } elseif ($status === 'Tersedia') {
+                $query->whereIn('status', ['Tersedia', 'Aktif', 'aktif']);
+            } else {
+                $query->where('status', $status);
+            }
         }
 
         if ($request->filled('jenis')) {
@@ -51,7 +58,7 @@ class VehicleController extends Controller
         $stats = [
             'total' => Vehicle::count(),
             'available' => Vehicle::whereIn('status', ['Tersedia', 'Aktif', 'aktif'])->count(),
-            'damaged' => Vehicle::whereIn('status', ['Rusak', 'Maintenance', 'maintenance'])->count(),
+            'damaged' => Vehicle::whereIn('status', ['Rusak', 'Rusak Berat', 'Rusak Ringan', 'Maintenance', 'maintenance', 'rusak'])->count(),
             'borrowed' => Vehicle::whereIn('status', ['Dipinjam', 'dipinjam'])->count(),
         ];
 
@@ -110,6 +117,15 @@ class VehicleController extends Controller
         Vehicle::create($validated);
 
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil ditambahkan.');
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Vehicle $vehicle): View
+    {
+        $vehicle->load(['user', 'vehicleType']);
+        return view('vehicles.show', compact('vehicle'));
     }
 
     /**

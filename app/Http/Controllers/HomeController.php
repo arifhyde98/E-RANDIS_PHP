@@ -27,7 +27,7 @@ class HomeController extends Controller implements HasMiddleware
             'total' => \App\Models\Vehicle::count(),
             'available' => \App\Models\Vehicle::whereIn('status', ['Tersedia', 'Aktif', 'aktif'])->count(),
             'borrowed' => \App\Models\Vehicle::whereIn('status', ['Dipinjam', 'dipinjam'])->count(),
-            'damaged' => \App\Models\Vehicle::whereIn('status', ['Rusak', 'Rusak Berat', 'Maintenance', 'maintenance'])->count(),
+            'damaged' => \App\Models\Vehicle::whereIn('status', ['Rusak', 'Rusak Berat', 'Rusak Ringan', 'Maintenance', 'maintenance', 'rusak'])->count(),
             'late' => 0, 
         ];
 
