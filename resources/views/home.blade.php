@@ -22,52 +22,17 @@
 
     <!-- SECTION 2: Statistic Cards -->
     <div class="row g-3 mb-4">
-        <!-- Total Kendaraan -->
         <div class="col-sm-6 col-lg-3">
-            <div class="card stat-card bg-gradient-primary p-3">
-                <i class="bi bi-car-front-fill stat-icon"></i>
-                <div class="position-relative z-2">
-                    <div class="text-white-50 fw-semibold small text-uppercase mb-1">Total Kendaraan</div>
-                    <h2 class="fw-bold mb-0">{{ $stats['total'] }}</h2>
-                    <div class="text-white-50 small fw-medium mt-1"><i class="bi bi-arrow-up-short"></i> Seluruh Aset</div>
-                </div>
-            </div>
+            <x-stat-card title="Total Kendaraan" :value="$stats['total']" icon="car-front-fill" gradient="primary" subtitle="Seluruh Aset" />
         </div>
-
-        <!-- Kendaraan Aktif -->
         <div class="col-sm-6 col-lg-3">
-            <div class="card stat-card bg-gradient-success p-3">
-                <i class="bi bi-check-circle-fill stat-icon"></i>
-                <div class="position-relative z-2">
-                    <div class="text-white-50 fw-semibold small text-uppercase mb-1">Tersedia / Aktif</div>
-                    <h2 class="fw-bold mb-0">{{ $stats['available'] }}</h2>
-                    <div class="text-white-50 small mt-1">Siap digunakan</div>
-                </div>
-            </div>
+            <x-stat-card title="Tersedia / Aktif" :value="$stats['available']" icon="check-circle-fill" gradient="success" subtitle="Siap digunakan" />
         </div>
-
-        <!-- Kendaraan Dipinjam -->
         <div class="col-sm-6 col-lg-3">
-            <div class="card stat-card bg-gradient-warning p-3">
-                <i class="bi bi-geo-alt-fill stat-icon"></i>
-                <div class="position-relative z-2">
-                    <div class="text-white-50 fw-semibold small text-uppercase mb-1">Dipinjam</div>
-                    <h2 class="fw-bold mb-0">{{ $stats['borrowed'] }}</h2>
-                    <div class="text-white-50 small mt-1">Sedang beroperasi</div>
-                </div>
-            </div>
+            <x-stat-card title="Dipinjam" :value="$stats['borrowed']" icon="geo-alt-fill" gradient="warning" subtitle="Sedang beroperasi" />
         </div>
-
-        <!-- Maintenance -->
         <div class="col-sm-6 col-lg-3">
-            <div class="card stat-card bg-gradient-danger p-3">
-                <i class="bi bi-tools stat-icon"></i>
-                <div class="position-relative z-2">
-                    <div class="text-white-50 fw-semibold small text-uppercase mb-1">Maintenance</div>
-                    <h2 class="fw-bold mb-0">{{ $stats['damaged'] }}</h2>
-                    <div class="text-white-50 small fw-medium mt-1">Dalam perbaikan</div>
-                </div>
-            </div>
+            <x-stat-card title="Maintenance" :value="$stats['damaged']" icon="tools" gradient="danger" subtitle="Dalam perbaikan" />
         </div>
     </div>
 
@@ -84,10 +49,7 @@
                         <small class="text-secondary">Pantau aktivitas operasional armada terkini.</small>
                     </div>
                     <div class="d-flex gap-2">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-secondary"></i></span>
-                            <input type="text" class="form-control border-start-0 bg-light shadow-none" placeholder="Cari Nopol...">
-                        </div>
+                        <a href="{{ route('vehicles.index') }}" class="btn btn-sm btn-light border small fw-bold">Lihat Semua</a>
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -110,32 +72,18 @@
                                     </td>
                                     <td class="py-3">
                                         <div class="fw-medium text-dark"><i class="bi bi-person-fill text-secondary me-1"></i> {{ $v->pemegang }}</div>
-                                        <small class="text-secondary">{{ $v->opd }}</small>
+                                        <small class="text-secondary">{{ Str::limit($v->opd, 30) }}</small>
                                     </td>
                                     <td class="py-3 text-secondary small">
                                         {{ $v->updated_at ? $v->updated_at->diffForHumans() : 'Baru saja' }}
                                     </td>
                                     <td class="py-3 text-center">
-                                        @php
-                                            $statusClasses = [
-                                                'Tersedia' => 'bg-success text-success',
-                                                'Aktif' => 'bg-success text-success',
-                                                'Rusak' => 'bg-warning text-warning',
-                                                'Maintenance' => 'bg-warning text-warning',
-                                                'Nonaktif' => 'bg-secondary text-secondary',
-                                                'Dipinjam' => 'bg-info text-info'
-                                            ];
-                                            $class = $statusClasses[$v->status] ?? 'bg-info text-info';
-                                            $label = \App\Models\Vehicle::getStatuses()[$v->status] ?? $v->status;
-                                        @endphp
-                                        <span class="badge {{ explode(' ', $class)[0] }} rounded-pill px-3">
-                                            {{ $label }}
-                                        </span>
+                                        <x-status-badge :status="$v->status" />
                                     </td>
                                     <td class="px-4 py-3 text-end">
-                                        <button class="btn btn-sm btn-light rounded-3 text-primary border shadow-sm">
+                                        <a href="{{ route('vehicles.edit', $v) }}" class="btn btn-sm btn-light rounded-3 text-primary border shadow-sm">
                                             Detail <i class="bi bi-chevron-right ms-1" style="font-size:0.7rem;"></i>
-                                        </button>
+                                        </a>
                                     </td>
                                 </tr>
                             @empty
@@ -150,13 +98,8 @@
                     </table>
                 </div>
                 <div class="p-3 border-top bg-white d-flex justify-content-between align-items-center">
-                    <small class="text-secondary">Menampilkan 6 dari total kendaraan</small>
-                    <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item disabled"><a class="page-link" href="#">Prev</a></li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">Next</a></li>
-                    </ul>
+                    <small class="text-secondary">Menampilkan data terbaru kendaraan dinas</small>
+                    <a href="{{ route('vehicles.index') }}" class="small fw-bold text-decoration-none">Kelola Semua <i class="bi bi-arrow-right"></i></a>
                 </div>
             </div>
         </div>
@@ -188,7 +131,7 @@
                             <div class="fw-semibold text-danger mb-1">Terlambat Pengembalian</div>
                             <small class="text-secondary d-block">Melewati batas waktu peminjaman</small>
                         </div>
-                        <span class="badge bg-danger text-white rounded-pill px-3 py-2">{{ $stats['late'] }} Unit</span>
+                        <span class="badge bg-danger text-white rounded-pill px-3 py-2">0 Unit</span>
                     </li>
                 </ul>
             </div>
@@ -216,8 +159,8 @@
                     <div class="position-relative">
                         <span class="position-absolute top-0 start-0 translate-middle bg-primary border border-white border-3 rounded-circle" style="width: 16px; height: 16px; margin-left: -25px;"></span>
                         <div class="fw-medium text-dark small">Pengguna Baru Ditambahkan</div>
-                        <div class="text-secondary mb-1" style="font-size: 0.8rem;">Akun Budi Santoso aktif</div>
-                        <small class="text-muted" style="font-size: 0.7rem;">Kemarin, 14:30</small>
+                        <div class="text-secondary mb-1" style="font-size: 0.8rem;">Akun Admin aktif</div>
+                        <small class="text-muted" style="font-size: 0.7rem;">Baru Saja</small>
                     </div>
 
                 </div>

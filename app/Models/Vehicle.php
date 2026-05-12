@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Enums\VehicleStatus;
 
 class Vehicle extends Model
 {
@@ -48,11 +49,6 @@ class Vehicle extends Model
 
     public static function getStatuses(): array
     {
-        return [
-            'Tersedia' => 'Aktif / Tersedia',
-            'Dipinjam' => 'Sedang Dipinjam',
-            'Rusak' => 'Maintenance / Rusak',
-            'Nonaktif' => 'Nonaktif / Dilelang',
-        ];
+        return VehicleStatus::labels();
     }
 }

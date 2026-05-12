@@ -6,17 +6,22 @@ use App\Models\Vehicle;
 use App\Models\User;
 use App\Models\VehicleType;
 use Illuminate\Http\Request;
+use App\Http\Requests\StoreVehicleRequest;
+use App\Http\Requests\UpdateVehicleRequest;
 use App\Exports\VehicleExport;
 use App\Exports\VehicleTemplateExport;
 use App\Imports\VehicleImport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class VehicleController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $query = Vehicle::with(['user', 'vehicleType'])->latest();
 
@@ -58,7 +63,7 @@ class VehicleController extends Controller
     /**
      * Search function for Landing Page (Public)
      */
-    public function search(Request $request)
+    public function search(Request $request): View
     {
         $query = $request->input('q');
         $vehicle = null;
@@ -84,7 +89,7 @@ class VehicleController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
         $users = User::all();
         $vehicleTypes = VehicleType::orderBy('name')->get();
@@ -95,29 +100,9 @@ class VehicleController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreVehicleRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'no_polisi' => 'required|unique:vehicles,no_polisi',
-            'merk' => 'required',
-            'tipe' => 'required',
-            'jenis' => 'required',
-            'vehicle_type_id' => 'nullable|exists:vehicle_types,id',
-            'tahun_pembuatan' => 'nullable|integer',
-            'tgl_perolehan' => 'nullable|date',
-            'nilai_perolehan' => 'nullable|numeric',
-            'stnk_ada' => 'required',
-            'bpkb_ada' => 'required',
-            'no_rangka' => 'nullable',
-            'no_mesin' => 'nullable',
-            'warna' => 'nullable',
-            'tgl_stnk' => 'nullable|date',
-            'opd' => 'required',
-            'pemegang' => 'required',
-            'status' => 'required',
-            'keterangan' => 'nullable',
-            'user_id' => 'nullable|exists:users,id',
-        ]);
+        $validated = $request->validated();
 
         // Clean plate number before store from manual form
         $validated['no_polisi'] = strtoupper(preg_replace('/\s+/', ' ', trim($validated['no_polisi'])));
@@ -130,7 +115,7 @@ class VehicleController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Vehicle $vehicle)
+    public function edit(Vehicle $vehicle): View
     {
         $users = User::all();
         $vehicleTypes = VehicleType::orderBy('name')->get();
@@ -141,29 +126,9 @@ class VehicleController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Vehicle $vehicle)
+    public function update(UpdateVehicleRequest $request, Vehicle $vehicle): RedirectResponse
     {
-        $validated = $request->validate([
-            'no_polisi' => 'required|unique:vehicles,no_polisi,' . $vehicle->id,
-            'merk' => 'required',
-            'tipe' => 'required',
-            'jenis' => 'required',
-            'vehicle_type_id' => 'nullable|exists:vehicle_types,id',
-            'tahun_pembuatan' => 'nullable|integer',
-            'tgl_perolehan' => 'nullable|date',
-            'nilai_perolehan' => 'nullable|numeric',
-            'stnk_ada' => 'required',
-            'bpkb_ada' => 'required',
-            'no_rangka' => 'nullable',
-            'no_mesin' => 'nullable',
-            'warna' => 'nullable',
-            'tgl_stnk' => 'nullable|date',
-            'opd' => 'required',
-            'pemegang' => 'required',
-            'status' => 'required',
-            'keterangan' => 'nullable',
-            'user_id' => 'nullable|exists:users,id',
-        ]);
+        $validated = $request->validated();
 
         // Clean plate number before update from manual form
         $validated['no_polisi'] = strtoupper(preg_replace('/\s+/', ' ', trim($validated['no_polisi'])));
@@ -176,7 +141,7 @@ class VehicleController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Vehicle $vehicle)
+    public function destroy(Vehicle $vehicle): RedirectResponse
     {
         $vehicle->delete();
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil dihapus.');
@@ -185,7 +150,7 @@ class VehicleController extends Controller
     /**
      * Remove all resources from storage.
      */
-    public function truncate()
+    public function truncate(): RedirectResponse
     {
         Vehicle::truncate();
         return redirect()->route('vehicles.index')->with('success', 'Seluruh data kendaraan berhasil dikosongkan.');
@@ -194,7 +159,7 @@ class VehicleController extends Controller
     /**
      * Export data to Excel
      */
-    public function export() 
+    public function export(): BinaryFileResponse
     {
         return Excel::download(new VehicleExport, 'data_kendaraan_' . date('Y-m-d') . '.xlsx');
     }
@@ -202,7 +167,7 @@ class VehicleController extends Controller
     /**
      * Download Excel Template
      */
-    public function downloadTemplate()
+    public function downloadTemplate(): BinaryFileResponse
     {
         return Excel::download(new VehicleTemplateExport, 'template_import_kendaraan.xlsx');
     }
@@ -210,7 +175,7 @@ class VehicleController extends Controller
     /**
      * Import data from Excel
      */
-    public function import(Request $request) 
+    public function import(Request $request): RedirectResponse
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv'

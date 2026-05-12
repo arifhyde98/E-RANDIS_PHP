@@ -20,17 +20,15 @@ class HomeController extends Controller implements HasMiddleware
 
     /**
      * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
      */
-    public function index()
+    public function index(): \Illuminate\View\View
     {
         $stats = [
             'total' => \App\Models\Vehicle::count(),
             'available' => \App\Models\Vehicle::whereIn('status', ['Tersedia', 'Aktif', 'aktif'])->count(),
             'borrowed' => \App\Models\Vehicle::whereIn('status', ['Dipinjam', 'dipinjam'])->count(),
-            'damaged' => \App\Models\Vehicle::whereIn('status', ['Rusak', 'Maintenance', 'maintenance'])->count(),
-            'late' => 2, // Placeholder for now as late return logic might not exist yet
+            'damaged' => \App\Models\Vehicle::whereIn('status', ['Rusak', 'Rusak Berat', 'Maintenance', 'maintenance'])->count(),
+            'late' => 0, 
         ];
 
         $latestVehicles = \App\Models\Vehicle::latest()->take(6)->get();

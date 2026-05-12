@@ -158,22 +158,8 @@
                                 <div class="fw-medium text-dark"><i class="bi bi-person-fill text-secondary me-1"></i> {{ $vehicle->pemegang }}</div>
                                 <div class="small text-secondary">{{ $vehicle->opd }}</div>
                             </td>
-                            <td class="py-3 text-center">
-                                @php
-                                    $statusClasses = [
-                                        'Tersedia' => 'bg-success text-success',
-                                        'Aktif' => 'bg-success text-success',
-                                        'Rusak' => 'bg-warning text-warning',
-                                        'Maintenance' => 'bg-warning text-warning',
-                                        'Nonaktif' => 'bg-secondary text-secondary',
-                                        'Dipinjam' => 'bg-info text-info'
-                                    ];
-                                    $class = $statusClasses[$vehicle->status] ?? 'bg-info text-info';
-                                    $label = \App\Models\Vehicle::getStatuses()[$vehicle->status] ?? $vehicle->status;
-                                @endphp
-                                <span class="badge {{ explode(' ', $class)[0] }} bg-opacity-10 {{ explode(' ', $class)[1] }} border border-{{ explode('-', explode(' ', $class)[1])[1] }} border-opacity-25 px-3 py-2 rounded-pill fw-medium w-100">
-                                    {{ $label }}
-                                </span>
+                            <td class="text-center">
+                                <x-status-badge :status="$vehicle->status" />
                             </td>
                             <td class="py-3 text-secondary small">
                                 {{ $vehicle->updated_at ? $vehicle->updated_at->diffForHumans() : '-' }}
