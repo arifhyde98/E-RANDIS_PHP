@@ -125,8 +125,19 @@
                     
                     <div class="mb-4">
                         <label class="form-label small fw-semibold text-dark">Unit Kerja / OPD</label>
-                        <input type="text" name="opd" class="form-control @error('opd') is-invalid @enderror" value="{{ old('opd') }}" placeholder="Contoh: Sekretariat Daerah" required>
-                        @error('opd') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <select name="opd_id" id="opd_select" class="form-select @error('opd_id') is-invalid @enderror" required
+                                onchange="document.getElementById('opd_text').value = this.options[this.selectedIndex].text">
+                            <option value="">-- Pilih OPD --</option>
+                            @foreach($opds as $o)
+                                <option value="{{ $o->id }}"
+                                    {{ old('opd_id') == $o->id ? 'selected' : '' }}>
+                                    {{ $o->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                        {{-- Hidden field untuk tetap menyimpan nama OPD ke kolom 'opd' string --}}
+                        <input type="hidden" name="opd" id="opd_text" value="{{ old('opd') }}">
+                        @error('opd_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     
                     <div class="mb-4">
@@ -161,3 +172,17 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const noPolisiInput = document.querySelector('input[name="no_polisi"]');
+        if (noPolisiInput) {
+            noPolisiInput.addEventListener('input', function(e) {
+                // Hapus titik dan paksa huruf besar
+                this.value = this.value.replace(/\./g, '').toUpperCase();
+            });
+        }
+    });
+</script>
+@endpush

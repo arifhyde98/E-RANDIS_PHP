@@ -25,12 +25,11 @@ class MasterDataController extends Controller
      */
     public function index()
     {
-        // Mock data for summary, in a real app these would be counts from respective models
         $stats = [
             'total_kendaraan' => Vehicle::count(),
             'total_pengguna' => User::count(),
-            'total_opd' => 24, // Example count
-            'total_sopir' => 12, // Example count
+            'total_opd' => \App\Models\Opd::count(),
+            'total_sopir' => 12, // Still mocked as requested/needed
         ];
 
         return view('master-data.index', compact('stats'));

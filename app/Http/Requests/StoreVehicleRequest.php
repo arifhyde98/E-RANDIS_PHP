@@ -15,6 +15,15 @@ class StoreVehicleRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        if ($this->has('no_polisi')) {
+            $this->merge([
+                'no_polisi' => strtoupper(str_replace('.', '', preg_replace('/\s+/', ' ', trim($this->no_polisi))))
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [

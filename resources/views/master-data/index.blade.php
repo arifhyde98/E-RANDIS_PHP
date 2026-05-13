@@ -122,7 +122,7 @@
                 </div>
                 <h5 class="fw-bold text-navy">OPD / Instansi</h5>
                 <p class="text-secondary small mb-4">Pengelolaan data Organisasi Perangkat Daerah dan unit kerja.</p>
-                <a href="#" class="btn btn-outline-primary btn-sm rounded-pill px-4">Buka Data</a>
+                <a href="{{ route('opds.index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-4">Buka Data</a>
             </div>
         </div>
 

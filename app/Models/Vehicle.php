@@ -28,6 +28,7 @@ class Vehicle extends Model
         'warna',
         'tgl_stnk',
         'opd',
+        'opd_id',
         'pemegang',
         'status',
         'keterangan',
@@ -45,6 +46,14 @@ class Vehicle extends Model
     public function vehicleType(): BelongsTo
     {
         return $this->belongsTo(VehicleType::class);
+    }
+
+    /**
+     * Get the OPD (Organisasi Perangkat Daerah) that owns the vehicle.
+     */
+    public function opdRelation(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Opd::class, 'opd_id');
     }
 
     public static function getStatuses(): array

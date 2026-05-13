@@ -30,8 +30,8 @@ class VehicleImport implements ToModel, WithStartRow
         // 1. Identifikasi Nomor Polisi (Kolom C / Index 2)
         $raw_no_polisi = $row[2] ?? null;
         
-        // Bersihkan Nomor Polisi
-        $no_polisi = $raw_no_polisi ? preg_replace('/\s+/', ' ', trim($raw_no_polisi)) : null;
+        // Bersihkan Nomor Polisi (Hilangkan titik dan spasi ganda)
+        $no_polisi = $raw_no_polisi ? str_replace('.', '', preg_replace('/\s+/', ' ', trim($raw_no_polisi))) : null;
         $no_polisi = $no_polisi ? strtoupper($no_polisi) : null;
 
         // ATURAN TEMPLATE: Jika plat kosong/strip/tanda tanya, buatkan identitas urut
@@ -68,7 +68,14 @@ class VehicleImport implements ToModel, WithStartRow
             ['description' => 'Otomatis dibuat saat import Excel']
         );
 
-        // 3. Persiapkan Data untuk Insert/Update
+        // 3. Proses OPD / Instansi (Kolom M / Index 12)
+        $opdName = strtoupper(trim($row[12] ?? 'SEKRETARIAT DAERAH'));
+        $opd = \App\Models\Opd::firstOrCreate(
+            ['nama' => $opdName],
+            ['singkatan' => null, 'alamat' => null]
+        );
+
+        // 4. Persiapkan Data untuk Insert/Update
         $tglPerolehan = $this->transformDate($row[5] ?? null);
         $tahunPembuatan = $tglPerolehan ? \Carbon\Carbon::parse($tglPerolehan)->year : null;
 
@@ -88,7 +95,8 @@ class VehicleImport implements ToModel, WithStartRow
             'status'          => (isset($row[9]) && (strtoupper($row[9]) == 'BAIK' || strtoupper($row[9]) == 'RUSAK RINGAN')) ? 'Tersedia' : ($row[9] ?? 'Tersedia'),
             'pemegang'        => $row[10] ?? '-',
             'keterangan'      => $row[11] ?? null,
-            'opd'             => $row[12] ?? 'SEKRETARIAT DAERAH',
+            'opd'             => $opdName,
+            'opd_id'          => $opd->id,
         ];
 
         return new Vehicle($data);

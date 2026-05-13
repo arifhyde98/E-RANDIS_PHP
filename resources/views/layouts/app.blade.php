@@ -40,6 +40,7 @@
     </div>
 
     @stack('modals')
+    @stack('scripts')
 
     <!-- Theme Toggle & UI Interactivity JS -->
     <script>

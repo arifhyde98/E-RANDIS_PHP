@@ -124,7 +124,8 @@ class VehicleController extends Controller
         $users = User::all();
         $vehicleTypes = VehicleType::orderBy('name')->get();
         $statuses = Vehicle::getStatuses();
-        return view('vehicles.create', compact('users', 'vehicleTypes', 'statuses'));
+        $opds = \App\Models\Opd::orderBy('nama')->get();
+        return view('vehicles.create', compact('users', 'vehicleTypes', 'statuses', 'opds'));
     }
 
     /**
@@ -134,8 +135,8 @@ class VehicleController extends Controller
     {
         $validated = $request->validated();
 
-        // Clean plate number before store from manual form
-        $validated['no_polisi'] = strtoupper(preg_replace('/\s+/', ' ', trim($validated['no_polisi'])));
+        // Clean plate number before store from manual form (Remove dots and double spaces)
+        $validated['no_polisi'] = strtoupper(str_replace('.', '', preg_replace('/\s+/', ' ', trim($validated['no_polisi']))));
 
         Vehicle::create($validated);
 
@@ -159,7 +160,8 @@ class VehicleController extends Controller
         $users = User::all();
         $vehicleTypes = VehicleType::orderBy('name')->get();
         $statuses = Vehicle::getStatuses();
-        return view('vehicles.edit', compact('vehicle', 'users', 'vehicleTypes', 'statuses'));
+        $opds = \App\Models\Opd::orderBy('nama')->get();
+        return view('vehicles.edit', compact('vehicle', 'users', 'vehicleTypes', 'statuses', 'opds'));
     }
 
     /**
@@ -169,8 +171,8 @@ class VehicleController extends Controller
     {
         $validated = $request->validated();
 
-        // Clean plate number before update from manual form
-        $validated['no_polisi'] = strtoupper(preg_replace('/\s+/', ' ', trim($validated['no_polisi'])));
+        // Clean plate number before update from manual form (Remove dots and double spaces)
+        $validated['no_polisi'] = strtoupper(str_replace('.', '', preg_replace('/\s+/', ' ', trim($validated['no_polisi']))));
 
         $vehicle->update($validated);
 

@@ -41,16 +41,16 @@
             <small class="text-uppercase fw-bold text-white-50" style="font-size: 0.7rem; letter-spacing: 0.5px;">Operasional</small>
         </li>
 
-        <li class="{{ Request::is('master-data*') ? 'active' : '' }}">
+        <li class="{{ Request::is('master-data*', 'opds*', 'vehicle-types*') ? 'active' : '' }}">
             <a href="javascript:void(0)" 
-               class="has-submenu {{ Request::is('master-data*') ? '' : 'collapsed' }}"
+               class="has-submenu {{ Request::is('master-data*', 'opds*', 'vehicle-types*') ? '' : 'collapsed' }}"
                data-bs-toggle="collapse" 
                data-bs-target="#masterDataSubmenu" 
-               aria-expanded="{{ Request::is('master-data*') ? 'true' : 'false' }}"
+               aria-expanded="{{ Request::is('master-data*', 'opds*', 'vehicle-types*') ? 'true' : 'false' }}"
                role="button">
                 <i class="bi bi-database"></i> Master Data
             </a>
-            <ul class="collapse list-unstyled {{ Request::is('master-data*') ? 'show' : '' }}" id="masterDataSubmenu">
+            <ul class="collapse list-unstyled {{ Request::is('master-data*', 'opds*', 'vehicle-types*') ? 'show' : '' }}" id="masterDataSubmenu">
                 
                 <li class="{{ Request::is('vehicle-types*') ? 'active' : '' }}">
                     <a href="{{ route('vehicle-types.index') }}"><i class="bi bi-grid small me-2"></i> Jenis Kendaraan</a>
@@ -58,8 +58,8 @@
                 <li>
                     <a href="#"><i class="bi bi-people small me-2"></i> Data Pengguna</a>
                 </li>
-                <li>
-                    <a href="#"><i class="bi bi-building small me-2"></i> OPD / Instansi</a>
+                <li class="{{ Request::is('opds*') ? 'active' : '' }}">
+                    <a href="{{ route('opds.index') }}"><i class="bi bi-building small me-2"></i> OPD / Instansi</a>
                 </li>
                 <li>
                     <a href="#"><i class="bi bi-check-circle small me-2"></i> Status Kendaraan</a>
