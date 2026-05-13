@@ -209,6 +209,14 @@ body {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     color: var(--text-color);
+
+    @media (max-width: 768px) {
+        border-radius: 0.5rem;
+        padding: 1rem !important;
+        
+        &.p-4 { padding: 1.25rem !important; }
+        &.p-3 { padding: 1rem !important; }
+    }
 }
 
 .table {
@@ -298,6 +306,16 @@ body {
         color: #60a5fa;
         &:hover { color: #93c5fd; }
     }
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+    body {
+        font-size: 0.9rem;
+    }
+    h1, .h1 { font-size: 1.75rem; }
+    h2, .h2 { font-size: 1.5rem; }
+    h3, .h3 { font-size: 1.35rem; }
 }
 
 /* Admin Layout Styles */
@@ -650,16 +668,84 @@ body {
 @media (max-width: 768px) {
     #sidebar {
         margin-left: calc(-1 * var(--sidebar-width));
+        box-shadow: none;
     }
     #sidebar.active {
         margin-left: 0;
+        box-shadow: 10px 0 30px rgba(0,0,0,0.2);
     }
     #content {
         margin-left: 0;
         padding: 1rem;
+        width: 100%;
     }
     #content.active {
-        margin-left: var(--sidebar-width);
+        margin-left: 0;
+    }
+
+    .navbar-admin {
+        padding: 0.75rem 0.75rem;
+        top: 0;
+        margin-bottom: 1rem;
+        border-radius: 0 !important;
+        width: 100%;
+        left: 0;
+    }
+
+    .action-toolbar {
+        width: 100%;
+        .btn {
+            flex: 1 1 auto;
+            justify-content: center;
+            font-size: 0.85rem;
+            padding: 0.5rem;
+        }
+    }
+
+    .breadcrumb {
+        display: none; // Hide breadcrumbs on mobile to save space
+    }
+
+    h3.fw-bold.text-navy {
+        font-size: 1.25rem;
+    }
+
+    // Sidebar Overlay
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 998;
+        top: 0;
+        left: 0;
+        backdrop-filter: blur(2px);
+        
+        &.show {
+            display: block;
+        }
+    }
+}
+
+// Global Table Responsive Helper
+.table-responsive {
+    border-radius: 0.75rem;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+    
+    &::-webkit-scrollbar {
+        height: 5px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.1);
+        border-radius: 10px;
+    }
+}
+
+[data-theme="dark"] {
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.1);
     }
 }
 

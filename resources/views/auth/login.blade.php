@@ -31,6 +31,11 @@
             background-color: var(--bg-color);
             transition: all 0.3s ease;
         }
+        @media (max-width: 991.98px) {
+            .login-form-container {
+                padding: 2rem 1.5rem !important;
+            }
+        }
     </style>
 </head>
 <body id="theme-root">
@@ -86,8 +91,8 @@
                             @endif
                             <h2 class="fw-bold text-navy mt-2">E-RANDIS</h2>
                         </div>
-                        <h2 class="fw-bold text-navy mb-2">Selamat Datang</h2>
-                        <p class="text-secondary">Masukkan kredensial Anda untuk melanjutkan ke dashboard.</p>
+                        <h2 class="fw-bold text-navy mb-2 fs-2">Selamat Datang</h2>
+                        <p class="text-secondary small-mobile">Masukkan kredensial Anda untuk melanjutkan ke dashboard.</p>
                     </div>
 
                     @if ($errors->any())

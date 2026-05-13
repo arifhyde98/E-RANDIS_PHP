@@ -25,6 +25,7 @@
     </script>
     <div class="wrapper">
         @include('layouts.partials.sidebar')
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <!-- Page Content -->
         <div id="content">
@@ -92,30 +93,41 @@
             const sidebarCollapse = document.getElementById('sidebarCollapse');
             const sidebar = document.getElementById('sidebar');
             const content = document.getElementById('content');
+            const overlay = document.getElementById('sidebarOverlay');
             
+            function toggleSidebar() {
+                sidebar.classList.toggle('active');
+                if(window.innerWidth > 768) {
+                    content.style.marginLeft = sidebar.classList.contains('active') ? '0' : '260px';
+                } else {
+                    overlay.classList.toggle('show');
+                    // Lock body scroll when sidebar is open on mobile
+                    document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : 'auto';
+                }
+            }
+
             if(sidebarCollapse) {
-                sidebarCollapse.addEventListener('click', function () {
-                    sidebar.classList.toggle('active');
-                    if(window.innerWidth > 768) {
-                        content.style.marginLeft = sidebar.classList.contains('active') ? '0' : '260px';
-                    }
-                });
+                sidebarCollapse.addEventListener('click', toggleSidebar);
+            }
+
+            if(overlay) {
+                overlay.addEventListener('click', toggleSidebar);
             }
             
-            window.addEventListener('resize', function() {
+            function handleResize() {
                 if(window.innerWidth <= 768) {
-                    sidebar.classList.add('active');
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('show');
                     content.style.marginLeft = '0';
+                    document.body.style.overflow = 'auto';
                 } else {
                     sidebar.classList.remove('active');
                     content.style.marginLeft = '260px';
                 }
-            });
-            
-            if(window.innerWidth <= 768) {
-                sidebar.classList.add('active');
-                content.style.marginLeft = '0';
             }
+
+            window.addEventListener('resize', handleResize);
+            handleResize(); // Initial check
         });
     </script>
 </body>
