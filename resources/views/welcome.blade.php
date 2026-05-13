@@ -23,7 +23,7 @@
                 @endphp
                 
                 @if($siteLogo)
-                    <img src="{{ Storage::url($siteLogo) }}" alt="Logo" style="height: 40px; width: auto;">
+                    <img src="{{ \App\Models\Setting::imageUrl($siteLogo) }}" alt="Logo" style="height: 40px; width: auto;">
                 @else
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" style="width: 32px; height: 38px;">
                         <!-- Shield outline -->
@@ -64,7 +64,7 @@
     <section id="hero-section" style="
         @php
             $heroBg = \App\Models\Setting::get('hero_bg_image', 'images/hero-illustration.png');
-            $bgUrl = Str::startsWith($heroBg, 'images/') ? asset($heroBg) : Storage::url($heroBg);
+            $bgUrl = \App\Models\Setting::imageUrl($heroBg);
         @endphp
         background: linear-gradient(rgba(30, 64, 175, 0.85), rgba(30, 58, 138, 0.95)), url('{{ $bgUrl }}');
         background-size: cover;
@@ -88,7 +88,7 @@
                         @php
                             $heroImage = \App\Models\Setting::get('hero_image', 'images/hero-illustration.png');
                         @endphp
-                        <img src="{{ Str::startsWith($heroImage, 'images/') ? asset($heroImage) : Storage::url($heroImage) }}" alt="Monitoring Illustration" style="max-height: 400px; width: auto;">
+                        <img src="{{ \App\Models\Setting::imageUrl($heroImage) }}" alt="Monitoring Illustration" style="max-height: 400px; width: auto;">
                     </div>
                 </div>
             </div>
@@ -115,7 +115,7 @@
                     </div>
                     
                     <div class="search-card border border-light-subtle">
-                        <form action="{{ route('landing') }}" method="GET">
+                        <form id="vehicleSearchForm" action="{{ route('landing') }}" method="GET" data-search-url="{{ route('landing.vehicle-search') }}">
                             <div class="d-flex flex-column flex-md-row gap-2 align-items-stretch">
                                 <div class="flex-grow-1">
                                     <input type="text" name="q" class="form-control form-control-lg border py-3 px-4 shadow-none fs-6" placeholder="Masukkan Nomor Polisi" value="{{ $query ?? '' }}" required style="text-transform: uppercase;">
@@ -129,45 +129,6 @@
                             </div>
                         </form>
 
-                        @if(isset($query))
-                            <div class="mt-4 pt-4 border-top text-start">
-                                @if($vehicle)
-                                    <div class="p-4 bg-light rounded-3 border-start border-primary border-4 shadow-sm">
-                                        <div class="d-flex justify-content-between align-items-start mb-3">
-                                            <div>
-                                                <div class="text-secondary small mb-1">Hasil Pencarian</div>
-                                                <h4 class="fw-bold text-primary mb-0">{{ $vehicle->no_polisi }}</h4>
-                                            </div>
-                                            <span class="badge bg-success px-3 py-2 rounded-pill fw-medium">
-                                                {{ \App\Models\Vehicle::getStatuses()[$vehicle->status] ?? $vehicle->status }}
-                                            </span>
-                                        </div>
-                                        
-                                        <div class="row g-3 pt-2 border-top border-light">
-                                            <div class="col-md-4">
-                                                <div class="text-secondary small">Nama Kendaraan</div>
-                                                <div class="fw-bold text-dark">{{ $vehicle->merk }} {{ $vehicle->tipe }}</div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="text-secondary small">OPD / Instansi</div>
-                                                <div class="fw-bold text-dark">{{ $vehicle->opd }}</div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="text-secondary small">Pemegang</div>
-                                                <div class="fw-bold text-dark">{{ $vehicle->pemegang }}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @else
-                                    <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center p-3 m-0">
-                                        <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
-                                        <div class="small text-dark">
-                                            <strong>Data tidak ditemukan.</strong> Kendaraan dengan plat "{{ $query }}" belum terdaftar.
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-                        @endif
                     </div>
                     
                     <div class="text-center mt-4 text-secondary small">
@@ -177,6 +138,29 @@
             </div>
         </div>
     </section>
+
+    <div class="modal fade" id="vehicleSearchResultModal" tabindex="-1" aria-labelledby="vehicleSearchResultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div id="vehicleSearchModalHeader" class="modal-header border-0 bg-primary text-white px-4 py-3">
+                    <div>
+                        <div id="vehicleSearchModalEyebrow" class="small text-white-50 mb-1">Hasil Pencarian</div>
+                        <h5 class="modal-title fw-bold" id="vehicleSearchResultModalLabel">Memuat...</h5>
+                    </div>
+                    <button type="button" id="vehicleSearchModalClose" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" id="vehicleSearchModalBody">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+                        <div class="fw-semibold text-dark">Mencari data kendaraan...</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button type="button" class="btn btn-primary px-4 rounded-3 fw-semibold" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Features Section -->
     <section id="features" class="py-5 animate-on-scroll bg-white" style="margin-top: 4rem;">
@@ -249,7 +233,7 @@
             <!-- Logo Replikasi Persis Referensi di Footer -->
             <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
                 @if($siteLogo)
-                    <img src="{{ Storage::url($siteLogo) }}" alt="Logo" style="height: 30px; width: auto;">
+                    <img src="{{ \App\Models\Setting::imageUrl($siteLogo) }}" alt="Logo" style="height: 30px; width: auto;">
                 @else
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" style="width: 24px; height: 28px;">
                         <path d="M50 0 L90 20 V70 C90 95 50 120 50 120 C50 120 10 95 10 70 V20 Z" fill="#15803d" stroke="#facc15" stroke-width="6"/>
@@ -281,6 +265,136 @@
             } else {
                 document.querySelector('.navbar').classList.remove('scrolled');
             }
+        });
+
+        window.addEventListener('DOMContentLoaded', function() {
+            const searchForm = document.getElementById('vehicleSearchForm');
+            const resultModalElement = document.getElementById('vehicleSearchResultModal');
+            const modalHeader = document.getElementById('vehicleSearchModalHeader');
+            const modalEyebrow = document.getElementById('vehicleSearchModalEyebrow');
+            const modalTitle = document.getElementById('vehicleSearchResultModalLabel');
+            const modalBody = document.getElementById('vehicleSearchModalBody');
+            const modalClose = document.getElementById('vehicleSearchModalClose');
+
+            if (!searchForm || !resultModalElement || !window.bootstrap) {
+                return;
+            }
+
+            const resultModal = new bootstrap.Modal(resultModalElement);
+            const escapeHtml = function(value) {
+                return String(value ?? '').replace(/[&<>"']/g, function(character) {
+                    return {
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#039;'
+                    }[character];
+                });
+            };
+
+            const setHeaderState = function(found) {
+                modalHeader.className = found
+                    ? 'modal-header border-0 bg-primary text-white px-4 py-3'
+                    : 'modal-header border-0 bg-warning-subtle px-4 py-3';
+                modalEyebrow.className = found ? 'small text-white-50 mb-1' : 'small text-secondary mb-1';
+                modalClose.className = found ? 'btn-close btn-close-white shadow-none' : 'btn-close shadow-none';
+            };
+
+            searchForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                const formData = new FormData(searchForm);
+                const query = formData.get('q');
+                const searchUrl = new URL(searchForm.dataset.searchUrl, window.location.origin);
+                searchUrl.searchParams.set('q', query);
+
+                setHeaderState(true);
+                modalTitle.textContent = 'Memuat...';
+                modalBody.innerHTML = `
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+                        <div class="fw-semibold text-dark">Mencari data kendaraan...</div>
+                    </div>
+                `;
+                resultModal.show();
+
+                try {
+                    const response = await fetch(searchUrl, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Search request failed');
+                    }
+
+                    const data = await response.json();
+
+                    if (data.found && data.vehicle) {
+                        setHeaderState(true);
+                        modalTitle.textContent = data.vehicle.no_polisi;
+                        modalBody.innerHTML = `
+                            <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4 pb-3 border-bottom">
+                                <div>
+                                    <div class="text-secondary small mb-1">Nama Kendaraan</div>
+                                    <div class="fw-bold fs-5 text-navy">${escapeHtml(data.vehicle.nama)}</div>
+                                </div>
+                                <div>
+                                    <span class="badge bg-success px-3 py-2 rounded-pill fw-medium">${escapeHtml(data.vehicle.status)}</span>
+                                </div>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded-3 h-100">
+                                        <div class="text-secondary small mb-1">OPD / Instansi</div>
+                                        <div class="fw-bold text-dark">${escapeHtml(data.vehicle.opd)}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded-3 h-100">
+                                        <div class="text-secondary small mb-1">Pemegang</div>
+                                        <div class="fw-bold text-dark">${escapeHtml(data.vehicle.pemegang)}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded-3 h-100">
+                                        <div class="text-secondary small mb-1">Nomor Polisi</div>
+                                        <div class="fw-bold text-dark">${escapeHtml(data.vehicle.no_polisi)}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        setHeaderState(false);
+                        modalTitle.textContent = 'Data tidak ditemukan';
+                        modalBody.innerHTML = `
+                            <div class="d-flex align-items-start gap-3">
+                                <i class="bi bi-exclamation-triangle-fill fs-3 text-warning"></i>
+                                <div>
+                                    <div class="fw-bold text-dark mb-1">Kendaraan belum terdaftar.</div>
+                                    <p class="text-secondary mb-0">Kendaraan dengan kata kunci "${escapeHtml(data.query || query)}" belum ditemukan dalam database.</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    setHeaderState(false);
+                    modalTitle.textContent = 'Pencarian gagal';
+                    modalBody.innerHTML = `
+                        <div class="d-flex align-items-start gap-3">
+                            <i class="bi bi-exclamation-triangle-fill fs-3 text-warning"></i>
+                            <div>
+                                <div class="fw-bold text-dark mb-1">Terjadi kendala saat mencari data.</div>
+                                <p class="text-secondary mb-0">Silakan coba beberapa saat lagi.</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
         });
     </script>
 </body>

@@ -14,7 +14,7 @@
         .login-side-bg {
             @php
                 $loginBg = \App\Models\Setting::get('login_bg_image', 'images/hero-illustration.png');
-                $bgUrl = Str::startsWith($loginBg, 'images/') ? asset($loginBg) : Storage::url($loginBg);
+                $bgUrl = \App\Models\Setting::imageUrl($loginBg);
             @endphp
             background: linear-gradient(rgba(30, 64, 175, 0.85), rgba(30, 58, 138, 0.95)), url('{{ $bgUrl }}');
             background-size: cover;
@@ -48,8 +48,16 @@
             <div class="col-lg-6 d-none d-lg-flex login-side-bg flex-column justify-content-center align-items-center p-5 text-white">
                 <div class="glass-card p-5 text-center shadow-lg" style="max-width: 500px;">
                     <div class="d-flex justify-content-center mb-4">
-                        <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center shadow" style="width: 70px; height: 70px;">
-                            <i class="bi {{ \App\Models\Setting::get('login_logo_icon', 'bi-shield-lock-fill') }} fs-2"></i>
+                        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow p-2" style="width: 70px; height: 70px;">
+                            @php
+                                $siteLogo = \App\Models\Setting::get('site_logo');
+                            @endphp
+
+                            @if($siteLogo)
+                                <img src="{{ \App\Models\Setting::imageUrl($siteLogo) }}" alt="Logo" style="max-width: 48px; max-height: 48px; object-fit: contain;">
+                            @else
+                                <img src="{{ asset('images/hero-illustration.png') }}" alt="Logo" style="max-width: 48px; max-height: 48px; object-fit: contain;">
+                            @endif
                         </div>
                     </div>
                     <h1 class="fw-bold mb-2">{{ \App\Models\Setting::get('login_title', 'E-RANDIS') }}</h1>
@@ -67,7 +75,15 @@
                     
                     <div class="mb-5 text-center text-lg-start">
                         <div class="d-lg-none mb-4">
-                            <i class="bi bi-shield-lock-fill text-primary display-4"></i>
+                            @php
+                                $siteLogo = \App\Models\Setting::get('site_logo');
+                            @endphp
+
+                            @if($siteLogo)
+                                <img src="{{ \App\Models\Setting::imageUrl($siteLogo) }}" alt="Logo" class="mb-2" style="height: 58px; width: auto; max-width: 120px; object-fit: contain;">
+                            @else
+                                <img src="{{ asset('images/hero-illustration.png') }}" alt="Logo" class="mb-2" style="height: 58px; width: auto; max-width: 120px; object-fit: contain;">
+                            @endif
                             <h2 class="fw-bold text-navy mt-2">E-RANDIS</h2>
                         </div>
                         <h2 class="fw-bold text-navy mb-2">Selamat Datang</h2>

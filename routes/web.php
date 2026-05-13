@@ -5,6 +5,7 @@ use App\Http\Controllers\VehicleController;
 
 // Landing Page with Search
 Route::get('/', [VehicleController::class, 'search'])->name('landing');
+Route::get('/vehicle-search', [VehicleController::class, 'searchLandingVehicle'])->name('landing.vehicle-search');
 
 Auth::routes();
 

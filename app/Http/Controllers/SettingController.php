@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Setting;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -23,12 +24,18 @@ class SettingController extends Controller
             
             if ($setting) {
                 if ($setting->type === 'image' && $request->hasFile("settings.$key")) {
-                    // Delete old image if exists
-                    if ($setting->value && Storage::disk('public')->exists($setting->value)) {
-                        Storage::disk('public')->delete($setting->value);
+                    if ($setting->value && Str::startsWith($setting->value, 'uploads/')) {
+                        File::delete(public_path($setting->value));
                     }
-                    
-                    $path = $request->file("settings.$key")->store('settings', 'public');
+
+                    $directory = public_path('uploads/settings');
+                    File::ensureDirectoryExists($directory);
+
+                    $file = $request->file("settings.$key");
+                    $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
+                    $file->move($directory, $filename);
+
+                    $path = 'uploads/settings/'.$filename;
                     $setting->update(['value' => $path]);
                 } else {
                     $setting->update(['value' => $value]);

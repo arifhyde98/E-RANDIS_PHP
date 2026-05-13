@@ -1,7 +1,15 @@
 <!-- Sidebar -->
 <nav id="sidebar">
     <div class="sidebar-header d-flex align-items-center gap-2">
-        <i class="bi bi-shield-check fs-3"></i>
+        @php
+            $siteLogo = \App\Models\Setting::get('site_logo');
+        @endphp
+
+        @if($siteLogo)
+            <img src="{{ \App\Models\Setting::imageUrl($siteLogo) }}" alt="Logo" class="bg-white rounded-circle p-1" style="width: 38px; height: 38px; object-fit: contain;">
+        @else
+            <img src="{{ asset('images/hero-illustration.png') }}" alt="Logo" class="bg-white rounded-circle p-1" style="width: 38px; height: 38px; object-fit: contain;">
+        @endif
         <div>
             <div class="fw-bold fs-5 lh-1 text-white">E-RANDIS</div>
             <small class="text-white-50" style="font-size: 0.75rem;">Panel Admin</small>

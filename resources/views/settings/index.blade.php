@@ -34,7 +34,7 @@
                                 @elseif($setting->type === 'image')
                                     <div class="d-flex align-items-center gap-3">
                                         @if($setting->value)
-                                            <img src="{{ Str::startsWith($setting->value, 'images/') ? asset($setting->value) : Storage::url($setting->value) }}" class="rounded-3 border shadow-sm" style="height: 40px;">
+                                            <img src="{{ \App\Models\Setting::imageUrl($setting->value) }}" class="rounded-3 border shadow-sm" style="height: 40px;">
                                         @endif
                                         <input type="file" name="settings[{{ $setting->key }}]" class="form-control rounded-3">
                                     </div>
@@ -68,7 +68,7 @@
                             @elseif($setting->type === 'image')
                                 <div class="d-flex align-items-center gap-3">
                                     @if($setting->value)
-                                        <img src="{{ Str::startsWith($setting->value, 'images/') ? asset($setting->value) : Storage::url($setting->value) }}" class="rounded-3 border shadow-sm" style="width: 80px; height: 50px; object-fit: cover;">
+                                        <img src="{{ \App\Models\Setting::imageUrl($setting->value) }}" class="rounded-3 border shadow-sm" style="width: 80px; height: 50px; object-fit: cover;">
                                     @endif
                                     <input type="file" name="settings[{{ $setting->key }}]" class="form-control rounded-3">
                                 </div>
@@ -90,6 +90,8 @@
                     </div>
 
                     @foreach($settings['login'] ?? [] as $setting)
+                        @continue($setting->key === 'login_logo_icon')
+
                         <div class="mb-4">
                             <label class="form-label fw-semibold text-dark small text-uppercase">{{ str_replace('_', ' ', $setting->key) }}</label>
                             
@@ -100,7 +102,7 @@
                             @elseif($setting->type === 'image')
                                 <div class="d-flex align-items-center gap-3">
                                     @if($setting->value)
-                                        <img src="{{ Str::startsWith($setting->value, 'images/') ? asset($setting->value) : Storage::url($setting->value) }}" class="rounded-3 border shadow-sm" style="width: 80px; height: 50px; object-fit: cover;">
+                                        <img src="{{ \App\Models\Setting::imageUrl($setting->value) }}" class="rounded-3 border shadow-sm" style="width: 80px; height: 50px; object-fit: cover;">
                                     @endif
                                     <input type="file" name="settings[{{ $setting->key }}]" class="form-control rounded-3">
                                 </div>

@@ -13,6 +13,7 @@ use App\Exports\VehicleTemplateExport;
 use App\Imports\VehicleImport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -73,17 +74,7 @@ class VehicleController extends Controller
     public function search(Request $request): View
     {
         $query = $request->input('q');
-        $vehicle = null;
-
-        if ($query) {
-            // Membersihkan input pencarian agar sama dengan format di database
-            $cleanQuery = preg_replace('/\s+/', ' ', trim($query));
-            $cleanQuery = strtoupper($cleanQuery);
-
-            $vehicle = Vehicle::where('no_polisi', 'LIKE', "%{$cleanQuery}%")
-                ->orWhere('pemegang', 'LIKE', "%{$cleanQuery}%")
-                ->first();
-        }
+        $vehicle = $this->findLandingVehicle($query);
 
         // Stats for Landing Page Hero
         $total = Vehicle::count();
@@ -91,6 +82,38 @@ class VehicleController extends Controller
         $activePercentage = $total > 0 ? round(($activeCount / $total) * 100) : 0;
 
         return view('welcome', compact('vehicle', 'query', 'total', 'activePercentage'));
+    }
+
+    public function searchLandingVehicle(Request $request): JsonResponse
+    {
+        $query = $request->input('q');
+        $vehicle = $this->findLandingVehicle($query);
+
+        return response()->json([
+            'found' => (bool) $vehicle,
+            'query' => $query,
+            'vehicle' => $vehicle ? [
+                'no_polisi' => $vehicle->no_polisi,
+                'nama' => trim($vehicle->merk.' '.$vehicle->tipe),
+                'opd' => $vehicle->opd,
+                'pemegang' => $vehicle->pemegang,
+                'status' => \App\Models\Vehicle::getStatuses()[$vehicle->status] ?? $vehicle->status,
+            ] : null,
+        ]);
+    }
+
+    private function findLandingVehicle(?string $query): ?Vehicle
+    {
+        if (! $query) {
+            return null;
+        }
+
+        $cleanQuery = preg_replace('/\s+/', ' ', trim($query));
+        $cleanQuery = strtoupper($cleanQuery);
+
+        return Vehicle::where('no_polisi', 'LIKE', "%{$cleanQuery}%")
+            ->orWhere('pemegang', 'LIKE', "%{$cleanQuery}%")
+            ->first();
     }
 
     /**

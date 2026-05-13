@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class Setting extends Model
 {
@@ -12,5 +14,18 @@ class Setting extends Model
     {
         $setting = self::where('key', $key)->first();
         return $setting ? $setting->value : $default;
+    }
+
+    public static function imageUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        if (Str::startsWith($path, ['http://', 'https://', 'images/', 'uploads/'])) {
+            return asset($path);
+        }
+
+        return Storage::url($path);
     }
 }
