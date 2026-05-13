@@ -29,6 +29,18 @@
             <a href="{{ route('vehicles.index') }}"><i class="bi bi-car-front"></i> Data Kendaraan</a>
         </li>
 
+        <li>
+            <a href="#"><i class="bi bi-people"></i> Pengguna Kendaraan</a>
+        </li>
+
+        <li>
+            <a href="#"><i class="bi bi-clock-history"></i> Riwayat Penggunaan</a>
+        </li>
+
+        <li class="mt-4 mb-2 ps-3">
+            <small class="text-uppercase fw-bold text-white-50" style="font-size: 0.7rem; letter-spacing: 0.5px;">Operasional</small>
+        </li>
+
         <li class="{{ Request::is('master-data*') ? 'active' : '' }}">
             <a href="javascript:void(0)" 
                class="has-submenu {{ Request::is('master-data*') ? '' : 'collapsed' }}"
@@ -56,18 +68,6 @@
                     <a href="#"><i class="bi bi-window-sidebar small me-2"></i> Landing Page Setting</a>
                 </li>
             </ul>
-        </li>
-        
-        <li>
-            <a href="#"><i class="bi bi-people"></i> Pengguna Kendaraan</a>
-        </li>
-
-        <li>
-            <a href="#"><i class="bi bi-clock-history"></i> Riwayat Penggunaan</a>
-        </li>
-
-        <li class="mt-4 mb-2 ps-3">
-            <small class="text-uppercase fw-bold text-white-50" style="font-size: 0.7rem; letter-spacing: 0.5px;">Operasional</small>
         </li>
         
         <li>

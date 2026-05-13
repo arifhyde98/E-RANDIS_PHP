@@ -408,6 +408,92 @@ body {
     padding: 0.75rem 1.5rem;
 }
 
+.action-toolbar {
+    .btn-action {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        color: var(--text-color);
+        min-height: 42px;
+        border-radius: 0.75rem;
+        position: relative;
+
+        .btn-action-icon {
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.65rem;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        &:hover {
+            background: var(--navbar-bg);
+            border-color: rgba(59, 130, 246, 0.35);
+            color: var(--text-color);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12) !important;
+
+            .btn-action-icon {
+                transform: translateY(-1px) scale(1.08);
+            }
+        }
+
+        &.is-loading {
+            pointer-events: none;
+            opacity: 0.8;
+
+            .btn-action-icon i {
+                animation: pulse 1s infinite;
+            }
+        }
+    }
+
+    .btn-action-success .btn-action-icon {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+    }
+
+    .btn-action-primary .btn-action-icon {
+        background: rgba(59, 130, 246, 0.12);
+        color: #3b82f6;
+    }
+}
+
+.import-helper {
+    background: var(--bg-color);
+    border-color: var(--card-border) !important;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    color: var(--text-color);
+}
+
+.modal-header,
+.modal-footer {
+    border-color: var(--card-border) !important;
+}
+
+[data-theme="dark"] {
+    .action-toolbar {
+        .btn-action {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2) !important;
+
+            &:hover {
+                border-color: rgba(96, 165, 250, 0.45);
+                box-shadow: 0 14px 28px rgba(0, 0, 0, 0.3) !important;
+            }
+        }
+    }
+
+    .btn-light {
+        background-color: var(--card-bg) !important;
+        border-color: var(--card-border) !important;
+        color: var(--text-color) !important;
+    }
+}
+
 .feature-card {
     box-shadow: 0 4px 12px rgba(0,0,0,0.02);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);

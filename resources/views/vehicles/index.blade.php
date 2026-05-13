@@ -16,18 +16,20 @@
             </nav>
             <h3 class="fw-bold text-navy mb-0">Manajemen Data Kendaraan</h3>
         </div>
-        <div class="d-flex gap-2">
+        <div class="action-toolbar d-flex flex-wrap gap-2">
             <form action="{{ route('vehicles.truncate') }}" method="POST" onsubmit="return confirm('PERHATIAN! Anda akan menghapus SELURUH data kendaraan. Tindakan ini tidak dapat dibatalkan. Apakah Anda yakin?')">
                 @csrf
                 <button type="submit" class="btn btn-outline-danger shadow-sm fw-medium d-flex align-items-center gap-2">
                     <i class="bi bi-trash3"></i> <span class="d-none d-sm-inline">Kosongkan</span>
                 </button>
             </form>
-            <button type="button" class="btn btn-light border bg-white shadow-sm fw-medium d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#importModal">
-                <i class="bi bi-file-earmark-excel text-success"></i> <span class="d-none d-sm-inline">Import</span>
+            <button type="button" class="btn btn-action btn-action-success shadow-sm fw-semibold d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#importModal">
+                <span class="btn-action-icon"><i class="bi bi-file-earmark-arrow-up"></i></span>
+                <span class="d-none d-sm-inline">Import</span>
             </button>
-            <a href="{{ route('vehicles.export') }}" class="btn btn-light border bg-white shadow-sm fw-medium d-flex align-items-center gap-2">
-                <i class="bi bi-download text-primary"></i> <span class="d-none d-sm-inline">Export</span>
+            <a href="{{ route('vehicles.export') }}" class="btn btn-action btn-action-primary shadow-sm fw-semibold d-flex align-items-center gap-2" data-export-button>
+                <span class="btn-action-icon"><i class="bi bi-download"></i></span>
+                <span class="d-none d-sm-inline" data-export-label>Export</span>
             </a>
             <a href="{{ route('vehicles.create') }}" class="btn btn-primary shadow-sm fw-medium d-flex align-items-center gap-2">
                 <i class="bi bi-plus-lg"></i> Tambah Kendaraan
@@ -233,17 +235,17 @@
                 <h5 class="modal-title fw-bold text-navy" id="importModalLabel">Import Data Kendaraan</h5>
                 <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('vehicles.import') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('vehicles.import') }}" method="POST" enctype="multipart/form-data" data-import-form>
                 @csrf
                 <div class="modal-body p-4">
-                    <div class="d-flex bg-light border border-secondary border-opacity-25 rounded-3 p-3 mb-4">
+                    <div class="import-helper d-flex border rounded-3 p-3 mb-4">
                         <div class="me-3">
                             <i class="bi bi-info-circle text-primary fs-4"></i>
                         </div>
                         <div>
                             <h6 class="fw-bold text-dark mb-1">Persiapkan Data Anda</h6>
                             <p class="small text-secondary mb-2">Pastikan data Excel (.xlsx) mengikuti format standar sistem agar proses import berjalan lancar.</p>
-                            <a href="{{ route('vehicles.template') }}" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                            <a href="{{ route('vehicles.template') }}" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" data-template-button>
                                 <i class="bi bi-download"></i> Download Template
                             </a>
                         </div>
@@ -251,12 +253,15 @@
                     
                     <div class="mb-3">
                         <label class="form-label fw-semibold text-dark small">Pilih File Excel</label>
-                        <input type="file" name="file" class="form-control" accept=".xlsx, .xls" required>
+                        <input type="file" name="file" class="form-control" accept=".xlsx, .xls" required data-import-file>
+                        <div class="small text-secondary mt-2" data-import-file-name>Belum ada file dipilih.</div>
                     </div>
                 </div>
                 <div class="modal-footer border-top bg-light px-4 py-3 rounded-bottom-4">
                     <button type="button" class="btn btn-light border fw-medium" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary fw-medium px-4">Proses Import Data</button>
+                    <button type="submit" class="btn btn-primary fw-medium px-4" data-import-submit>
+                        <i class="bi bi-cloud-arrow-up me-1"></i> Proses Import Data
+                    </button>
                 </div>
             </form>
         </div>
@@ -270,6 +275,49 @@
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         })
+
+        const exportButton = document.querySelector('[data-export-button]');
+        if (exportButton) {
+            exportButton.addEventListener('click', function () {
+                const label = exportButton.querySelector('[data-export-label]');
+                exportButton.classList.add('is-loading');
+                if (label) label.textContent = 'Menyiapkan...';
+
+                setTimeout(function () {
+                    exportButton.classList.remove('is-loading');
+                    if (label) label.textContent = 'Export';
+                }, 2500);
+            });
+        }
+
+        const templateButton = document.querySelector('[data-template-button]');
+        if (templateButton) {
+            templateButton.addEventListener('click', function () {
+                templateButton.classList.add('active');
+                setTimeout(function () {
+                    templateButton.classList.remove('active');
+                }, 1600);
+            });
+        }
+
+        const importFile = document.querySelector('[data-import-file]');
+        const importFileName = document.querySelector('[data-import-file-name]');
+        if (importFile && importFileName) {
+            importFile.addEventListener('change', function () {
+                importFileName.textContent = importFile.files.length
+                    ? importFile.files[0].name
+                    : 'Belum ada file dipilih.';
+            });
+        }
+
+        const importForm = document.querySelector('[data-import-form]');
+        const importSubmit = document.querySelector('[data-import-submit]');
+        if (importForm && importSubmit) {
+            importForm.addEventListener('submit', function () {
+                importSubmit.disabled = true;
+                importSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Mengimport...';
+            });
+        }
     });
 </script>
 @endsection
