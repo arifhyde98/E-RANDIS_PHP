@@ -14,6 +14,7 @@ $accent: #3B82F6;
     --card-border: #f3f4f6;
     --sidebar-bg: #1E40AF;
     --navbar-bg: #ffffff;
+    --navbar-bg-rgb: 255, 255, 255;
 }
 
 [data-theme="dark"] {
@@ -23,6 +24,7 @@ $accent: #3B82F6;
     --card-border: #334155;
     --sidebar-bg: #020617;
     --navbar-bg: #1e293b;
+    --navbar-bg-rgb: 30, 41, 59;
 }
 
 // Use static colors for Bootstrap Sass functions to avoid compilation errors
@@ -223,6 +225,22 @@ body {
         background-color: var(--card-bg);
         color: var(--text-color);
         border-color: var(--card-border);
+        transition: all 0.2s ease;
+    }
+
+    tbody tr {
+        transition: all 0.2s ease;
+        &:hover {
+            td {
+                background-color: rgba(30, 64, 175, 0.03);
+            }
+        }
+    }
+}
+
+[data-theme="dark"] {
+    .table tbody tr:hover td {
+        background-color: rgba(255, 255, 255, 0.03) !important;
     }
 }
 
@@ -235,6 +253,7 @@ body {
         background-color: var(--card-bg);
         color: var(--text-color);
         border-color: $primary;
+        box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.12);
     }
 
     &::placeholder {
@@ -348,9 +367,22 @@ body {
     }
 }
 
-#sidebar ul li.active > a {
+#sidebar ul li.active > a,
+#sidebar ul li a.active {
     color: #ffffff;
     background: rgba(255,255,255,0.1);
+    position: relative;
+    
+    &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 15%;
+        height: 70%;
+        width: 4px;
+        background: $accent;
+        border-radius: 0 4px 4px 0;
+    }
 }
 
 #sidebar ul li a i {
@@ -403,9 +435,24 @@ body {
 }
 
 .navbar-admin {
-    background: var(--navbar-bg) !important;
-    border-bottom: 1px solid var(--card-border);
+    background: rgba(var(--navbar-bg-rgb), 0.8) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--card-border) !important;
     padding: 0.75rem 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04) !important;
+    position: sticky;
+    top: 1rem;
+    z-index: 999;
+
+    #sidebarCollapse {
+        transition: all 0.2s ease;
+        &:hover {
+            background: var(--bg-color);
+            transform: scale(1.05);
+            color: $primary;
+        }
+    }
 }
 
 .action-toolbar {
@@ -541,19 +588,19 @@ body {
     }
     
     &.bg-gradient-primary {
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%) !important;
+        background: radial-gradient(at 0% 0%, #3b82f6 0, transparent 50%), radial-gradient(at 50% 0%, #1e40af 0, transparent 50%), radial-gradient(at 100% 0%, #3b82f6 0, transparent 50%), #1e3a8a !important;
         color: #ffffff !important;
     }
     &.bg-gradient-success {
-        background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+        background: radial-gradient(at 0% 0%, #10b981 0, transparent 50%), radial-gradient(at 50% 0%, #059669 0, transparent 50%), radial-gradient(at 100% 0%, #10b981 0, transparent 50%), #065f46 !important;
         color: #ffffff !important;
     }
     &.bg-gradient-warning {
-        background: linear-gradient(135deg, #d97706 0%, #fbbf24 100%) !important;
+        background: radial-gradient(at 0% 0%, #fbbf24 0, transparent 50%), radial-gradient(at 50% 0%, #d97706 0, transparent 50%), radial-gradient(at 100% 0%, #fbbf24 0, transparent 50%), #92400e !important;
         color: #ffffff !important;
     }
     &.bg-gradient-danger {
-        background: linear-gradient(135deg, #dc2626 0%, #f87171 100%) !important;
+        background: radial-gradient(at 0% 0%, #f87171 0, transparent 50%), radial-gradient(at 50% 0%, #dc2626 0, transparent 50%), radial-gradient(at 100% 0%, #f87171 0, transparent 50%), #991b1b !important;
         color: #ffffff !important;
     }
 }

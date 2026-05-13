@@ -50,7 +50,7 @@
                         <a class="nav-link pb-1" href="#search-section">Cek Kendaraan</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link pb-1" href="#feature-section">Informasi</a>
+                        <a class="nav-link pb-1" href="{{ route('login') }}">Login</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link pb-1" href="#footer">Kontak</a>

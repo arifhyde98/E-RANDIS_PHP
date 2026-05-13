@@ -82,8 +82,8 @@
             <small class="text-uppercase fw-bold text-white-50" style="font-size: 0.7rem; letter-spacing: 0.5px;">Sistem</small>
         </li>
 
-        <li>
-            <a href="{{ route('settings.index') }}" class="{{ request()->routeIs('settings.*') ? 'active' : '' }}">
+        <li class="{{ request()->routeIs('settings.*') ? 'active' : '' }}">
+            <a href="{{ route('settings.index') }}">
                 <i class="bi bi-gear"></i> Pengaturan
             </a>
         </li>
