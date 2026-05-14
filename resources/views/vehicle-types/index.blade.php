@@ -18,7 +18,7 @@
             </nav>
         </div>
         <div class="d-flex gap-2">
-            <form action="{{ route('vehicle-types.cleanup') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus SEMUA jenis yang tidak memiliki kendaraan?')">
+            <form action="{{ route('vehicle-types.cleanup') }}" method="POST" class="delete-confirm">
                 @csrf
                 <button type="submit" class="btn btn-outline-danger rounded-3 shadow-sm d-flex align-items-center gap-2">
                     <i class="bi bi-eraser"></i> Bersihkan Jenis Kosong
@@ -30,19 +30,7 @@
         </div>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show rounded-3 border-0 shadow-sm mb-4" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
 
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show rounded-3 border-0 shadow-sm mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
 
     <!-- DATA TABLE -->
     <div class="admin-card overflow-hidden">
@@ -78,7 +66,7 @@
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     @if($type->vehicles_count == 0)
-                                        <form action="{{ route('vehicle-types.destroy', $type) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus jenis ini?')">
+                                        <form action="{{ route('vehicle-types.destroy', $type) }}" method="POST" class="delete-confirm">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-light border text-danger rounded-3" title="Hapus">

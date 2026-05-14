@@ -24,13 +24,7 @@
         </div>
     </div>
 
-    <!-- ALERTS -->
-    @if(session('success'))
-        <div class="alert alert-success d-flex align-items-center border-0 border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
-            <i class="bi bi-check-circle-fill fs-5 text-success me-3"></i>
-            <div>{{ session('success') }}</div>
-        </div>
-    @endif
+
 
     <!-- MAIN TABLE SECTION -->
     <div class="admin-card overflow-hidden">
@@ -89,7 +83,7 @@
                                             data-alamat="{{ $opd->alamat }}">
                                         <i class="bi bi-pencil-square"></i>
                                     </button>
-                                    <form action="{{ route('opds.destroy', $opd) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data OPD ini?')">
+                                    <form action="{{ route('opds.destroy', $opd) }}" method="POST" class="d-inline delete-confirm">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-light border shadow-none text-danger">

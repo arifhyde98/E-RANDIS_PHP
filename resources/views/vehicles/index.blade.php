@@ -17,7 +17,7 @@
             <h3 class="fw-bold text-navy mb-0">Manajemen Data Kendaraan</h3>
         </div>
         <div class="action-toolbar d-flex flex-wrap gap-2">
-            <form action="{{ route('vehicles.truncate') }}" method="POST" onsubmit="return confirm('PERHATIAN! Anda akan menghapus SELURUH data kendaraan. Tindakan ini tidak dapat dibatalkan. Apakah Anda yakin?')">
+            <form action="{{ route('vehicles.truncate') }}" method="POST" class="delete-confirm">
                 @csrf
                 <button type="submit" class="btn btn-outline-danger shadow-sm fw-medium d-flex align-items-center gap-2">
                     <i class="bi bi-trash3"></i> <span class="d-none d-sm-inline">Kosongkan</span>
@@ -37,19 +37,7 @@
         </div>
     </div>
 
-    <!-- ALERTS -->
-    @if(session('success'))
-        <div class="alert alert-success d-flex align-items-center border-0 border-start border-success border-4 rounded-3 shadow-sm mb-4" role="alert">
-            <i class="bi bi-check-circle-fill fs-5 text-success me-3"></i>
-            <div>{{ session('success') }}</div>
-        </div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger d-flex align-items-center border-0 border-start border-danger border-4 rounded-3 shadow-sm mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger me-3"></i>
-            <div>{{ session('error') }}</div>
-        </div>
-    @endif
+
 
     <!-- OPTIONAL SIDEBAR SUMMARY (Displayed as top cards on smaller screens) -->
     <div class="row g-3 mb-4">
@@ -174,7 +162,7 @@
                                     <a href="{{ route('vehicles.edit', $vehicle) }}" class="btn btn-sm btn-light border shadow-none text-primary" data-bs-toggle="tooltip" title="Edit Data">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
-                                    <form action="{{ route('vehicles.destroy', $vehicle) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data kendaraan ini? Tindakan ini tidak dapat dibatalkan.')">
+                                    <form action="{{ route('vehicles.destroy', $vehicle) }}" method="POST" class="d-inline delete-confirm">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-light border shadow-none text-danger" data-bs-toggle="tooltip" title="Hapus Data">

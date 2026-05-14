@@ -30,9 +30,9 @@ class VehicleImport implements ToModel, WithStartRow
         // 1. Identifikasi Nomor Polisi (Kolom C / Index 2)
         $raw_no_polisi = $row[2] ?? null;
         
-        // Bersihkan Nomor Polisi (Hilangkan titik dan spasi ganda)
-        $no_polisi = $raw_no_polisi ? str_replace('.', '', preg_replace('/\s+/', ' ', trim($raw_no_polisi))) : null;
-        $no_polisi = $no_polisi ? strtoupper($no_polisi) : null;
+        // Bersihkan Nomor Polisi menggunakan Service
+        $vehicleService = app(\App\Services\VehicleService::class);
+        $no_polisi = $vehicleService->formatPlateNumber($raw_no_polisi);
 
         // ATURAN TEMPLATE: Jika plat kosong/strip/tanda tanya, buatkan identitas urut
         if (empty($no_polisi) || $no_polisi == 'NOMOR POLISI' || $no_polisi == '-' || $no_polisi == '?') {

@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     @vite(['resources/css/app.scss', 'resources/js/app.js'])
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-light" id="theme-root">
     <script>
@@ -33,6 +34,7 @@
 
             <!-- Main Content Area -->
             <main class="animate-on-scroll">
+                @include('layouts.partials.alerts')
                 @yield('content')
             </main>
             
@@ -128,6 +130,41 @@
 
             window.addEventListener('resize', handleResize);
             handleResize(); // Initial check
+
+            // 4. Auto-close for Global Alerts
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+
+            // 5. Global Delete Confirmation (SweetAlert2)
+            document.body.addEventListener('submit', function(e) {
+                if (e.target.classList.contains('delete-confirm')) {
+                    e.preventDefault();
+                    const form = e.target;
+                    
+                    Swal.fire({
+                        title: 'Apakah Anda yakin?',
+                        text: "Data yang dihapus tidak dapat dikembalikan!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#1e40af', 
+                        cancelButtonColor: '#ef4444', 
+                        confirmButtonText: 'Ya, Hapus!',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true,
+                        background: root.getAttribute('data-theme') === 'dark' ? '#1e293b' : '#ffffff',
+                        color: root.getAttribute('data-theme') === 'dark' ? '#f1f5f9' : '#1e293b',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                }
+            });
         });
     </script>
 </body>

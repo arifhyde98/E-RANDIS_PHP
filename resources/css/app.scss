@@ -731,21 +731,34 @@ body {
 // Global Table Responsive Helper
 .table-responsive {
     border-radius: 0.75rem;
-    overflow: hidden;
+    overflow-x: auto !important; // Aktifkan geser horizontal
+    -webkit-overflow-scrolling: touch;
     border: 1px solid var(--card-border);
+    margin-bottom: 1rem;
     
     &::-webkit-scrollbar {
-        height: 5px;
+        height: 6px; // Sedikit lebih tebal agar mudah terlihat
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
     }
     &::-webkit-scrollbar-thumb {
-        background: rgba(0,0,0,0.1);
+        background: rgba(30, 64, 175, 0.2); // Warna biru transparan
         border-radius: 10px;
+    }
+
+    // Pastikan tabel di dalamnya memiliki lebar minimal agar tidak menciut
+    table {
+        min-width: 800px; // Memaksa munculnya scroll pada layar kecil
+        @media (max-width: 576px) {
+            min-width: 700px;
+        }
     }
 }
 
 [data-theme="dark"] {
     .table-responsive::-webkit-scrollbar-thumb {
-        background: rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.15);
     }
 }
 
@@ -774,4 +787,20 @@ body {
     0% { transform: scale(0.95); opacity: 0.7; }
     70% { transform: scale(1); opacity: 1; }
     100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+/* Alert Animation */
+.alert {
+    animation: fadeInDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

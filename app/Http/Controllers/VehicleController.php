@@ -17,8 +17,17 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
+use App\Services\VehicleService;
+
 class VehicleController extends Controller
 {
+    protected $vehicleService;
+
+    public function __construct(VehicleService $vehicleService)
+    {
+        $this->vehicleService = $vehicleService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -55,13 +64,8 @@ class VehicleController extends Controller
 
         $vehicles = $query->paginate(10)->withQueryString();
         
-        // Dynamic Stats
-        $stats = [
-            'total' => Vehicle::count(),
-            'available' => Vehicle::whereIn('status', ['Tersedia', 'Aktif', 'aktif'])->count(),
-            'damaged' => Vehicle::whereIn('status', ['Rusak', 'Rusak Berat', 'Rusak Ringan', 'Maintenance', 'maintenance', 'rusak'])->count(),
-            'borrowed' => Vehicle::whereIn('status', ['Dipinjam', 'dipinjam'])->count(),
-        ];
+        // Dynamic Stats using Service
+        $stats = $this->vehicleService->getDashboardStats();
 
         $vehicleTypes = VehicleType::orderBy('name')->get();
         
@@ -74,11 +78,12 @@ class VehicleController extends Controller
     public function search(Request $request): View
     {
         $query = $request->input('q');
-        $vehicle = $this->findLandingVehicle($query);
+        $vehicle = $this->vehicleService->findForLanding($query);
 
         // Stats for Landing Page Hero
-        $total = Vehicle::count();
-        $activeCount = Vehicle::whereIn('status', ['Tersedia', 'Aktif', 'aktif'])->count();
+        $stats = $this->vehicleService->getDashboardStats();
+        $total = $stats['total'];
+        $activeCount = $stats['available'];
         $activePercentage = $total > 0 ? round(($activeCount / $total) * 100) : 0;
 
         return view('welcome', compact('vehicle', 'query', 'total', 'activePercentage'));
@@ -87,7 +92,7 @@ class VehicleController extends Controller
     public function searchLandingVehicle(Request $request): JsonResponse
     {
         $query = $request->input('q');
-        $vehicle = $this->findLandingVehicle($query);
+        $vehicle = $this->vehicleService->findForLanding($query);
 
         return response()->json([
             'found' => (bool) $vehicle,
@@ -100,20 +105,6 @@ class VehicleController extends Controller
                 'status' => \App\Models\Vehicle::getStatuses()[$vehicle->status] ?? $vehicle->status,
             ] : null,
         ]);
-    }
-
-    private function findLandingVehicle(?string $query): ?Vehicle
-    {
-        if (! $query) {
-            return null;
-        }
-
-        $cleanQuery = preg_replace('/\s+/', ' ', trim($query));
-        $cleanQuery = strtoupper($cleanQuery);
-
-        return Vehicle::where('no_polisi', 'LIKE', "%{$cleanQuery}%")
-            ->orWhere('pemegang', 'LIKE', "%{$cleanQuery}%")
-            ->first();
     }
 
     /**
@@ -135,8 +126,8 @@ class VehicleController extends Controller
     {
         $validated = $request->validated();
 
-        // Clean plate number before store from manual form (Remove dots and double spaces)
-        $validated['no_polisi'] = strtoupper(str_replace('.', '', preg_replace('/\s+/', ' ', trim($validated['no_polisi']))));
+        // Clean plate number using Service
+        $validated['no_polisi'] = $this->vehicleService->formatPlateNumber($validated['no_polisi']);
 
         Vehicle::create($validated);
 
@@ -171,8 +162,8 @@ class VehicleController extends Controller
     {
         $validated = $request->validated();
 
-        // Clean plate number before update from manual form (Remove dots and double spaces)
-        $validated['no_polisi'] = strtoupper(str_replace('.', '', preg_replace('/\s+/', ' ', trim($validated['no_polisi']))));
+        // Clean plate number using Service
+        $validated['no_polisi'] = $this->vehicleService->formatPlateNumber($validated['no_polisi']);
 
         $vehicle->update($validated);
 
