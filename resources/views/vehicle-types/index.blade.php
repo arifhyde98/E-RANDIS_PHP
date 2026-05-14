@@ -24,9 +24,9 @@
                     <i class="bi bi-eraser"></i> Bersihkan Jenis Kosong
                 </button>
             </form>
-            <a href="{{ route('vehicle-types.create') }}" class="btn btn-primary rounded-3 shadow-sm d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-primary rounded-3 shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addVehicleTypeModal">
                 <i class="bi bi-plus-lg"></i> Tambah Jenis
-            </a>
+            </button>
         </div>
     </div>
 
@@ -62,9 +62,14 @@
                             </td>
                             <td class="px-4 py-3 text-end">
                                 <div class="d-flex justify-content-end gap-2">
-                                    <a href="{{ route('vehicle-types.edit', $type) }}" class="btn btn-sm btn-light border text-primary rounded-3">
+                                    <button type="button" class="btn btn-sm btn-light border text-primary rounded-3" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editVehicleTypeModal"
+                                            data-id="{{ $type->id }}"
+                                            data-name="{{ $type->name }}"
+                                            data-description="{{ $type->description }}">
                                         <i class="bi bi-pencil"></i>
-                                    </a>
+                                    </button>
                                     @if($type->vehicles_count == 0)
                                         <form action="{{ route('vehicle-types.destroy', $type) }}" method="POST" class="delete-confirm">
                                             @csrf
@@ -94,4 +99,61 @@
         </div>
     </div>
 </div>
+
+@push('modals')
+    <!-- ADD MODAL -->
+    <x-modal id="addVehicleTypeModal" title="Tambah Jenis Kendaraan Baru" size="md" submitLabel="Simpan Data" form="addVehicleTypeForm">
+        <form id="addVehicleTypeForm" action="{{ route('vehicle-types.store') }}" method="POST">
+            @csrf
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-dark small">Nama Jenis Kendaraan</label>
+                <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" placeholder="Contoh: Roda 4 (Jeep)" value="{{ old('name') }}" required>
+                @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="mb-0">
+                <label class="form-label fw-semibold text-dark small">Deskripsi Singkat</label>
+                <textarea name="description" class="form-control" rows="3" placeholder="Keterangan tambahan...">{{ old('description') }}</textarea>
+            </div>
+        </form>
+    </x-modal>
+
+    <!-- EDIT MODAL -->
+    <x-modal id="editVehicleTypeModal" title="Edit Data Jenis Kendaraan" size="md" submitLabel="Simpan Perubahan" form="editVehicleTypeForm">
+        <form id="editVehicleTypeForm" method="POST">
+            @csrf
+            @method('PUT')
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-dark small">Nama Jenis Kendaraan</label>
+                <input type="text" name="name" id="edit_name" class="form-control" required>
+            </div>
+            <div class="mb-0">
+                <label class="form-label fw-semibold text-dark small">Deskripsi Singkat</label>
+                <textarea name="description" id="edit_description" class="form-control" rows="3"></textarea>
+            </div>
+        </form>
+    </x-modal>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const editModal = document.getElementById('editVehicleTypeModal');
+        if (editModal) {
+            editModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const id = button.getAttribute('data-id');
+                const name = button.getAttribute('data-name');
+                const description = button.getAttribute('data-description');
+
+                const form = document.getElementById('editVehicleTypeForm');
+                const routeTemplate = "{{ route('vehicle-types.update', ':id') }}";
+                form.action = routeTemplate.replace(':id', id);
+
+                document.getElementById('edit_name').value = name || '';
+                document.getElementById('edit_description').value = description || '';
+            });
+        }
+    });
+</script>
+@endpush
 @endsection

@@ -7,11 +7,11 @@ use Illuminate\Http\Request;
 
 class OpdController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): \Illuminate\View\View
     {
         $query = Opd::query();
 
-        if ($request->has('q')) {
+        if ($request->filled('q')) {
             $query->where('nama', 'like', '%' . $request->q . '%')
                   ->orWhere('singkatan', 'like', '%' . $request->q . '%');
         }
@@ -21,33 +21,33 @@ class OpdController extends Controller
         return view('opds.index', compact('opds'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'nama' => 'required|unique:opds,nama',
             'singkatan' => 'nullable|string',
             'alamat' => 'nullable|string',
         ]);
 
-        Opd::create($request->all());
+        Opd::create($validated);
 
         return redirect()->route('opds.index')->with('success', 'Data OPD berhasil ditambahkan.');
     }
 
-    public function update(Request $request, Opd $opd)
+    public function update(Request $request, Opd $opd): \Illuminate\Http\RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'nama' => 'required|unique:opds,nama,' . $opd->id,
             'singkatan' => 'nullable|string',
             'alamat' => 'nullable|string',
         ]);
 
-        $opd->update($request->all());
+        $opd->update($validated);
 
         return redirect()->route('opds.index')->with('success', 'Data OPD berhasil diperbarui.');
     }
 
-    public function destroy(Opd $opd)
+    public function destroy(Opd $opd): \Illuminate\Http\RedirectResponse
     {
         // Check if there are vehicles attached to this OPD (once refactored)
         // For now, just delete since it's master data

@@ -119,72 +119,45 @@
 </div>
 
 @push('modals')
-<!-- ADD MODAL -->
-<div class="modal fade" id="addOpdModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header border-bottom px-4">
-                <h5 class="modal-title fw-bold text-navy">Tambah OPD Baru</h5>
-                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- ADD MODAL -->
+    <x-modal id="addOpdModal" title="Tambah OPD / Instansi Baru" size="md" submitLabel="Simpan Data" form="addOpdForm">
+        <form id="addOpdForm" action="{{ route('opds.store') }}" method="POST">
+            @csrf
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-dark small">Nama Instansi / OPD</label>
+                <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror" placeholder="Masukkan nama lengkap OPD" value="{{ old('nama') }}" required>
+                @error('nama') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
-            <form action="{{ route('opds.store') }}" method="POST">
-                @csrf
-                <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark small">Nama Instansi / OPD</label>
-                        <input type="text" name="nama" class="form-control shadow-none" placeholder="Masukkan nama lengkap OPD" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark small">Singkatan</label>
-                        <input type="text" name="singkatan" class="form-control shadow-none" placeholder="Contoh: BAPPEDA">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark small">Alamat</label>
-                        <textarea name="alamat" class="form-control shadow-none" rows="3" placeholder="Masukkan alamat lengkap kantor"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light px-4 border-top">
-                    <button type="button" class="btn btn-light border fw-medium" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary px-4 fw-medium">Simpan Data</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-dark small">Singkatan</label>
+                <input type="text" name="singkatan" class="form-control" placeholder="Contoh: BAPPEDA" value="{{ old('singkatan') }}">
+            </div>
+            <div class="mb-0">
+                <label class="form-label fw-semibold text-dark small">Alamat Kantor</label>
+                <textarea name="alamat" class="form-control" rows="3" placeholder="Jl. Jalur Dua No. 1...">{{ old('alamat') }}</textarea>
+            </div>
+        </form>
+    </x-modal>
 
-<!-- EDIT MODAL -->
-<div class="modal fade" id="editOpdModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header border-bottom px-4">
-                <h5 class="modal-title fw-bold text-navy">Edit Data OPD</h5>
-                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- EDIT MODAL -->
+    <x-modal id="editOpdModal" title="Edit Data OPD" size="md" submitLabel="Simpan Perubahan" form="editOpdForm">
+        <form id="editOpdForm" method="POST">
+            @csrf
+            @method('PUT')
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-dark small">Nama Instansi / OPD</label>
+                <input type="text" name="nama" id="edit_nama" class="form-control" required>
             </div>
-            <form id="editOpdForm" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark small">Nama Instansi / OPD</label>
-                        <input type="text" name="nama" id="edit_nama" class="form-control shadow-none" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark small">Singkatan</label>
-                        <input type="text" name="singkatan" id="edit_singkatan" class="form-control shadow-none">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark small">Alamat</label>
-                        <textarea name="alamat" id="edit_alamat" class="form-control shadow-none" rows="3"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light px-4 border-top">
-                    <button type="button" class="btn btn-light border fw-medium" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary px-4 fw-medium">Simpan Perubahan</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-dark small">Singkatan</label>
+                <input type="text" name="singkatan" id="edit_singkatan" class="form-control">
+            </div>
+            <div class="mb-0">
+                <label class="form-label fw-semibold text-dark small">Alamat Kantor</label>
+                <textarea name="alamat" id="edit_alamat" class="form-control" rows="3"></textarea>
+            </div>
+        </form>
+    </x-modal>
 @endpush
 
 @push('scripts')
@@ -201,8 +174,8 @@
 
                 const form = document.getElementById('editOpdForm');
                 // Use a safe way to construct the URL
-                const baseUrl = "{{ route('opds.index') }}";
-                form.action = `${baseUrl}/${id}`;
+                const routeTemplate = "{{ route('opds.update', ':id') }}";
+                form.action = routeTemplate.replace(':id', id);
 
                 document.getElementById('edit_nama').value = nama || '';
                 document.getElementById('edit_singkatan').value = (singkatan && singkatan !== '-') ? singkatan : '';

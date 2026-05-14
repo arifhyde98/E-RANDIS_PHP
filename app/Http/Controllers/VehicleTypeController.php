@@ -7,49 +7,39 @@ use Illuminate\Http\Request;
 
 class VehicleTypeController extends Controller
 {
-    public function index()
+    public function index(): \Illuminate\View\View
     {
         $types = VehicleType::withCount('vehicles')->latest()->get();
         return view('vehicle-types.index', compact('types'));
     }
 
-    public function create()
+    public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
-        return view('vehicle-types.create');
-    }
-
-    public function store(Request $request)
-    {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|unique:vehicle_types,name',
             'description' => 'nullable'
         ]);
 
-        VehicleType::create($request->all());
+        VehicleType::create($validated);
 
         return redirect()->route('vehicle-types.index')
             ->with('success', 'Jenis kendaraan berhasil ditambahkan.');
     }
 
-    public function edit(VehicleType $vehicleType)
+    public function update(Request $request, VehicleType $vehicleType): \Illuminate\Http\RedirectResponse
     {
-        return view('vehicle-types.edit', compact('vehicleType'));
-    }
-
-    public function update(Request $request, VehicleType $vehicleType)
-    {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|unique:vehicle_types,name,' . $vehicleType->id,
             'description' => 'nullable'
         ]);
 
-        $vehicleType->update($request->all());
+        $vehicleType->update($validated);
 
         return redirect()->route('vehicle-types.index')
             ->with('success', 'Jenis kendaraan berhasil diperbarui.');
     }
 
-    public function destroy(VehicleType $vehicleType)
+    public function destroy(VehicleType $vehicleType): \Illuminate\Http\RedirectResponse
     {
         // Check if there are vehicles using this type
         if ($vehicleType->vehicles()->count() > 0) {
@@ -62,7 +52,7 @@ class VehicleTypeController extends Controller
             ->with('success', 'Jenis kendaraan berhasil dihapus.');
     }
 
-    public function cleanup()
+    public function cleanup(): \Illuminate\Http\RedirectResponse
     {
         $deletedCount = 0;
         $types = VehicleType::withCount('vehicles')->get();

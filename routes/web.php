@@ -22,7 +22,7 @@ Route::middleware('auth')->group(function () {
     // Master Data Hub
     Route::get('master-data', [\App\Http\Controllers\MasterDataController::class, 'index'])->name('master-data.index');
     Route::post('vehicle-types/cleanup', [\App\Http\Controllers\VehicleTypeController::class, 'cleanup'])->name('vehicle-types.cleanup');
-    Route::resource('vehicle-types', \App\Http\Controllers\VehicleTypeController::class);
+    Route::resource('vehicle-types', \App\Http\Controllers\VehicleTypeController::class)->except(['create', 'edit', 'show']);
     Route::resource('opds', \App\Http\Controllers\OpdController::class);
     // Settings CMS
     Route::get('settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');

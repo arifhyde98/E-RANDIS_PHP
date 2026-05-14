@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Vehicle;
 use App\Models\User;
 use App\Models\VehicleType;
+use App\Models\Opd;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreVehicleRequest;
 use App\Http\Requests\UpdateVehicleRequest;
@@ -64,12 +65,12 @@ class VehicleController extends Controller
 
         $vehicles = $query->paginate(10)->withQueryString();
         
-        // Dynamic Stats using Service
-        $stats = $this->vehicleService->getDashboardStats();
-
         $vehicleTypes = VehicleType::orderBy('name')->get();
-        
-        return view('vehicles.index', compact('vehicles', 'stats', 'vehicleTypes'));
+        $stats = $this->vehicleService->getDashboardStats();
+        $opds = Opd::orderBy('nama')->get();
+        $statuses = Vehicle::getStatuses();
+
+        return view('vehicles.index', compact('vehicles', 'stats', 'vehicleTypes', 'opds', 'statuses'));
     }
 
     /**
@@ -115,7 +116,7 @@ class VehicleController extends Controller
         $users = User::all();
         $vehicleTypes = VehicleType::orderBy('name')->get();
         $statuses = Vehicle::getStatuses();
-        $opds = \App\Models\Opd::orderBy('nama')->get();
+        $opds = Opd::orderBy('nama')->get();
         return view('vehicles.create', compact('users', 'vehicleTypes', 'statuses', 'opds'));
     }
 
@@ -151,7 +152,7 @@ class VehicleController extends Controller
         $users = User::all();
         $vehicleTypes = VehicleType::orderBy('name')->get();
         $statuses = Vehicle::getStatuses();
-        $opds = \App\Models\Opd::orderBy('nama')->get();
+        $opds = Opd::orderBy('nama')->get();
         return view('vehicles.edit', compact('vehicle', 'users', 'vehicleTypes', 'statuses', 'opds'));
     }
 
