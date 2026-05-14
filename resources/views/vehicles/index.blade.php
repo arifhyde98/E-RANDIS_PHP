@@ -56,10 +56,12 @@
     </div>
 
     <!-- MAIN TABLE SECTION -->
-    <div class="admin-card overflow-hidden">
+    <x-table-card 
+        :empty="$vehicles->isEmpty()" 
+        emptyText="Belum ada data kendaraan" 
+        emptyIcon="bi-car-front">
         
-        <!-- FILTER & SEARCH SECTION -->
-        <div class="bg-light p-3 border-bottom border-light">
+        <x-slot:filters>
             <form action="{{ route('vehicles.index') }}" method="GET" class="row g-2 align-items-center">
                 <div class="col-md-4">
                     <div class="input-group input-group-sm">
@@ -88,109 +90,88 @@
                     <a href="{{ route('vehicles.index') }}" class="btn btn-light border btn-sm bg-white" title="Reset Filter"><i class="bi bi-arrow-clockwise"></i></a>
                 </div>
             </form>
-        </div>
+        </x-slot:filters>
 
-        <!-- TABLE -->
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-white text-secondary small text-uppercase">
-                    <tr>
-                        <th class="py-3 px-4 border-bottom-0 fw-semibold">No. Polisi</th>
-                        <th class="py-3 border-bottom-0 fw-semibold">Nama Kendaraan</th>
-                        <th class="py-3 border-bottom-0 fw-semibold">Jenis / Tahun</th>
-                        <th class="py-3 border-bottom-0 fw-semibold">Pengguna</th>
-                        <th class="py-3 border-bottom-0 fw-semibold text-center">Status</th>
-                        <th class="py-3 border-bottom-0 fw-semibold">Terakhir Aktif</th>
-                        <th class="py-3 px-4 border-bottom-0 fw-semibold text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="border-top-0 bg-white">
-                    @forelse($vehicles as $vehicle)
-                        <tr>
-                            <td class="px-4 py-3">
-                                <span class="badge bg-light text-dark border border-secondary border-opacity-25 px-3 py-2 fs-6 rounded-3 fw-bold">{{ $vehicle->no_polisi }}</span>
-                            </td>
-                            <td class="py-3">
-                                <div class="fw-bold text-navy">{{ $vehicle->merk }}</div>
-                                <div class="small text-secondary">{{ $vehicle->tipe }}</div>
-                            </td>
-                            <td class="py-3">
-                                <div class="text-dark fw-medium">{{ $vehicle->vehicleType->name ?? ($vehicle->jenis ?? 'Mobil Dinas') }}</div>
-                                <div class="small text-secondary">
-                                    {{ $vehicle->tahun_pembuatan ?? ($vehicle->tgl_perolehan ? \Carbon\Carbon::parse($vehicle->tgl_perolehan)->year : '-') }}
-                                </div>
-                            </td>
-                            <td class="py-3">
-                                <div class="fw-medium text-dark"><i class="bi bi-person-fill text-secondary me-1"></i> {{ $vehicle->pemegang }}</div>
-                                <div class="small text-secondary">{{ $vehicle->opd }}</div>
-                            </td>
-                            <td class="text-center">
-                                <x-status-badge :status="$vehicle->status" />
-                            </td>
-                            <td class="py-3 text-secondary small">
-                                {{ $vehicle->updated_at ? $vehicle->updated_at->diffForHumans() : '-' }}
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <div class="d-flex justify-content-center gap-2">
-                                    <button type="button" class="btn btn-sm btn-light border shadow-none text-navy" 
-                                            data-bs-toggle="modal" data-bs-target="#detailVehicleModal" 
-                                            data-vehicle="{{ json_encode($vehicle->only(['id', 'no_polisi', 'merk', 'tipe', 'jenis', 'opd', 'opd_id', 'pemegang', 'status', 'vehicle_type_id', 'tahun_pembuatan', 'warna', 'stnk_ada', 'bpkb_ada', 'tgl_stnk', 'tgl_perolehan', 'nilai_perolehan', 'no_mesin', 'no_rangka', 'keterangan'])) }}" title="Detail Kendaraan">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-light border shadow-none text-primary" 
-                                            data-bs-toggle="modal" data-bs-target="#editVehicleModal" 
-                                            data-vehicle="{{ json_encode($vehicle->only(['id', 'no_polisi', 'merk', 'tipe', 'jenis', 'opd', 'opd_id', 'pemegang', 'status', 'vehicle_type_id', 'tahun_pembuatan', 'warna', 'stnk_ada', 'bpkb_ada', 'tgl_stnk', 'tgl_perolehan', 'nilai_perolehan', 'no_mesin', 'no_rangka', 'keterangan'])) }}" title="Edit Data">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </button>
-                                    <form action="{{ route('vehicles.destroy', $vehicle) }}" method="POST" class="d-inline delete-confirm">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-light border shadow-none text-danger" data-bs-toggle="tooltip" title="Hapus Data">
-                                            <i class="bi bi-trash3"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <!-- EMPTY STATE -->
-                        <tr>
-                            <td colspan="7" class="text-center py-5">
-                                <div class="py-4">
-                                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-car-front text-secondary opacity-50" style="font-size: 2.5rem;"></i>
-                                    </div>
-                                    <h5 class="fw-bold text-navy mb-1">Belum ada data kendaraan</h5>
-                                    <p class="text-secondary mb-4">Sistem saat ini belum memiliki data operasional armada apapun.</p>
-                                    <button type="button" class="btn btn-primary px-4 fw-medium" data-bs-toggle="modal" data-bs-target="#addVehicleModal">
-                                        <i class="bi bi-plus-lg me-1"></i> Tambah Kendaraan Pertama
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        
-        <!-- PAGINATION -->
-        @if($vehicles->hasPages())
-            <div class="p-3 border-top bg-white d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                <div class="small text-secondary">
-                    Menampilkan <strong>{{ $vehicles->firstItem() }}</strong> hingga <strong>{{ $vehicles->lastItem() }}</strong> dari <strong>{{ $vehicles->total() }}</strong> entri data
+        <x-slot:thead>
+            <tr>
+                <th class="py-3 px-4 border-bottom-0 fw-semibold">No. Polisi</th>
+                <th class="py-3 border-bottom-0 fw-semibold">Nama Kendaraan</th>
+                <th class="py-3 border-bottom-0 fw-semibold d-none d-md-table-cell">Jenis / Tahun</th>
+                <th class="py-3 border-bottom-0 fw-semibold">Pengguna</th>
+                <th class="py-3 border-bottom-0 fw-semibold text-center">Status</th>
+                <th class="py-3 border-bottom-0 fw-semibold d-none d-md-table-cell">Terakhir Aktif</th>
+                <th class="py-3 px-4 border-bottom-0 fw-semibold text-center">Aksi</th>
+            </tr>
+        </x-slot:thead>
+
+        @foreach($vehicles as $vehicle)
+            <tr>
+                <td class="px-4 py-3">
+                    <span class="badge bg-light text-dark border border-secondary border-opacity-25 px-3 py-2 fs-6 rounded-3 fw-bold plate-number">{{ $vehicle->no_polisi }}</span>
+                </td>
+                <td class="py-3">
+                    <div class="fw-bold text-navy">{{ $vehicle->merk }}</div>
+                    <div class="small text-secondary">{{ $vehicle->tipe }}</div>
+                </td>
+                <td class="py-3 d-none d-md-table-cell">
+                    <div class="text-dark fw-medium">{{ $vehicle->vehicleType->name ?? ($vehicle->jenis ?? 'Mobil Dinas') }}</div>
+                    <div class="small text-secondary">
+                        {{ $vehicle->tahun_pembuatan ?? ($vehicle->tgl_perolehan ? \Carbon\Carbon::parse($vehicle->tgl_perolehan)->year : '-') }}
+                    </div>
+                </td>
+                <td class="py-3">
+                    <div class="fw-medium text-dark"><i class="bi bi-person-fill text-secondary me-1"></i> {{ $vehicle->pemegang }}</div>
+                    <div class="small text-secondary">{{ $vehicle->opd }}</div>
+                </td>
+                <td class="text-center">
+                    <x-status-badge :status="$vehicle->status" />
+                </td>
+                <td class="py-3 text-secondary small d-none d-md-table-cell">
+                    {{ $vehicle->updated_at ? $vehicle->updated_at->diffForHumans() : '-' }}
+                </td>
+                <td class="px-4 py-3 text-center">
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-sm btn-light border shadow-none text-navy" 
+                                data-bs-toggle="modal" data-bs-target="#detailVehicleModal" 
+                                data-vehicle="{{ json_encode($vehicle->only(['id', 'no_polisi', 'merk', 'tipe', 'jenis', 'opd', 'opd_id', 'pemegang', 'status', 'vehicle_type_id', 'tahun_pembuatan', 'warna', 'stnk_ada', 'bpkb_ada', 'tgl_stnk', 'tgl_perolehan', 'nilai_perolehan', 'no_mesin', 'no_rangka', 'keterangan'])) }}" title="Detail Kendaraan">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-light border shadow-none text-primary" 
+                                data-bs-toggle="modal" data-bs-target="#editVehicleModal" 
+                                data-vehicle="{{ json_encode($vehicle->only(['id', 'no_polisi', 'merk', 'tipe', 'jenis', 'opd', 'opd_id', 'pemegang', 'status', 'vehicle_type_id', 'tahun_pembuatan', 'warna', 'stnk_ada', 'bpkb_ada', 'tgl_stnk', 'tgl_perolehan', 'nilai_perolehan', 'no_mesin', 'no_rangka', 'keterangan'])) }}" title="Edit Data">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <form action="{{ route('vehicles.destroy', $vehicle) }}" method="POST" class="d-inline delete-confirm">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-sm btn-light border shadow-none text-danger" data-bs-toggle="tooltip" title="Hapus Data">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        @endforeach
+
+        <x-slot:pagination>
+            @if($vehicles->hasPages())
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                    <div class="small text-secondary">
+                        Menampilkan <strong>{{ $vehicles->firstItem() }}</strong> hingga <strong>{{ $vehicles->lastItem() }}</strong> dari <strong>{{ $vehicles->total() }}</strong> entri data
+                    </div>
+                    <div>
+                        {{ $vehicles->links('pagination::bootstrap-5') }}
+                    </div>
                 </div>
-                <div>
-                    {{ $vehicles->links('pagination::bootstrap-5') }}
-                </div>
-            </div>
-        @else
-            @if($vehicles->count() > 0)
-                <div class="p-3 border-top bg-white small text-secondary text-center text-md-start">
-                    Menampilkan seluruh data (Total: {{ $vehicles->count() }} entri)
-                </div>
+            @else
+                @if($vehicles->count() > 0)
+                    <div class="small text-secondary text-center text-md-start">
+                        Menampilkan seluruh data (Total: {{ $vehicles->count() }} entri)
+                    </div>
+                @endif
             @endif
-        @endif
-    </div>
+        </x-slot:pagination>
+    </x-table-card>
 
 </div>
 

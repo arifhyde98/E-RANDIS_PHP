@@ -42,66 +42,58 @@
         <!-- Main Column (Table) -->
         <div class="col-xl-8">
             <!-- SECTION 4: Table Kendaraan Terbaru -->
-            <div class="admin-card h-100 p-0 overflow-hidden">
-                <div class="p-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-3">
-                    <div>
-                        <h5 class="fw-bold text-navy mb-0">Status Kendaraan Terbaru</h5>
-                        <small class="text-secondary">Pantau aktivitas operasional armada terkini.</small>
+            <x-table-card 
+                title="Status Kendaraan Terbaru" 
+                subtitle="Pantau aktivitas operasional armada terkini."
+                :empty="$latestVehicles->isEmpty()"
+                emptyText="Belum ada data operasional"
+                emptyIcon="bi-inbox">
+                
+                <x-slot:actions>
+                    <a href="{{ route('vehicles.index') }}" class="btn btn-sm btn-light border small fw-bold">Lihat Semua</a>
+                </x-slot:actions>
+
+                <x-slot:thead>
+                    <tr>
+                        <th class="py-3 px-4 border-bottom-0 fw-semibold">Kendaraan</th>
+                        <th class="py-3 border-bottom-0 fw-semibold">Pengguna / OPD</th>
+                        <th class="py-3 border-bottom-0 fw-semibold">Waktu Update</th>
+                        <th class="py-3 border-bottom-0 fw-semibold text-center">Status</th>
+                        <th class="py-3 px-4 border-bottom-0 fw-semibold text-end">Aksi</th>
+                    </tr>
+                </x-slot:thead>
+
+                @foreach($latestVehicles as $v)
+                    <tr>
+                        <td class="px-4 py-3">
+                            <div class="fw-bold text-navy plate-number">{{ $v->no_polisi }}</div>
+                            <small class="text-secondary">{{ $v->merk }} {{ $v->tipe }}</small>
+                        </td>
+                        <td class="py-3">
+                            <div class="fw-medium text-dark"><i class="bi bi-person-fill text-secondary me-1"></i> {{ $v->pemegang }}</div>
+                            <small class="text-secondary">{{ Str::limit($v->opd, 30) }}</small>
+                        </td>
+                        <td class="py-3 text-secondary small">
+                            {{ $v->updated_at ? $v->updated_at->diffForHumans() : 'Baru saja' }}
+                        </td>
+                        <td class="py-3 text-center">
+                            <x-status-badge :status="$v->status" />
+                        </td>
+                        <td class="px-4 py-3 text-end">
+                            <a href="{{ route('vehicles.index', ['q' => $v->no_polisi]) }}" class="btn btn-sm btn-light rounded-3 text-primary border shadow-sm">
+                                Detail <i class="bi bi-chevron-right ms-1" style="font-size:0.7rem;"></i>
+                            </a>
+                        </td>
+                    </tr>
+                @endforeach
+
+                <x-slot:pagination>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-secondary">Menampilkan data terbaru kendaraan dinas</small>
+                        <a href="{{ route('vehicles.index') }}" class="small fw-bold text-decoration-none">Kelola Semua <i class="bi bi-arrow-right"></i></a>
                     </div>
-                    <div class="d-flex gap-2">
-                        <a href="{{ route('vehicles.index') }}" class="btn btn-sm btn-light border small fw-bold">Lihat Semua</a>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light text-secondary small text-uppercase">
-                            <tr>
-                                <th class="py-3 px-4 border-bottom-0 fw-semibold">Kendaraan</th>
-                                <th class="py-3 border-bottom-0 fw-semibold">Pengguna / OPD</th>
-                                <th class="py-3 border-bottom-0 fw-semibold">Waktu Update</th>
-                                <th class="py-3 border-bottom-0 fw-semibold text-center">Status</th>
-                                <th class="py-3 px-4 border-bottom-0 fw-semibold text-end">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="border-top-0">
-                            @forelse($latestVehicles as $v)
-                                <tr>
-                                    <td class="px-4 py-3">
-                                        <div class="fw-bold text-navy">{{ $v->no_polisi }}</div>
-                                        <small class="text-secondary">{{ $v->merk }} {{ $v->tipe }}</small>
-                                    </td>
-                                    <td class="py-3">
-                                        <div class="fw-medium text-dark"><i class="bi bi-person-fill text-secondary me-1"></i> {{ $v->pemegang }}</div>
-                                        <small class="text-secondary">{{ Str::limit($v->opd, 30) }}</small>
-                                    </td>
-                                    <td class="py-3 text-secondary small">
-                                        {{ $v->updated_at ? $v->updated_at->diffForHumans() : 'Baru saja' }}
-                                    </td>
-                                    <td class="py-3 text-center">
-                                        <x-status-badge :status="$v->status" />
-                                    </td>
-                                    <td class="px-4 py-3 text-end">
-                                        <a href="{{ route('vehicles.edit', $v) }}" class="btn btn-sm btn-light rounded-3 text-primary border shadow-sm">
-                                            Detail <i class="bi bi-chevron-right ms-1" style="font-size:0.7rem;"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted">
-                                        <i class="bi bi-inbox fs-1 d-block mb-2 text-light"></i>
-                                        Belum ada data operasional.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                <div class="p-3 border-top bg-white d-flex justify-content-between align-items-center">
-                    <small class="text-secondary">Menampilkan data terbaru kendaraan dinas</small>
-                    <a href="{{ route('vehicles.index') }}" class="small fw-bold text-decoration-none">Kelola Semua <i class="bi bi-arrow-right"></i></a>
-                </div>
-            </div>
+                </x-slot:pagination>
+            </x-table-card>
         </div>
 
         <!-- Side Column (Quick Monitoring & Activity) -->

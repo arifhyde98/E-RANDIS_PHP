@@ -33,71 +33,63 @@
 
 
     <!-- DATA TABLE -->
-    <div class="admin-card overflow-hidden">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light text-secondary small text-uppercase">
-                    <tr>
-                        <th class="py-3 px-4 border-bottom-0 fw-semibold" style="width: 50px;">No</th>
-                        <th class="py-3 border-bottom-0 fw-semibold">Nama Jenis</th>
-                        <th class="py-3 border-bottom-0 fw-semibold">Deskripsi</th>
-                        <th class="py-3 border-bottom-0 fw-semibold text-center">Total Kendaraan</th>
-                        <th class="py-3 px-4 border-bottom-0 fw-semibold text-end">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="border-top-0">
-                    @forelse($types as $type)
-                        <tr>
-                            <td class="px-4 py-3 text-secondary">{{ $loop->iteration }}</td>
-                            <td class="py-3">
-                                <div class="fw-bold text-navy">{{ $type->name }}</div>
-                            </td>
-                            <td class="py-3 text-secondary small">
-                                {{ $type->description ?: '-' }}
-                            </td>
-                            <td class="py-3 text-center">
-                                <span class="badge bg-light text-navy border px-3 py-2 rounded-pill fw-medium">
-                                    {{ $type->vehicles_count ?? $type->vehicles()->count() }} Unit
-                                </span>
-                            </td>
-                            <td class="px-4 py-3 text-end">
-                                <div class="d-flex justify-content-end gap-2">
-                                    <button type="button" class="btn btn-sm btn-light border text-primary rounded-3" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#editVehicleTypeModal"
-                                            data-id="{{ $type->id }}"
-                                            data-name="{{ $type->name }}"
-                                            data-description="{{ $type->description }}">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    @if($type->vehicles_count == 0)
-                                        <form action="{{ route('vehicle-types.destroy', $type) }}" method="POST" class="delete-confirm">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-light border text-danger rounded-3" title="Hapus">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
-                                    @else
-                                        <button class="btn btn-sm btn-light border text-muted rounded-3" disabled title="Tidak bisa dihapus karena masih ada unit">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">
-                                <i class="bi bi-grid fs-1 d-block mb-2 text-light"></i>
-                                Belum ada data jenis kendaraan.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <x-table-card 
+        :empty="$types->isEmpty()" 
+        emptyText="Belum ada data jenis kendaraan" 
+        emptyIcon="bi-grid">
+        
+        <x-slot:thead>
+            <tr>
+                <th class="py-3 px-4 border-bottom-0 fw-semibold" style="width: 50px;">No</th>
+                <th class="py-3 border-bottom-0 fw-semibold">Nama Jenis</th>
+                <th class="py-3 border-bottom-0 fw-semibold d-none d-md-table-cell">Deskripsi</th>
+                <th class="py-3 border-bottom-0 fw-semibold text-center">Total Kendaraan</th>
+                <th class="py-3 px-4 border-bottom-0 fw-semibold text-end">Aksi</th>
+            </tr>
+        </x-slot:thead>
+
+        @foreach($types as $type)
+            <tr>
+                <td class="px-4 py-3 text-secondary">{{ $loop->iteration }}</td>
+                <td class="py-3">
+                    <div class="fw-bold text-navy">{{ $type->name }}</div>
+                </td>
+                <td class="py-3 text-secondary small d-none d-md-table-cell">
+                    {{ $type->description ?: '-' }}
+                </td>
+                <td class="py-3 text-center">
+                    <span class="badge bg-light text-navy border px-3 py-2 rounded-pill fw-medium">
+                        {{ $type->vehicles_count ?? $type->vehicles()->count() }} Unit
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-end">
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-sm btn-light border text-primary rounded-3" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#editVehicleTypeModal"
+                                data-id="{{ $type->id }}"
+                                data-name="{{ $type->name }}"
+                                data-description="{{ $type->description }}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        @if(($type->vehicles_count ?? $type->vehicles()->count()) == 0)
+                            <form action="{{ route('vehicle-types.destroy', $type) }}" method="POST" class="delete-confirm">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-light border text-danger rounded-3" title="Hapus">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        @else
+                            <button class="btn btn-sm btn-light border text-muted rounded-3" disabled title="Tidak bisa dihapus karena masih ada unit">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        @endif
+                    </div>
+                </td>
+            </tr>
+        @endforeach
+    </x-table-card>
 </div>
 
 @push('modals')

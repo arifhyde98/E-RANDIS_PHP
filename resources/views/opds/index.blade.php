@@ -27,10 +27,12 @@
 
 
     <!-- MAIN TABLE SECTION -->
-    <div class="admin-card overflow-hidden">
+    <x-table-card 
+        :empty="$opds->isEmpty()" 
+        emptyText="Belum ada data OPD" 
+        emptyIcon="bi-building">
         
-        <!-- FILTER & SEARCH SECTION -->
-        <div class="bg-light p-3 border-bottom border-light">
+        <x-slot:filters>
             <form action="{{ route('opds.index') }}" method="GET" class="row g-2 align-items-center">
                 <div class="col-md-6">
                     <div class="input-group input-group-sm">
@@ -43,78 +45,63 @@
                     <a href="{{ route('opds.index') }}" class="btn btn-light border btn-sm bg-white" title="Reset"><i class="bi bi-arrow-clockwise"></i></a>
                 </div>
             </form>
-        </div>
+        </x-slot:filters>
 
-        <!-- TABLE -->
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-white text-secondary small text-uppercase">
-                    <tr>
-                        <th class="py-3 px-4 border-bottom-0 fw-semibold" style="width: 50px;">No</th>
-                        <th class="py-3 border-bottom-0 fw-semibold">Nama Instansi / OPD</th>
-                        <th class="py-3 border-bottom-0 fw-semibold">Singkatan</th>
-                        <th class="py-3 border-bottom-0 fw-semibold">Alamat</th>
-                        <th class="py-3 px-4 border-bottom-0 fw-semibold text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="border-top-0 bg-white">
-                    @forelse($opds as $index => $opd)
-                        <tr>
-                            <td class="px-4 py-3 text-secondary">
-                                {{ $opds->firstItem() + $index }}
-                            </td>
-                            <td class="py-3">
-                                <div class="fw-bold text-navy">{{ $opd->nama }}</div>
-                            </td>
-                            <td class="py-3">
-                                <span class="badge bg-light text-primary border border-primary border-opacity-25 px-2 py-1">{{ $opd->singkatan ?? '-' }}</span>
-                            </td>
-                            <td class="py-3 text-secondary small">
-                                {{ Str::limit($opd->alamat ?? '-', 50) }}
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <div class="d-flex justify-content-center gap-2">
-                                    <button type="button" class="btn btn-sm btn-light border shadow-none text-primary" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#editOpdModal"
-                                            data-id="{{ $opd->id }}"
-                                            data-nama="{{ $opd->nama }}"
-                                            data-singkatan="{{ $opd->singkatan }}"
-                                            data-alamat="{{ $opd->alamat }}">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </button>
-                                    <form action="{{ route('opds.destroy', $opd) }}" method="POST" class="d-inline delete-confirm">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-light border shadow-none text-danger">
-                                            <i class="bi bi-trash3"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="text-center py-5">
-                                <div class="py-4">
-                                    <i class="bi bi-building text-secondary opacity-25" style="font-size: 3rem;"></i>
-                                    <h6 class="fw-bold text-navy mt-3">Belum ada data OPD</h6>
-                                    <p class="text-secondary small">Silakan tambahkan data OPD baru atau jalankan seeder.</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        
-        <!-- PAGINATION -->
-        @if($opds->hasPages())
-            <div class="p-3 border-top bg-white d-flex justify-content-center">
-                {{ $opds->links('pagination::bootstrap-5') }}
-            </div>
-        @endif
-    </div>
+        <x-slot:thead>
+            <tr>
+                <th class="py-3 px-4 border-bottom-0 fw-semibold" style="width: 50px;">No</th>
+                <th class="py-3 border-bottom-0 fw-semibold">Nama Instansi / OPD</th>
+                <th class="py-3 border-bottom-0 fw-semibold">Singkatan</th>
+                <th class="py-3 border-bottom-0 fw-semibold d-none d-md-table-cell">Alamat</th>
+                <th class="py-3 px-4 border-bottom-0 fw-semibold text-center">Aksi</th>
+            </tr>
+        </x-slot:thead>
+
+        @foreach($opds as $index => $opd)
+            <tr>
+                <td class="px-4 py-3 text-secondary">
+                    {{ $opds->firstItem() + $index }}
+                </td>
+                <td class="py-3">
+                    <div class="fw-bold text-navy">{{ $opd->nama }}</div>
+                </td>
+                <td class="py-3">
+                    <span class="badge bg-light text-primary border border-primary border-opacity-25 px-2 py-1">{{ $opd->singkatan ?? '-' }}</span>
+                </td>
+                <td class="py-3 text-secondary small d-none d-md-table-cell">
+                    {{ Str::limit($opd->alamat ?? '-', 50) }}
+                </td>
+                <td class="px-4 py-3 text-center">
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-sm btn-light border shadow-none text-primary" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#editOpdModal"
+                                data-id="{{ $opd->id }}"
+                                data-nama="{{ $opd->nama }}"
+                                data-singkatan="{{ $opd->singkatan }}"
+                                data-alamat="{{ $opd->alamat }}">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <form action="{{ route('opds.destroy', $opd) }}" method="POST" class="d-inline delete-confirm">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-sm btn-light border shadow-none text-danger">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        @endforeach
+
+        <x-slot:pagination>
+            @if($opds->hasPages())
+                <div class="d-flex justify-content-center">
+                    {{ $opds->links('pagination::bootstrap-5') }}
+                </div>
+            @endif
+        </x-slot:pagination>
+    </x-table-card>
 
 </div>
 
