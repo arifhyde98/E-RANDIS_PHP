@@ -11,7 +11,7 @@ $accent: #3B82F6;
     --bg-color: #ffffff;
     --text-color: #1F2937;
     --card-bg: #ffffff;
-    --card-border: #f3f4f6;
+    --card-border: #e2e8f0;
     --sidebar-bg: #1E40AF;
     --navbar-bg: #ffffff;
     --navbar-bg-rgb: 255, 255, 255;
@@ -224,9 +224,10 @@ body {
     border-color: var(--card-border);
     
     th {
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        border-color: var(--card-border);
+        background-color: #f8fafc !important;
+        color: #475569;
+        border-bottom: 2px solid var(--card-border) !important;
+        font-weight: 700 !important;
     }
     
     td {
