@@ -621,6 +621,10 @@ body {
         background: radial-gradient(at 0% 0%, #f87171 0, transparent 50%), radial-gradient(at 50% 0%, #dc2626 0, transparent 50%), radial-gradient(at 100% 0%, #f87171 0, transparent 50%), #991b1b !important;
         color: #ffffff !important;
     }
+    &.bg-gradient-info {
+        background: radial-gradient(at 0% 0%, #22d3ee 0, transparent 50%), radial-gradient(at 50% 0%, #0891b2 0, transparent 50%), radial-gradient(at 100% 0%, #22d3ee 0, transparent 50%), #164e63 !important;
+        color: #ffffff !important;
+    }
 }
 
 /* Modern Badges */

@@ -42,40 +42,16 @@
     <!-- OPTIONAL SIDEBAR SUMMARY (Displayed as top cards on smaller screens) -->
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-lg-3">
-            <div class="admin-card p-3 d-flex align-items-center gap-3">
-                <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-circle lh-1"><i class="bi bi-car-front fs-5"></i></div>
-                <div>
-                    <h5 class="fw-bold text-navy mb-0">{{ $stats['total'] }}</h5>
-                    <small class="text-secondary">Total Kendaraan</small>
-                </div>
-            </div>
+            <x-stat-card title="Total Kendaraan" :value="$stats['total']" icon="car-front" gradient="primary" />
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="admin-card p-3 d-flex align-items-center gap-3">
-                <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle lh-1"><i class="bi bi-check-circle fs-5"></i></div>
-                <div>
-                    <h5 class="fw-bold text-navy mb-0">{{ $stats['available'] }}</h5>
-                    <small class="text-secondary">Kendaraan Aktif</small>
-                </div>
-            </div>
+            <x-stat-card title="Kendaraan Aktif" :value="$stats['available']" icon="check-circle" gradient="success" />
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="admin-card p-3 d-flex align-items-center gap-3">
-                <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-circle lh-1"><i class="bi bi-tools fs-5"></i></div>
-                <div>
-                    <h5 class="fw-bold text-navy mb-0">{{ $stats['damaged'] }}</h5>
-                    <small class="text-secondary">Maintenance</small>
-                </div>
-            </div>
+            <x-stat-card title="Maintenance" :value="$stats['damaged']" icon="tools" gradient="danger" />
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="admin-card p-3 d-flex align-items-center gap-3">
-                <div class="bg-info bg-opacity-10 text-info p-3 rounded-circle lh-1"><i class="bi bi-key fs-5"></i></div>
-                <div>
-                    <h5 class="fw-bold text-navy mb-0">{{ $stats['borrowed'] }}</h5>
-                    <small class="text-secondary">Dipinjam</small>
-                </div>
-            </div>
+            <x-stat-card title="Dipinjam" :value="$stats['borrowed']" icon="key" gradient="warning" />
         </div>
     </div>
 

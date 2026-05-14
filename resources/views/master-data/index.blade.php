@@ -25,64 +25,17 @@
 
     <!-- SUMMARY SECTION -->
     <div class="row g-3 mb-5">
-        <!-- Total Kendaraan -->
         <div class="col-sm-6 col-lg-3">
-            <div class="admin-card p-3 border-0 shadow-sm" style="border-left: 4px solid #0F2C59 !important;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-3 lh-1">
-                        <i class="bi bi-car-front-fill fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-secondary fw-semibold small text-uppercase" style="font-size: 0.7rem;">Total Kendaraan</div>
-                        <h4 class="fw-bold mb-0 text-navy">{{ $stats['total_kendaraan'] }}</h4>
-                    </div>
-                </div>
-            </div>
+            <x-stat-card title="Total Kendaraan" :value="$stats['total_kendaraan']" icon="car-front-fill" gradient="primary" />
         </div>
-
-        <!-- Total Pengguna -->
         <div class="col-sm-6 col-lg-3">
-            <div class="admin-card p-3 border-0 shadow-sm" style="border-left: 4px solid #198754 !important;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="bg-success bg-opacity-10 text-success p-3 rounded-3 lh-1">
-                        <i class="bi bi-people-fill fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-secondary fw-semibold small text-uppercase" style="font-size: 0.7rem;">Total Pengguna</div>
-                        <h4 class="fw-bold mb-0 text-navy">{{ $stats['total_pengguna'] }}</h4>
-                    </div>
-                </div>
-            </div>
+            <x-stat-card title="Total Pengguna" :value="$stats['total_pengguna']" icon="people-fill" gradient="success" />
         </div>
-
-        <!-- Total OPD -->
         <div class="col-sm-6 col-lg-3">
-            <div class="admin-card p-3 border-0 shadow-sm" style="border-left: 4px solid #0dcaf0 !important;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="bg-info bg-opacity-10 text-info p-3 rounded-3 lh-1">
-                        <i class="bi bi-building-fill fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-secondary fw-semibold small text-uppercase" style="font-size: 0.7rem;">Total OPD</div>
-                        <h4 class="fw-bold mb-0 text-navy">{{ $stats['total_opd'] }}</h4>
-                    </div>
-                </div>
-            </div>
+            <x-stat-card title="Total OPD" :value="$stats['total_opd']" icon="building-fill" gradient="info" />
         </div>
-
-        <!-- Total Sopir -->
         <div class="col-sm-6 col-lg-3">
-            <div class="admin-card p-3 border-0 shadow-sm" style="border-left: 4px solid #ffc107 !important;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-3 lh-1">
-                        <i class="bi bi-person-badge-fill fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-secondary fw-semibold small text-uppercase" style="font-size: 0.7rem;">Total Sopir</div>
-                        <h4 class="fw-bold mb-0 text-navy">{{ $stats['total_sopir'] }}</h4>
-                    </div>
-                </div>
-            </div>
+            <x-stat-card title="Total Sopir" :value="$stats['total_sopir']" icon="person-badge-fill" gradient="warning" />
         </div>
     </div>
 
