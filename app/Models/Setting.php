@@ -12,8 +12,10 @@ class Setting extends Model
 
     public static function get($key, $default = null)
     {
-        $setting = self::where('key', $key)->first();
-        return $setting ? $setting->value : $default;
+        return cache()->remember("setting.{$key}", 3600, function () use ($key, $default) {
+            $setting = self::where('key', $key)->first();
+            return $setting ? $setting->value : $default;
+        });
     }
 
     public static function imageUrl(?string $path): ?string

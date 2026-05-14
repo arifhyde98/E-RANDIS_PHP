@@ -54,15 +54,7 @@ class VehicleTypeController extends Controller
 
     public function cleanup(): \Illuminate\Http\RedirectResponse
     {
-        $deletedCount = 0;
-        $types = VehicleType::withCount('vehicles')->get();
-
-        foreach ($types as $type) {
-            if ($type->vehicles_count == 0) {
-                $type->delete();
-                $deletedCount++;
-            }
-        }
+        $deletedCount = VehicleType::whereDoesntHave('vehicles')->delete();
 
         return redirect()->route('vehicle-types.index')
             ->with('success', "$deletedCount Jenis kendaraan yang kosong berhasil dibersihkan.");

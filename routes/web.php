@@ -17,13 +17,13 @@ Route::middleware('auth')->group(function () {
     Route::get('vehicles/template', [VehicleController::class, 'downloadTemplate'])->name('vehicles.template');
     Route::post('vehicles/import', [VehicleController::class, 'import'])->name('vehicles.import');
     Route::post('vehicles/truncate', [VehicleController::class, 'truncate'])->name('vehicles.truncate');
-    Route::resource('vehicles', VehicleController::class);
+    Route::resource('vehicles', VehicleController::class)->except(['create', 'edit', 'show']);
 
     // Master Data Hub
     Route::get('master-data', [\App\Http\Controllers\MasterDataController::class, 'index'])->name('master-data.index');
     Route::post('vehicle-types/cleanup', [\App\Http\Controllers\VehicleTypeController::class, 'cleanup'])->name('vehicle-types.cleanup');
     Route::resource('vehicle-types', \App\Http\Controllers\VehicleTypeController::class)->except(['create', 'edit', 'show']);
-    Route::resource('opds', \App\Http\Controllers\OpdController::class);
+    Route::resource('opds', \App\Http\Controllers\OpdController::class)->except(['create', 'edit', 'show']);
     // Settings CMS
     Route::get('settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
     Route::post('settings', [\App\Http\Controllers\SettingController::class, 'update'])->name('settings.update');

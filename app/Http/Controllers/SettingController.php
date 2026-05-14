@@ -37,8 +37,10 @@ class SettingController extends Controller
 
                     $path = 'uploads/settings/'.$filename;
                     $setting->update(['value' => $path]);
+                    cache()->forget("setting.{$key}");
                 } else {
                     $setting->update(['value' => $value]);
+                    cache()->forget("setting.{$key}");
                 }
             }
         }
