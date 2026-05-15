@@ -56,6 +56,27 @@ Telah diterapkan indeks lapis ganda melalui *migration* `2026_05_14_151900` untu
 - **B-tree Index:** Pada kolom `status`, `opd_id`, dan `vehicle_type_id`.
 - **Composite Index:** Pada kombinasi `['no_polisi', 'status']` untuk kueri pencarian yang difilter.
 
+### Tabel `vehicle_types`
+Master data klasifikasi jenis kendaraan:
+- `id` (PK, BigInt)
+- `name` (String, Unique) — Nama tipe/kategori kendaraan.
+- `description` (Text, Nullable) — Deskripsi opsional.
+
+### Tabel `opds`
+Master data Organisasi Perangkat Daerah (instansi pemerintah):
+- `id` (PK, BigInt)
+- `nama` (String, Unique) — Nama lengkap instansi.
+- `singkatan` (String, Nullable) — Singkatan resmi instansi.
+- `alamat` (Text, Nullable) — Alamat kantor.
+
+### Tabel `settings`
+Konfigurasi CMS yang dapat diubah melalui antarmuka admin:
+- `id` (PK, BigInt)
+- `key` (String, Unique) — Kunci pengaturan (misal: `app_name`, `logo`).
+- `value` (Text, Nullable) — Nilai pengaturan.
+- `type` (String, Default: 'text') — Tipe input: `text`, `image`, `textarea`.
+- `group` (String, Default: 'general') — Grup pengelompokan: `general`, `landing`, `login`.
+
 ---
 
 ## 🎨 Design System & Estetika Pemerintahan Resmi
@@ -92,6 +113,39 @@ Komponen modal untuk CRUD *Single Page Interaction*, mendukung perilaku *mobile-
 
 ---
 
+## 🗺️ Peta Rute Aplikasi (*Route Map*)
+
+| Metode | URI | Controller@Method | Akses | Keterangan |
+|--------|-----|-------------------|-------|------------|
+| GET | `/` | `VehicleController@search` | Publik | Landing page + pencarian |
+| GET | `/vehicle-search` | `VehicleController@searchLandingVehicle` | Publik | API AJAX pencarian kendaraan |
+| GET | `/home` | `HomeController@index` | Auth | Dashboard admin |
+| GET | `/vehicles` | `VehicleController@index` | Auth | Daftar kendaraan + filter |
+| POST | `/vehicles` | `VehicleController@store` | Auth | Simpan kendaraan baru |
+| PUT | `/vehicles/{id}` | `VehicleController@update` | Auth | Perbarui data kendaraan |
+| DELETE | `/vehicles/{id}` | `VehicleController@destroy` | Auth | Hapus kendaraan |
+| GET | `/vehicles/export` | `VehicleController@export` | Auth | Ekspor Excel |
+| GET | `/vehicles/template` | `VehicleController@downloadTemplate` | Auth | Unduh template import |
+| POST | `/vehicles/import` | `VehicleController@import` | Auth | Import dari Excel |
+| POST | `/vehicles/truncate` | `VehicleController@truncate` | Auth | Kosongkan seluruh data |
+| GET | `/master-data` | `MasterDataController@index` | Auth | Hub master data |
+| Resource | `/vehicle-types` | `VehicleTypeController` | Auth | CRUD tipe kendaraan |
+| POST | `/vehicle-types/cleanup` | `VehicleTypeController@cleanup` | Auth | Bersihkan tipe kosong |
+| Resource | `/opds` | `OpdController` | Auth | CRUD data OPD |
+| GET | `/settings` | `SettingController@index` | Auth | Halaman pengaturan |
+| POST | `/settings` | `SettingController@update` | Auth | Simpan pengaturan |
+
+---
+
+## 🔐 Autentikasi & Akses Kontrol
+- **Sistem Login:** Menggunakan `Auth::routes()` bawaan Laravel (Login, Register, Reset Password).
+- **Model Akses:** Saat ini menggunakan skema **single-role** — semua user yang terautentikasi memiliki hak akses penuh sebagai Admin.
+- **Proteksi Middleware:** Seluruh rute di dalam grup `Route::middleware('auth')` hanya dapat diakses setelah login.
+- **Halaman Publik:** Hanya Landing Page (`/`) dan endpoint pencarian AJAX (`/vehicle-search`) yang dapat diakses tanpa login.
+- **Catatan:** Belum diimplementasikan sistem *Role-Based Access Control* (RBAC). Jika diperlukan di masa depan, pertimbangkan penggunaan package seperti `spatie/laravel-permission`.
+
+---
+
 ## ⚙️ Backend Architecture & Aturan Validasi
 
 ### 1. Validasi Kelas Permintaan (*Form Request Validation*)
@@ -122,9 +176,23 @@ Seluruh kode backend (Models, Controllers, Services, Enums, dll) wajib memiliki 
 - **Metode:** Sertakan penjelasan fungsionalitas, penjelasan parameter (`@param`), dan tipe nilai kembalian (`@return`).
 - **Konsistensi:** Hindari penggunaan Bahasa Inggris dalam blok komentar dokumentasi untuk menjaga keseragaman codebase.
 
+**Contoh Format Standar:**
+```php
+/**
+ * Mendapatkan statistik dashboard untuk kendaraan.
+ * 
+ * Data di-cache selama 5 menit untuk performa optimal.
+ * 
+ * @param string|null $query Kata kunci pencarian
+ * @return array{total: int, available: int, damaged: int}
+ */
+```
+
 ---
 
 ## 🚨 Aturan Kritis untuk Sesi AI Berikutnya
 1. **Jangan asumsikan konteks:** Selalu gunakan `view_file` untuk membaca berkas sebelum memodifikasi.
 2. **Kepatuhan Desain:** Dilarang mengembalikan efek *glassmorphism* atau warna mencolok. Pertahankan gaya formal pemerintah (Navy/Putih/Gray).
 3. **Penyusunan Aset:** Selalu jalankan `npm run dev` saat mengedit file SCSS atau JS.
+4. **Bahasa Indonesia Wajib:** Seluruh dokumentasi kode (PHPDoc, komentar inline, pesan commit) dan komunikasi pengembangan wajib menggunakan **Bahasa Indonesia** secara konsisten.
+5. **Jangan eksekusi tanpa persetujuan:** Jika user meminta perubahan pada area spesifik, jangan memperluas cakupan ke file lain tanpa konfirmasi terlebih dahulu.
