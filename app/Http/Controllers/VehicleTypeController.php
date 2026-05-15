@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\VehicleType;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreVehicleTypeRequest;
+use App\Http\Requests\UpdateVehicleTypeRequest;
 
 /**
  * Controller untuk Manajemen Master Data Tipe Kendaraan
@@ -24,15 +25,12 @@ class VehicleTypeController extends Controller
     /**
      * Menyimpan tipe kendaraan baru ke database.
      * 
-     * @param Request $request
+     * @param StoreVehicleTypeRequest $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(Request $request): \Illuminate\Http\RedirectResponse
+    public function store(StoreVehicleTypeRequest $request): \Illuminate\Http\RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|unique:vehicle_types,name',
-            'description' => 'nullable'
-        ]);
+        $validated = $request->validated();
 
         VehicleType::create($validated);
 
@@ -43,16 +41,13 @@ class VehicleTypeController extends Controller
     /**
      * Memperbarui data tipe kendaraan di database.
      * 
-     * @param Request $request
+     * @param UpdateVehicleTypeRequest $request
      * @param VehicleType $vehicleType
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update(Request $request, VehicleType $vehicleType): \Illuminate\Http\RedirectResponse
+    public function update(UpdateVehicleTypeRequest $request, VehicleType $vehicleType): \Illuminate\Http\RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|unique:vehicle_types,name,' . $vehicleType->id,
-            'description' => 'nullable'
-        ]);
+        $validated = $request->validated();
 
         $vehicleType->update($validated);
 
@@ -94,4 +89,3 @@ class VehicleTypeController extends Controller
             ->with('success', "$deletedCount Jenis kendaraan yang kosong berhasil dibersihkan.");
     }
 }
-

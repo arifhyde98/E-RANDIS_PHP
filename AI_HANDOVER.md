@@ -88,8 +88,15 @@ Logika bisnis dan kalkulasi diletakkan di dalam kelas *Service* (`VehicleService
 
 ### Validasi Kelas Permintaan (*Form Request Validation*)
 Penyimpanan dan pembaruan data wajib menggunakan kelas validasi terpisah demi menjaga keamanan dan kebersihan pengontrol:
-- `StoreVehicleRequest`: Menjamin `no_polisi` unik dan atribut wajib terisi saat penambahan.
-- `UpdateVehicleRequest`: Memvalidasi keunikan `no_polisi` dengan mengecualikan ID kendaraan yang sedang diperbarui (`unique:vehicles,no_polisi,' . $vehicle->id`).
+- `StoreVehicleRequest`: Menjamin `no_polisi` unik dan atribut wajib terisi saat penambahan kendaraan.
+- `UpdateVehicleRequest`: Memvalidasi keunikan `no_polisi` dengan mengecualikan ID kendaraan yang sedang diperbarui.
+- `StoreOpdRequest` / `UpdateOpdRequest`: Mengelola validasi master data OPD, termasuk keunikan nama instansi.
+- `StoreVehicleTypeRequest` / `UpdateVehicleTypeRequest`: Mengelola validasi master data jenis kendaraan.
+- `StoreUserRequest` / `UpdateUserRequest`: Mengelola validasi manajemen pengguna, termasuk validasi enum `UserRole` dan relasi `opd_id`.
+- `UpdateProfileRequest`: Mengelola validasi pembaruan profil pengguna, email unik, kata sandi terkonfirmasi, dan avatar.
+- `UpdateSettingRequest`: Mengelola validasi pembaruan pengaturan CMS secara dinamis berdasarkan tipe setting (`text`, `textarea`, `image`).
+
+**Aturan implementasi terbaru:** Controller `OpdController`, `VehicleTypeController`, `UserController`, `ProfileController`, dan `SettingController` tidak lagi menulis validasi inline melalui `$request->validate()`. Semua validasi input pada area tersebut sudah dipindahkan ke kelas `FormRequest` khusus agar konsisten dengan pola Laravel 12 dan modul kendaraan.
 
 ### Konvensi Middleware & Akses Rute
 - Semua *Controller* wajib mengimplementasikan antarmuka `HasMiddleware` standar Laravel 12 dengan metode statis `middleware()`.
@@ -236,3 +243,4 @@ Seluruh kode backend (Models, Controllers, Services, Enums, dll) wajib memiliki 
 3. **Penyusunan Aset:** Selalu jalankan `npm run dev` saat mengedit file SCSS atau JS.
 4. **Bahasa Indonesia Wajib:** Seluruh dokumentasi kode (PHPDoc, komentar inline, pesan commit) dan komunikasi pengembangan wajib menggunakan **Bahasa Indonesia** secara konsisten.
 5. **Jangan eksekusi tanpa persetujuan:** Jika user meminta perubahan pada area spesifik, jangan memperluas cakupan ke file lain tanpa konfirmasi terlebih dahulu.
+6. **Konsistensi Validasi:** Untuk endpoint `store` dan `update`, utamakan `FormRequest` khusus dibanding validasi inline di controller, kecuali ada alasan teknis yang jelas untuk tidak melakukannya.

@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Opd;
 use App\Enums\UserRole;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 
 /**
  * Controller untuk Manajemen Pengguna & Role (Khusus Superadmin)
@@ -42,15 +42,9 @@ class UserController extends Controller
     /**
      * Menyimpan pengguna baru.
      */
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'role' => [Rule::enum(UserRole::class)],
-            'opd_id' => 'nullable|required_if:role,opd|exists:opds,id',
-        ]);
+        $validated = $request->validated();
 
         User::create($validated);
 
@@ -60,15 +54,9 @@ class UserController extends Controller
     /**
      * Memperbarui data pengguna.
      */
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8',
-            'role' => [Rule::enum(UserRole::class)],
-            'opd_id' => 'nullable|required_if:role,opd|exists:opds,id',
-        ]);
+        $validated = $request->validated();
 
         if (empty($validated['password'])) {
             unset($validated['password']);

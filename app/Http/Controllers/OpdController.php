@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Opd;
+use App\Http\Requests\StoreOpdRequest;
+use App\Http\Requests\UpdateOpdRequest;
 use Illuminate\Http\Request;
 
 /**
@@ -20,7 +22,7 @@ class OpdController extends Controller
     /**
      * Menampilkan daftar semua OPD dengan fitur pencarian dan paginasi.
      * 
-     * @param Request $request
+     * @param StoreOpdRequest $request
      * @return \Illuminate\View\View
      */
     public function index(Request $request): \Illuminate\View\View
@@ -40,16 +42,12 @@ class OpdController extends Controller
     /**
      * Menyimpan data OPD baru ke database.
      * 
-     * @param Request $request
+     * @param UpdateOpdRequest $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(Request $request): \Illuminate\Http\RedirectResponse
+    public function store(StoreOpdRequest $request): \Illuminate\Http\RedirectResponse
     {
-        $validated = $request->validate([
-            'nama' => 'required|unique:opds,nama',
-            'singkatan' => 'nullable|string',
-            'alamat' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $opd = Opd::create($validated);
         
@@ -63,13 +61,9 @@ class OpdController extends Controller
      * @param Opd $opd
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update(Request $request, Opd $opd): \Illuminate\Http\RedirectResponse
+    public function update(UpdateOpdRequest $request, Opd $opd): \Illuminate\Http\RedirectResponse
     {
-        $validated = $request->validate([
-            'nama' => 'required|unique:opds,nama,' . $opd->id,
-            'singkatan' => 'nullable|string',
-            'alamat' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $opd->update($validated);
 
@@ -110,4 +104,3 @@ class OpdController extends Controller
         return redirect()->route('opds.index')->with('success', 'Seluruh data Master OPD berhasil dikosongkan.');
     }
 }
-

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
-use Illuminate\Http\Request;
+use App\Http\Requests\UpdateSettingRequest;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -32,12 +32,12 @@ class SettingController extends Controller
      * 
      * Menangani pembaruan teks maupun unggahan file gambar, serta membersihkan cache.
      * 
-     * @param Request $request
+     * @param UpdateSettingRequest $request
      * @return RedirectResponse
      */
-    public function update(Request $request): RedirectResponse
+    public function update(UpdateSettingRequest $request): RedirectResponse
     {
-        foreach ($request->settings as $key => $value) {
+        foreach ($request->validated('settings') as $key => $value) {
             $setting = Setting::where('key', $key)->first();
             
             if ($setting) {
@@ -67,4 +67,3 @@ class SettingController extends Controller
         return redirect()->back()->with('success', 'Pengaturan berhasil diperbarui.');
     }
 }
-
