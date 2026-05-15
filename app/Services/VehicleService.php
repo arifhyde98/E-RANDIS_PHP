@@ -5,10 +5,20 @@ namespace App\Services;
 use App\Models\Vehicle;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Service untuk Logika Bisnis Kendaraan
+ * 
+ * Menangani operasi kompleks terkait data kendaraan seperti statistik dashboard,
+ * pembersihan nomor polisi, dan pencarian khusus.
+ */
 class VehicleService
 {
     /**
-     * Get dashboard statistics for vehicles.
+     * Mendapatkan statistik dashboard untuk kendaraan.
+     * 
+     * Data di-cache selama 5 menit untuk performa optimal.
+     * 
+     * @return array{total: int, available: int, damaged: int, borrowed: int, late: int}
      */
     public function getDashboardStats(): array
     {
@@ -31,7 +41,13 @@ class VehicleService
     }
 
     /**
-     * Clean and format plate number (Nomor Polisi).
+     * Membersihkan dan memformat Nomor Polisi.
+     * 
+     * Mengubah ke huruf kapital, menghapus karakter non-alfanumerik,
+     * dan merapikan spasi.
+     * 
+     * @param string|null $plate
+     * @return string|null
      */
     public function formatPlateNumber(?string $plate): ?string
     {
@@ -50,7 +66,10 @@ class VehicleService
     }
 
     /**
-     * Find vehicle for landing page search.
+     * Mencari kendaraan untuk fitur pencarian di landing page.
+     * 
+     * @param string|null $query
+     * @return \App\Models\Vehicle|null
      */
     public function findForLanding(?string $query): ?Vehicle
     {
@@ -63,3 +82,4 @@ class VehicleService
             ->first();
     }
 }
+

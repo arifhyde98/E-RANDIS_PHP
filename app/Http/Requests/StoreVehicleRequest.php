@@ -5,16 +5,26 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Form Request untuk Validasi Penambahan Kendaraan Baru
+ */
 class StoreVehicleRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah user diizinkan untuk membuat request ini.
+     * 
+     * @return bool
      */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Menyiapkan data untuk divalidasi (Pre-processing).
+     * 
+     * Melakukan pembersihan format nomor polisi sebelum masuk ke aturan validasi.
+     */
     protected function prepareForValidation()
     {
         if ($this->has('no_polisi')) {
@@ -24,6 +34,11 @@ class StoreVehicleRequest extends FormRequest
         }
     }
 
+    /**
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
+     *
+     * @return array
+     */
     public function rules(): array
     {
         return [
@@ -49,3 +64,4 @@ class StoreVehicleRequest extends FormRequest
         ];
     }
 }
+

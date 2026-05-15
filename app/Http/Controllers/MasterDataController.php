@@ -8,10 +8,17 @@ use App\Models\User;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 
+/**
+ * Controller untuk Hub Master Data
+ * 
+ * Berfungsi sebagai pusat navigasi dan ringkasan statistik untuk berbagai modul master data.
+ */
 class MasterDataController extends Controller implements HasMiddleware
 {
     /**
-     * Get the middleware that should be assigned to the controller.
+     * Mendapatkan middleware yang ditugaskan ke controller ini.
+     * 
+     * @return array
      */
     public static function middleware(): array
     {
@@ -21,7 +28,7 @@ class MasterDataController extends Controller implements HasMiddleware
     }
 
     /**
-     * Show the Master Data hub page.
+     * Menampilkan halaman utama Hub Master Data dengan ringkasan statistik.
      *
      * @return \Illuminate\Contracts\Support\Renderable
      */
@@ -31,7 +38,7 @@ class MasterDataController extends Controller implements HasMiddleware
             'total_kendaraan' => Vehicle::count(),
             'total_pengguna' => User::count(),
             'total_opd' => \App\Models\Opd::count(),
-            'total_sopir' => 12, // Still mocked as requested/needed
+            'total_sopir' => 12, // Masih statis sesuai kebutuhan tampilan
         ];
 
         return view('master-data.index', compact('stats'));

@@ -7,11 +7,22 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
+/**
+ * Class untuk Membuat Template Import Excel
+ * 
+ * Digunakan untuk mengunduh format file Excel yang benar agar data dapat
+ * diimport kembali ke sistem tanpa kesalahan format.
+ */
 class VehicleTemplateExport implements FromArray, WithHeadings, WithStyles
 {
+    /**
+     * Menyediakan data contoh (dummy) untuk diletakkan di dalam template.
+     * 
+     * @return array
+     */
     public function array(): array
     {
-        // Memberikan 1 baris contoh data
+        // Memberikan 1 baris contoh data agar user paham cara mengisinya
         return [
             [
                 'KENDARAAN DINAS RODA 4 (EMPAT)',
@@ -31,6 +42,11 @@ class VehicleTemplateExport implements FromArray, WithHeadings, WithStyles
         ];
     }
 
+    /**
+     * Menentukan struktur header multi-baris untuk template.
+     * 
+     * @return array
+     */
     public function headings(): array
     {
         return [
@@ -58,6 +74,12 @@ class VehicleTemplateExport implements FromArray, WithHeadings, WithStyles
         ];
     }
 
+    /**
+     * Mengatur gaya tampilan (styling) file Excel, seperti font tebal dan warna latar.
+     * 
+     * @param Worksheet $sheet
+     * @return array
+     */
     public function styles(Worksheet $sheet)
     {
         return [
@@ -68,3 +90,4 @@ class VehicleTemplateExport implements FromArray, WithHeadings, WithStyles
         ];
     }
 }
+

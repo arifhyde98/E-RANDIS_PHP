@@ -5,14 +5,28 @@ namespace App\Http\Controllers;
 use App\Models\VehicleType;
 use Illuminate\Http\Request;
 
+/**
+ * Controller untuk Manajemen Master Data Tipe Kendaraan
+ */
 class VehicleTypeController extends Controller
 {
+    /**
+     * Menampilkan daftar semua tipe kendaraan beserta jumlah unit masing-masing.
+     * 
+     * @return \Illuminate\View\View
+     */
     public function index(): \Illuminate\View\View
     {
         $types = VehicleType::withCount('vehicles')->latest()->get();
         return view('vehicle-types.index', compact('types'));
     }
 
+    /**
+     * Menyimpan tipe kendaraan baru ke database.
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
         $validated = $request->validate([
@@ -26,6 +40,13 @@ class VehicleTypeController extends Controller
             ->with('success', 'Jenis kendaraan berhasil ditambahkan.');
     }
 
+    /**
+     * Memperbarui data tipe kendaraan di database.
+     * 
+     * @param Request $request
+     * @param VehicleType $vehicleType
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function update(Request $request, VehicleType $vehicleType): \Illuminate\Http\RedirectResponse
     {
         $validated = $request->validate([
@@ -39,9 +60,17 @@ class VehicleTypeController extends Controller
             ->with('success', 'Jenis kendaraan berhasil diperbarui.');
     }
 
+    /**
+     * Menghapus tipe kendaraan dari database.
+     * 
+     * Memastikan tidak ada kendaraan yang masih menggunakan tipe ini sebelum dihapus.
+     * 
+     * @param VehicleType $vehicleType
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy(VehicleType $vehicleType): \Illuminate\Http\RedirectResponse
     {
-        // Check if there are vehicles using this type
+        // Pastikan tidak ada kendaraan yang menggunakan jenis ini
         if ($vehicleType->vehicles()->count() > 0) {
             return back()->with('error', 'Gagal menghapus! Masih ada kendaraan yang menggunakan jenis ini.');
         }
@@ -52,6 +81,11 @@ class VehicleTypeController extends Controller
             ->with('success', 'Jenis kendaraan berhasil dihapus.');
     }
 
+    /**
+     * Membersihkan (menghapus) semua tipe kendaraan yang tidak memiliki unit kendaraan sama sekali.
+     * 
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function cleanup(): \Illuminate\Http\RedirectResponse
     {
         $deletedCount = VehicleType::whereDoesntHave('vehicles')->delete();
@@ -60,3 +94,4 @@ class VehicleTypeController extends Controller
             ->with('success', "$deletedCount Jenis kendaraan yang kosong berhasil dibersihkan.");
     }
 }
+

@@ -20,17 +20,30 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 use App\Services\VehicleService;
 
+/**
+ * Controller untuk Manajemen Data Kendaraan
+ * 
+ * Menangani CRUD data kendaraan, pencarian, serta fitur import/export Excel.
+ */
 class VehicleController extends Controller
 {
     protected $vehicleService;
 
+    /**
+     * Konstruktor Controller.
+     * 
+     * @param VehicleService $vehicleService
+     */
     public function __construct(VehicleService $vehicleService)
     {
         $this->vehicleService = $vehicleService;
     }
 
     /**
-     * Display a listing of the resource.
+     * Menampilkan daftar kendaraan dengan fitur filter dan pencarian.
+     * 
+     * @param Request $request
+     * @return View
      */
     public function index(Request $request): View
     {
@@ -74,14 +87,17 @@ class VehicleController extends Controller
     }
 
     /**
-     * Search function for Landing Page (Public)
+     * Fungsi pencarian untuk Landing Page (Akses Publik).
+     * 
+     * @param Request $request
+     * @return View
      */
     public function search(Request $request): View
     {
         $query = $request->input('q');
         $vehicle = $this->vehicleService->findForLanding($query);
 
-        // Stats for Landing Page Hero
+        // Statistik untuk Hero Landing Page
         $stats = $this->vehicleService->getDashboardStats();
         $total = $stats['total'];
         $activeCount = $stats['available'];
@@ -90,6 +106,12 @@ class VehicleController extends Controller
         return view('welcome', compact('vehicle', 'query', 'total', 'activePercentage'));
     }
 
+    /**
+     * Endpoint API pencarian kendaraan untuk dipanggil via AJAX di landing page.
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function searchLandingVehicle(Request $request): JsonResponse
     {
         $query = $request->input('q');
@@ -109,7 +131,9 @@ class VehicleController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Menampilkan form untuk menambah kendaraan baru.
+     * 
+     * @return View
      */
     public function create(): View
     {
@@ -121,13 +145,16 @@ class VehicleController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Menyimpan data kendaraan baru ke database.
+     * 
+     * @param StoreVehicleRequest $request
+     * @return RedirectResponse
      */
     public function store(StoreVehicleRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
-        // Clean plate number using Service
+        // Format nomor polisi menggunakan Service
         $validated['no_polisi'] = $this->vehicleService->formatPlateNumber($validated['no_polisi']);
 
         Vehicle::create($validated);
@@ -136,7 +163,10 @@ class VehicleController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Menampilkan detail data satu kendaraan.
+     * 
+     * @param Vehicle $vehicle
+     * @return View
      */
     public function show(Vehicle $vehicle): View
     {
@@ -145,7 +175,10 @@ class VehicleController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Menampilkan form untuk mengedit data kendaraan.
+     * 
+     * @param Vehicle $vehicle
+     * @return View
      */
     public function edit(Vehicle $vehicle): View
     {
@@ -157,13 +190,17 @@ class VehicleController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Memperbarui data kendaraan di database.
+     * 
+     * @param UpdateVehicleRequest $request
+     * @param Vehicle $vehicle
+     * @return RedirectResponse
      */
     public function update(UpdateVehicleRequest $request, Vehicle $vehicle): RedirectResponse
     {
         $validated = $request->validated();
 
-        // Clean plate number using Service
+        // Format nomor polisi menggunakan Service
         $validated['no_polisi'] = $this->vehicleService->formatPlateNumber($validated['no_polisi']);
 
         $vehicle->update($validated);
@@ -172,7 +209,10 @@ class VehicleController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Menghapus data kendaraan dari database.
+     * 
+     * @param Vehicle $vehicle
+     * @return RedirectResponse
      */
     public function destroy(Vehicle $vehicle): RedirectResponse
     {
@@ -181,7 +221,9 @@ class VehicleController extends Controller
     }
 
     /**
-     * Remove all resources from storage.
+     * Mengosongkan seluruh data di tabel kendaraan.
+     * 
+     * @return RedirectResponse
      */
     public function truncate(): RedirectResponse
     {
@@ -190,7 +232,9 @@ class VehicleController extends Controller
     }
 
     /**
-     * Export data to Excel
+     * Mengekspor seluruh data kendaraan ke file Excel.
+     * 
+     * @return BinaryFileResponse
      */
     public function export(): BinaryFileResponse
     {
@@ -198,7 +242,9 @@ class VehicleController extends Controller
     }
 
     /**
-     * Download Excel Template
+     * Mengunduh file template Excel untuk import data.
+     * 
+     * @return BinaryFileResponse
      */
     public function downloadTemplate(): BinaryFileResponse
     {
@@ -206,7 +252,10 @@ class VehicleController extends Controller
     }
 
     /**
-     * Import data from Excel
+     * Mengimport data kendaraan dari file Excel.
+     * 
+     * @param Request $request
+     * @return RedirectResponse
      */
     public function import(Request $request): RedirectResponse
     {
@@ -222,3 +271,4 @@ class VehicleController extends Controller
         }
     }
 }
+

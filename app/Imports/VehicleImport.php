@@ -8,21 +8,36 @@ use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use Carbon\Carbon;
 
+/**
+ * Class untuk Mengimport Data Kendaraan dari Excel
+ * 
+ * Menggunakan library Maatwebsite Excel untuk memetakan kolom spreadsheet ke model Vehicle,
+ * menangani pembersihan data, konversi tanggal, dan pencegahan duplikat.
+ */
 class VehicleImport implements ToModel, WithStartRow
 {
+    /** @var int Counter untuk pembuatan ID sementara kendaraan tanpa plat */
     private $rowCount = 0;
 
     /**
-     * Start from row 2 (assuming row 1 is the header).
+     * Menentukan baris awal dimulainya pembacaan data (Baris 4).
+     * 
+     * @return int
      */
     public function startRow(): int
     {
         return 4;
     }
 
+    /**
+     * Memetakan baris Excel menjadi model Vehicle.
+     * 
+     * @param array $row Data satu baris dari Excel
+     * @return \Illuminate\Database\Eloquent\Model|null
+     */
     public function model(array $row)
     {
-        // Skip jika baris kosong (Jenis, Merk, dan Plat tidak ada isinya)
+        // Lewati jika baris kosong (Jenis, Merk, dan Plat tidak ada isinya)
         if (empty($row[0]) && empty($row[1]) && empty($row[2])) {
             return null;
         }
@@ -103,7 +118,10 @@ class VehicleImport implements ToModel, WithStartRow
     }
 
     /**
-     * Helper untuk memproses format tanggal Excel/String
+     * Helper untuk memproses format tanggal dari Excel (Serial) atau String.
+     * 
+     * @param mixed $value
+     * @return \Illuminate\Support\Carbon|null
      */
     private function transformDate($value)
     {
@@ -137,7 +155,12 @@ class VehicleImport implements ToModel, WithStartRow
     }
 
     /**
-     * Helper untuk memproses format uang
+     * Helper untuk membersihkan dan mengonversi format mata uang ke Float.
+     * 
+     * Menangani simbol Rp, titik ribuan, dan koma desimal.
+     * 
+     * @param mixed $value
+     * @return float
      */
     private function transformCurrency($value)
     {
@@ -147,7 +170,6 @@ class VehicleImport implements ToModel, WithStartRow
         if (is_numeric($value)) return (float) $value;
 
         // Jika string, bersihkan karakter non-angka kecuali titik/koma desimal
-        // Menghapus Rp, spasi, dan titik ribuan
         $clean = preg_replace('/[^0-9,.]/', '', $value);
         
         // Standarisasi format: jika ada koma desimal (format Indo), ubah ke titik
@@ -163,3 +185,4 @@ class VehicleImport implements ToModel, WithStartRow
         return (float) $clean;
     }
 }
+

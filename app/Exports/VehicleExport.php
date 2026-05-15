@@ -7,16 +7,29 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
+/**
+ * Class untuk Mengekspor Data Kendaraan ke Excel
+ * 
+ * Mengambil seluruh koleksi data kendaraan beserta relasinya dan memetakannya
+ * ke kolom-kolom yang sesuai untuk file Excel hasil ekspor.
+ */
 class VehicleExport implements FromCollection, WithHeadings, WithMapping
 {
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * Mengambil seluruh data kendaraan dari database untuk diekspor.
+     * 
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
         return Vehicle::with('vehicleType')->get();
     }
 
+    /**
+     * Menentukan header (judul kolom) untuk file Excel.
+     * 
+     * @return array
+     */
     public function headings(): array
     {
         return [
@@ -37,8 +50,11 @@ class VehicleExport implements FromCollection, WithHeadings, WithMapping
     }
 
     /**
-    * @var Vehicle $vehicle
-    */
+     * Memetakan setiap baris model Vehicle menjadi array baris Excel.
+     * 
+     * @param Vehicle $vehicle
+     * @return array
+     */
     public function map($vehicle): array
     {
         return [
@@ -58,3 +74,4 @@ class VehicleExport implements FromCollection, WithHeadings, WithMapping
         ];
     }
 }
+

@@ -6,10 +6,15 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 
+/**
+ * Controller untuk Halaman Utama (Dashboard) Admin
+ */
 class HomeController extends Controller implements HasMiddleware
 {
     /**
-     * Get the middleware that should be assigned to the controller.
+     * Mendapatkan middleware yang ditugaskan ke controller ini.
+     * 
+     * @return array
      */
     public static function middleware(): array
     {
@@ -19,7 +24,10 @@ class HomeController extends Controller implements HasMiddleware
     }
 
     /**
-     * Show the application dashboard.
+     * Menampilkan halaman dashboard utama admin dengan statistik dan data terbaru.
+     * 
+     * @param \App\Services\VehicleService $vehicleService
+     * @return \Illuminate\View\View
      */
     public function index(\App\Services\VehicleService $vehicleService): \Illuminate\View\View
     {
@@ -30,3 +38,4 @@ class HomeController extends Controller implements HasMiddleware
         return view('home', compact('stats', 'latestVehicles'));
     }
 }
+

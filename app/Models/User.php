@@ -8,13 +8,27 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Model untuk Pengguna (Admin)
+ * 
+ * @property int $id
+ * @property string $name Nama lengkap pengguna
+ * @property string $email Alamat email pengguna
+ * @property \Illuminate\Support\Carbon|null $email_verified_at
+ * @property string $password Password (terenkripsi)
+ * @property string|null $remember_token
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * 
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Vehicle[] $vehicles
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
+     * Atribut yang dapat diisi secara massal.
      *
      * @var list<string>
      */
@@ -25,7 +39,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * Atribut yang harus disembunyikan untuk serialisasi.
      *
      * @var list<string>
      */
@@ -35,7 +49,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * Mendapatkan atribut yang harus dikonversi tipe datanya.
      *
      * @return array<string, string>
      */
@@ -48,10 +62,13 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the vehicles owned by the user.
+     * Mendapatkan daftar kendaraan yang dikelola oleh user ini.
+     * 
+     * @return HasMany
      */
     public function vehicles(): HasMany
     {
         return $this->hasMany(Vehicle::class);
     }
 }
+
