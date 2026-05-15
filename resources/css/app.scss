@@ -335,6 +335,11 @@ body {
         color: #60a5fa;
         &:hover { color: #93c5fd; }
     }
+
+    // Breadcrumb Separator Fix
+    .breadcrumb-item::before {
+        color: #94a3b8 !important;
+    }
 }
 
 /* Responsive Typography */
@@ -807,7 +812,7 @@ body {
         
         th:first-child {
             z-index: 12;
-            background-color: #f8fafc !important;
+            background-color: var(--card-bg) !important;
         }
 
         @media (max-width: 768px) {
