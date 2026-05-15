@@ -62,8 +62,8 @@ class UpdateVehicleRequest extends FormRequest
             'tgl_stnk' => 'nullable|date',
             'opd' => 'required',
             'pemegang' => 'required',
-            'status' => 'required|in:Tersedia,Dipinjam,Nonaktif',
-            'kondisi' => 'required|in:Baik,Rusak Ringan,Rusak Berat,Hilang,Dalam Penelusuran',
+            'status' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\VehicleStatus::class)],
+            'kondisi' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\VehicleCondition::class)],
             'foto_kendaraan' => 'nullable|array|max:4',
             'foto_kendaraan.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
             'keterangan' => 'nullable',
@@ -77,6 +77,8 @@ class UpdateVehicleRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'status.Illuminate\Validation\Rules\Enum' => 'Status yang dipilih tidak valid.',
+            'kondisi.Illuminate\Validation\Rules\Enum' => 'Kondisi yang dipilih tidak valid.',
             'foto_kendaraan.max' => 'Maksimal foto yang dapat diunggah adalah 4 foto.',
             'foto_kendaraan.*.image' => 'File harus berupa gambar.',
             'foto_kendaraan.*.mimes' => 'Format gambar harus jpeg, png, jpg, atau webp.',

@@ -35,19 +35,7 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-    protected static function booted(): void
-    {
-        static::deleting(function ($user) {
-            if ($user->avatar) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
-            }
-            \App\Models\Activity::log("Menghapus akun pengguna: {$user->email}", 'danger');
-        });
 
-        static::created(function ($user) {
-            \App\Models\Activity::log("Membuat akun baru: {$user->email} ({$user->role->value})", 'info');
-        });
-    }
 
     protected $fillable = [
         'name',

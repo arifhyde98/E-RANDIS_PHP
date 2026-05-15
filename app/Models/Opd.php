@@ -21,32 +21,7 @@ class Opd extends Model
 {
     protected $fillable = ['nama', 'singkatan', 'alamat'];
 
-    /**
-     * Boot model untuk menangani event Eloquent.
-     */
-    protected static function booted()
-    {
-        static::created(function ($opd) {
-            // Auto-generate akun setiap kali OPD baru dibuat (Form/Import/Seeder)
-            $result = app(\App\Services\AccountService::class)->createOpdAccount($opd);
 
-            // Jika dalam konteks request web, flash password ke session 
-            // agar bisa ditampilkan di UI SweetAlert
-            if (request()->hasSession()) {
-                session()->flash('new_account', [
-                    'opd_nama' => $opd->nama,
-                    'email' => $result['user']->email,
-                    'password' => $result['password']
-                ]);
-            }
-
-            \App\Models\Activity::log("Menambahkan Master Data OPD: {$opd->nama}", 'success');
-        });
-
-        static::deleted(function ($opd) {
-            \App\Models\Activity::log("Menghapus Master Data OPD: {$opd->nama}", 'danger');
-        });
-    }
 
     /**
      * Mendapatkan daftar semua kendaraan yang dimiliki oleh OPD ini.

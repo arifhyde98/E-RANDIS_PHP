@@ -16,7 +16,7 @@ Dokumen ini merupakan sumber kebenaran tunggal (*Single Source of Truth*) mengen
   - **Notifications:** SweetAlert2 (Local via NPM/Vite) untuk peringatan, validasi *real-time*, & konfirmasi aksi
   - **Typography:** Plus Jakarta Sans (Local via @fontsource)
 - **Data Engine:** Laravel Excel (Maatwebsite/Excel) sebagai mesin utama pengolahan Impor & Ekspor data massal.
-- **Infrastruktur / Deployment:** Mendukung eksekusi lokal berbasis **Laragon** serta telah disiapkan konfigurasi **Docker** (`Dockerfile` & `docker-compose.yml`) untuk kemudahan kontainerisasi.
+- **Infrastruktur / Deployment:** Mendukung eksekusi lokal berbasis **Laragon** serta telah disiapkan konfigurasi **Docker** (`Dockerfile` & `compose.yaml`) untuk kemudahan kontainerisasi.
 
 ---
 
@@ -213,6 +213,11 @@ Komponen modal untuk CRUD *Single Page Interaction*, mendukung perilaku *mobile-
 | Resource | `/opds` | `OpdController` | Auth | CRUD data OPD |
 | GET | `/settings` | `SettingController@index` | Auth | Halaman pengaturan |
 | POST | `/settings` | `SettingController@update` | Auth | Simpan pengaturan |
+| GET | `/profile` | `ProfileController@index` | Auth | Halaman profil saya |
+| PUT | `/profile` | `ProfileController@update` | Auth | Perbarui data profil |
+| Resource | `/users` | `UserController` | Superadmin | CRUD data pengguna |
+| DELETE | `/activities/clear` | `ActivityController@clear` | Superadmin | Bersihkan seluruh log |
+| DELETE | `/opds/truncate` | `OpdController@truncate` | Superadmin | Reset seluruh data OPD |
 
 ---
 

@@ -45,26 +45,6 @@ class Vehicle extends Model
     protected static function booted(): void
     {
         static::addGlobalScope(new \App\Models\Scopes\TenantScope);
-
-        // Otomatis set opd_id saat create jika user adalah Admin OPD
-        static::creating(function ($vehicle) {
-            if (auth()->check() && auth()->user()->role === \App\Enums\UserRole::OPD) {
-                $vehicle->opd_id = auth()->user()->opd_id;
-                
-                // Sinkronisasi teks OPD jika tersedia
-                if (auth()->user()->opd) {
-                    $vehicle->opd = auth()->user()->opd->nama;
-                }
-            }
-        });
-
-        static::created(function ($vehicle) {
-            \App\Models\Activity::log("Menambahkan kendaraan baru: {$vehicle->no_polisi} ({$vehicle->merk})", 'success');
-        });
-
-        static::deleted(function ($vehicle) {
-            \App\Models\Activity::log("Menghapus data kendaraan: {$vehicle->no_polisi}", 'danger');
-        });
     }
 
     /**
