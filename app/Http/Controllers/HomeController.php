@@ -40,7 +40,11 @@ class HomeController extends Controller implements \Illuminate\Routing\Controlle
     {
         $stats = $this->vehicleService->getDashboardStats();
         $latestVehicles = \App\Models\Vehicle::with(['user', 'vehicleType'])->latest()->take(5)->get();
-        $activities = \App\Models\Activity::with('user')->latest()->take(10)->get();
+        
+        // Hanya tarik data aktivitas jika user adalah Superadmin
+        $activities = auth()->user()->role === \App\Enums\UserRole::SUPERADMIN 
+            ? \App\Models\Activity::with('user')->latest()->take(10)->get()
+            : collect();
 
         return view('home', compact('stats', 'latestVehicles', 'activities'));
     }

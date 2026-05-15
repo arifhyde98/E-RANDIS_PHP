@@ -138,6 +138,7 @@
                 </ul>
             </div>
 
+            @if(auth()->user()->role === \App\Enums\UserRole::SUPERADMIN)
             <!-- RIGHT PANEL: Aktivitas Terbaru -->
             <div class="admin-card p-4 flex-grow-1">
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -181,6 +182,7 @@
                     </div>
                 @endif
             </div>
+            @endif
 
         </div>
     </div>
