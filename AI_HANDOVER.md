@@ -182,11 +182,15 @@ Sistem melakukan pembersihan data otomatis saat import Excel:
 2. **Penentuan Status Otomatis**: Jika kondisi fisik adalah 'Rusak Berat' atau 'Hilang', sistem otomatis mengatur status operasional ke 'Nonaktif'.
 
 ### 6. Standar Tampilan & UI
-- **Penomoran Tabel**: Menggunakan `$loop->iteration` untuk nomor urut. Pada tabel paginasi, nomor dikalikan dengan posisi halaman agar tetap berkelanjutan.
+- **Paginasi Global**: Menggunakan `Paginator::useBootstrapFive()` di `AppServiceProvider` untuk memastikan template navigasi yang bersih dan konsisten.
+- **Penomoran Tabel**: Menggunakan `$loop->iteration` yang dikombinasikan dengan metadata paginasi: `($collection->currentPage() - 1) * $collection->perPage() + $loop->iteration`.
 - **Format Akuntansi**: Seluruh tampilan mata uang (seperti `nilai_perolehan`) wajib menggunakan format titik ribuan (Contoh: Rp 150.000.000). 
   - Di Blade: `number_format($val, 0, ',', '.')`.
   - Di JavaScript (Modal): `.toLocaleString('id-ID')`.
-- **Komponen Reusable**: Menggunakan `x-modal` sebagai shell modal, `x-stat-card` untuk kartu statistik, dan `x-condition-badge` untuk label kondisi.
+- **Komponen Reusable (table-card)**:
+  - Wajib mengirimkan `:collection="$data"` agar informasi *"Menampilkan X sampai Y dari Z data"* muncul secara otomatis.
+  - Slot `:pagination` digunakan untuk merender tombol navigasi `{{ $data->links() }}`.
+- **Komponen Lainnya**: Menggunakan `x-modal` sebagai shell modal, `x-stat-card` untuk kartu statistik, dan `x-condition-badge` untuk label kondisi.
 
 ### 7. Standar Dokumentasi Kode (PHPDoc)
 Seluruh kode backend (Models, Controllers, Services, Enums, dll) wajib memiliki dokumentasi **PHPDoc dalam Bahasa Indonesia**.

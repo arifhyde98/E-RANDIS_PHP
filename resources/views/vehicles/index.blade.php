@@ -58,6 +58,7 @@
     <!-- MAIN TABLE SECTION -->
     <x-table-card 
         :empty="$vehicles->isEmpty()" 
+        :collection="$vehicles"
         emptyText="Belum ada data kendaraan" 
         emptyIcon="bi-car-front">
         
@@ -158,22 +159,7 @@
         @endforeach
 
         <x-slot:pagination>
-            @if($vehicles->hasPages())
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                    <div class="small text-secondary">
-                        Menampilkan <strong>{{ $vehicles->firstItem() }}</strong> hingga <strong>{{ $vehicles->lastItem() }}</strong> dari <strong>{{ $vehicles->total() }}</strong> entri data
-                    </div>
-                    <div>
-                        {{ $vehicles->links('pagination::bootstrap-5') }}
-                    </div>
-                </div>
-            @else
-                @if($vehicles->count() > 0)
-                    <div class="small text-secondary text-center text-md-start">
-                        Menampilkan seluruh data (Total: {{ $vehicles->count() }} entri)
-                    </div>
-                @endif
-            @endif
+            {{ $vehicles->links() }}
         </x-slot:pagination>
     </x-table-card>
 

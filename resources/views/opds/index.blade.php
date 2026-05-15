@@ -29,6 +29,7 @@
     <!-- MAIN TABLE SECTION -->
     <x-table-card 
         :empty="$opds->isEmpty()" 
+        :collection="$opds"
         emptyText="Belum ada data OPD" 
         emptyIcon="bi-building">
         
@@ -59,8 +60,8 @@
 
         @foreach($opds as $index => $opd)
             <tr>
-                <td class="px-4 py-3 text-secondary">
-                    {{ $opds->firstItem() + $index }}
+                <td class="px-4 py-3 text-secondary text-center">
+                    {{ ($opds->currentPage() - 1) * $opds->perPage() + $loop->iteration }}
                 </td>
                 <td class="py-3">
                     <div class="fw-bold text-navy">{{ $opd->nama }}</div>
@@ -95,11 +96,7 @@
         @endforeach
 
         <x-slot:pagination>
-            @if($opds->hasPages())
-                <div class="d-flex justify-content-center">
-                    {{ $opds->links('pagination::bootstrap-5') }}
-                </div>
-            @endif
+            {{ $opds->links() }}
         </x-slot:pagination>
     </x-table-card>
 

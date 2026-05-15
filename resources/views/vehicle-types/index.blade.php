@@ -35,6 +35,7 @@
     <!-- DATA TABLE -->
     <x-table-card 
         :empty="$types->isEmpty()" 
+        :collection="$types"
         emptyText="Belum ada data jenis kendaraan" 
         emptyIcon="bi-grid">
         

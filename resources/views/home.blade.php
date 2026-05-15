@@ -45,6 +45,7 @@
             <x-table-card 
                 title="Status Kendaraan Terbaru" 
                 subtitle="Pantau aktivitas operasional armada terkini."
+                :collection="$latestVehicles"
                 :empty="$latestVehicles->isEmpty()"
                 emptyText="Belum ada data operasional"
                 emptyIcon="bi-inbox">
