@@ -138,12 +138,12 @@
                     <div class="d-flex justify-content-center gap-2">
                         <button type="button" class="btn btn-sm btn-light border shadow-none text-navy" 
                                 data-bs-toggle="modal" data-bs-target="#detailVehicleModal" 
-                                data-vehicle="{{ json_encode($vehicle->only(['id', 'no_polisi', 'merk', 'tipe', 'jenis', 'opd', 'opd_id', 'pemegang', 'status', 'vehicle_type_id', 'tahun_pembuatan', 'warna', 'stnk_ada', 'bpkb_ada', 'tgl_stnk', 'tgl_perolehan', 'nilai_perolehan', 'no_mesin', 'no_rangka', 'keterangan'])) }}" title="Detail Kendaraan">
+                                data-vehicle="{{ json_encode($vehicle->only(['id', 'no_polisi', 'merk', 'tipe', 'jenis', 'opd', 'opd_id', 'pemegang', 'status', 'vehicle_type_id', 'tahun_pembuatan', 'warna', 'stnk_ada', 'bpkb_ada', 'tgl_stnk', 'tgl_perolehan', 'nilai_perolehan', 'no_mesin', 'no_rangka', 'keterangan', 'foto_kendaraan'])) }}" title="Detail Kendaraan">
                             <i class="bi bi-eye"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-light border shadow-none text-primary" 
                                 data-bs-toggle="modal" data-bs-target="#editVehicleModal" 
-                                data-vehicle="{{ json_encode($vehicle->only(['id', 'no_polisi', 'merk', 'tipe', 'jenis', 'opd', 'opd_id', 'pemegang', 'status', 'vehicle_type_id', 'tahun_pembuatan', 'warna', 'stnk_ada', 'bpkb_ada', 'tgl_stnk', 'tgl_perolehan', 'nilai_perolehan', 'no_mesin', 'no_rangka', 'keterangan'])) }}" title="Edit Data">
+                                data-vehicle="{{ json_encode($vehicle->only(['id', 'no_polisi', 'merk', 'tipe', 'jenis', 'opd', 'opd_id', 'pemegang', 'status', 'vehicle_type_id', 'tahun_pembuatan', 'warna', 'stnk_ada', 'bpkb_ada', 'tgl_stnk', 'tgl_perolehan', 'nilai_perolehan', 'no_mesin', 'no_rangka', 'keterangan', 'foto_kendaraan'])) }}" title="Edit Data">
                             <i class="bi bi-pencil-square"></i>
                         </button>
                         <form action="{{ route('vehicles.destroy', $vehicle) }}" method="POST" class="d-inline delete-confirm">
@@ -211,7 +211,7 @@
 @push('modals')
     <!-- ADD VEHICLE MODAL -->
     <x-modal id="addVehicleModal" title="Tambah Kendaraan Dinas Baru" size="xl" submitLabel="Simpan Data" form="addVehicleForm">
-        <form id="addVehicleForm" action="{{ route('vehicles.store') }}" method="POST">
+        <form id="addVehicleForm" action="{{ route('vehicles.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="row g-3">
                 <div class="col-md-3">
@@ -308,9 +308,14 @@
                     <label class="form-label fw-semibold small text-uppercase">Nomor Rangka</label>
                     <input type="text" name="no_rangka" class="form-control">
                 </div>
-                <div class="col-12">
+                <div class="col-md-6">
                     <label class="form-label fw-semibold small text-uppercase">Keterangan</label>
                     <textarea name="keterangan" class="form-control" rows="2" placeholder="Catatan tambahan..."></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small text-uppercase">Foto Kendaraan (Max 4)</label>
+                    <input type="file" name="foto_kendaraan[]" class="form-control" multiple accept="image/*">
+                    <small class="text-secondary italic">Hanya file gambar (max 2MB per file).</small>
                 </div>
             </div>
         </form>
@@ -326,7 +331,7 @@
     </x-modal>
     <!-- EDIT VEHICLE MODAL -->
     <x-modal id="editVehicleModal" title="Edit Informasi Kendaraan" size="xl" submitLabel="Simpan Perubahan" form="editVehicleForm">
-        <form id="editVehicleForm" method="POST">
+        <form id="editVehicleForm" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div class="row g-3">
@@ -424,9 +429,14 @@
                     <label class="form-label fw-semibold small text-uppercase">Nomor Rangka</label>
                     <input type="text" name="no_rangka" id="edit_no_rangka" class="form-control">
                 </div>
-                <div class="col-12">
+                <div class="col-md-6">
                     <label class="form-label fw-semibold small text-uppercase">Keterangan</label>
                     <textarea name="keterangan" id="edit_keterangan" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small text-uppercase">Ganti Foto Kendaraan (Max 4)</label>
+                    <input type="file" name="foto_kendaraan[]" class="form-control" multiple accept="image/*">
+                    <small class="text-secondary italic text-danger">Mencuplik foto baru akan menghapus semua foto lama.</small>
                 </div>
             </div>
         </form>
@@ -459,6 +469,57 @@
                 const formatRupiah = (num) => {
                     if (!num) return 'Rp 0';
                     return 'Rp ' + Number(num).toLocaleString('id-ID');
+                };
+
+                const renderPhotos = (photos) => {
+                    if (!photos || photos.length === 0) {
+                        return `
+                            <div class="col-12 text-center py-4 bg-light rounded-3 border">
+                                <i class="bi bi-image text-secondary opacity-50 fs-2 d-block mb-2"></i>
+                                <span class="text-secondary small">Belum ada foto kendaraan</span>
+                            </div>
+                        `;
+                    }
+                    
+                    let itemsHtml = '';
+                    let indicatorsHtml = '';
+                    
+                    photos.forEach((path, index) => {
+                        const url = `/storage/${path}`;
+                        itemsHtml += `
+                            <div class="carousel-item ${index === 0 ? 'active' : ''}">
+                                <a href="${url}" target="_blank">
+                                    <img src="${url}" class="d-block w-100 rounded-3 shadow-sm" style="height: 350px; object-fit: contain; background: #f1f5f9;" alt="Foto ${index + 1}">
+                                </a>
+                            </div>
+                        `;
+                        indicatorsHtml += `
+                            <button type="button" data-bs-target="#modalCarousel" data-bs-slide-to="${index}" class="${index === 0 ? 'active' : ''}" aria-current="${index === 0 ? 'true' : 'false'}"></button>
+                        `;
+                    });
+
+                    const controls = photos.length > 1 ? `
+                        <button class="carousel-control-prev" type="button" data-bs-target="#modalCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon bg-navy rounded-circle" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#modalCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon bg-navy rounded-circle" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                        <div class="carousel-indicators" style="bottom: -40px;">
+                            ${indicatorsHtml}
+                        </div>
+                    ` : '';
+
+                    return `
+                        <div id="modalCarousel" class="carousel slide pb-4" data-bs-ride="false">
+                            <div class="carousel-inner rounded-3 border">
+                                ${itemsHtml}
+                            </div>
+                            ${controls}
+                        </div>
+                    `;
                 };
                 
                 detailContent.innerHTML = `
@@ -500,6 +561,10 @@
                                             <h5 class="fw-bold text-navy mb-0">${formatRupiah(vehicle.nilai_perolehan)}</h5>
                                         </div>
                                     </div>
+                                </div>
+                                <div class="col-md-12 mt-3">
+                                    <label class="small text-secondary fw-bold text-uppercase mb-2" style="font-size: 0.65rem;">Galeri Foto Fisik</label>
+                                    ${renderPhotos(vehicle.foto_kendaraan)}
                                 </div>
                             </div>
                         </div>
@@ -566,6 +631,22 @@
                 importSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mengimport...';
             });
         }
+
+        // 6. Real-time File Count Validation (Max 4 Photos)
+        const photoInputs = document.querySelectorAll('input[name="foto_kendaraan[]"]');
+        photoInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                if (this.files.length > 4) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Terlalu Banyak Foto',
+                        text: 'Anda hanya dapat mengunggah maksimal 4 foto per kendaraan.',
+                        confirmButtonColor: '#1e40af',
+                    });
+                    this.value = ''; // Kosongkan input
+                }
+            });
+        });
     });
 </script>
 @endpush

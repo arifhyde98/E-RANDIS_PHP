@@ -31,8 +31,43 @@
         <!-- LEFT COLUMN: PHOTO & PRIMARY INFO -->
         <div class="col-xl-4">
             <div class="admin-card p-4 text-center">
-                <div class="bg-light rounded-4 p-5 mb-4 d-flex align-items-center justify-content-center">
-                    <i class="bi bi-car-front text-primary opacity-25" style="font-size: 8rem;"></i>
+                <div class="mb-4">
+                    @if($vehicle->foto_kendaraan && count($vehicle->foto_kendaraan) > 0)
+                        <div id="vehicleCarousel" class="carousel slide rounded-4 overflow-hidden border shadow-sm" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                @foreach($vehicle->foto_kendaraan as $index => $path)
+                                    <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
+                                        <img src="{{ asset('storage/' . $path) }}" class="d-block w-100" style="height: 300px; object-fit: cover;" alt="Foto {{ $index + 1 }}">
+                                    </div>
+                                @endforeach
+                            </div>
+                            @if(count($vehicle->foto_kendaraan) > 1)
+                                <button class="carousel-control-prev" type="button" data-bs-target="#vehicleCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#vehicleCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            @endif
+                        </div>
+                        <div class="row g-2 mt-2">
+                            @foreach($vehicle->foto_kendaraan as $index => $path)
+                                <div class="col-3">
+                                    <img src="{{ asset('storage/' . $path) }}" 
+                                         class="img-fluid rounded border cursor-pointer opacity-75 hover-opacity-100 transition-all" 
+                                         style="height: 60px; width: 100%; object-fit: cover;"
+                                         onclick="bootstrap.Carousel.getInstance(document.getElementById('vehicleCarousel')).to({{ $index }})">
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="bg-light rounded-4 p-5 d-flex align-items-center justify-content-center border border-dashed">
+                            <i class="bi bi-car-front text-primary opacity-25" style="font-size: 8rem;"></i>
+                        </div>
+                        <p class="text-secondary small mt-2 italic">Belum ada foto kendaraan diunggah</p>
+                    @endif
                 </div>
                 <h4 class="fw-bold text-navy mb-1">{{ $vehicle->merk }} {{ $vehicle->tipe }}</h4>
                 <div class="badge bg-light text-dark border border-secondary border-opacity-25 px-4 py-2 fs-5 rounded-3 fw-bold mb-3">

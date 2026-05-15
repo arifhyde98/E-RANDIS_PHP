@@ -60,8 +60,33 @@ class StoreVehicleRequest extends FormRequest
             'pemegang' => 'required',
             'status' => 'required|in:Tersedia,Dipinjam,Nonaktif',
             'kondisi' => 'required|in:Baik,Rusak Ringan,Rusak Berat,Hilang,Dalam Penelusuran',
+            'foto_kendaraan' => 'nullable|array|max:4',
+            'foto_kendaraan.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
             'keterangan' => 'nullable',
             'user_id' => 'nullable|exists:users,id',
+        ];
+    }
+
+    /**
+     * Mendapatkan pesan kustom untuk aturan validasi.
+     */
+    public function messages(): array
+    {
+        return [
+            'foto_kendaraan.max' => 'Maksimal foto yang dapat diunggah adalah 4 foto.',
+            'foto_kendaraan.*.image' => 'File harus berupa gambar.',
+            'foto_kendaraan.*.mimes' => 'Format gambar harus jpeg, png, jpg, atau webp.',
+            'foto_kendaraan.*.max' => 'Ukuran setiap foto tidak boleh lebih dari 2MB.',
+        ];
+    }
+
+    /**
+     * Mendapatkan nama atribut yang lebih ramah pengguna.
+     */
+    public function attributes(): array
+    {
+        return [
+            'foto_kendaraan' => 'Foto Kendaraan',
         ];
     }
 }

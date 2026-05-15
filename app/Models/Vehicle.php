@@ -31,6 +31,7 @@ use App\Enums\VehicleCondition;
  * @property string $pemegang Nama Pemegang Kendaraan
  * @property string $status Status Operasional
  * @property string $kondisi Kondisi Fisik Kendaraan
+ * @property array|null $foto_kendaraan Daftar Path Foto Kendaraan
  * @property string|null $keterangan Catatan Tambahan
  * @property int|null $user_id ID Admin Pengelola
  */
@@ -48,7 +49,16 @@ class Vehicle extends Model
         'tahun_pembuatan', 'tgl_perolehan', 'nilai_perolehan', 
         'stnk_ada', 'bpkb_ada', 'no_rangka', 'no_mesin', 'warna', 
         'tgl_stnk', 'opd', 'opd_id', 'pemegang', 'status', 'kondisi', 
-        'keterangan', 'user_id',
+        'foto_kendaraan', 'keterangan', 'user_id',
+    ];
+
+    /**
+     * Konversi tipe data otomatis.
+     * 
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'foto_kendaraan' => 'array',
     ];
 
     /**

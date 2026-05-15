@@ -336,6 +336,30 @@
                     if (data.found && data.vehicle) {
                         setHeaderState(true);
                         modalTitle.textContent = data.vehicle.no_polisi;
+                        const renderLandingPhotos = (photos) => {
+                            if (!photos || photos.length === 0) return '';
+                            
+                            let html = `
+                                <div class="mt-4 pt-3 border-top">
+                                    <div class="text-secondary small mb-3 fw-bold text-uppercase">Foto Fisik Kendaraan</div>
+                                    <div class="row g-2">
+                            `;
+                            
+                            photos.forEach(path => {
+                                const url = `/storage/${path}`;
+                                html += `
+                                    <div class="col-6 col-md-3">
+                                        <a href="${url}" target="_blank">
+                                            <img src="${url}" class="img-fluid rounded-3 border" style="height: 100px; width: 100%; object-fit: cover;" alt="Foto Kendaraan">
+                                        </a>
+                                    </div>
+                                `;
+                            });
+                            
+                            html += '</div></div>';
+                            return html;
+                        };
+
                         modalBody.innerHTML = `
                             <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4 pb-3 border-bottom">
                                 <div>
@@ -362,11 +386,13 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="p-3 bg-light rounded-3 h-100">
-                                        <div class="text-secondary small mb-1">Nomor Polisi</div>
-                                        <div class="fw-bold text-dark">${escapeHtml(data.vehicle.no_polisi)}</div>
+                                        <div class="text-secondary small mb-1">Kondisi Fisik</div>
+                                        <div class="fw-bold text-dark">${escapeHtml(data.vehicle.kondisi)}</div>
                                     </div>
                                 </div>
                             </div>
+
+                            ${renderLandingPhotos(data.vehicle.foto_kendaraan)}
                         `;
                     } else {
                         setHeaderState(false);

@@ -6,7 +6,7 @@ Dokumen ini merupakan sumber kebenaran tunggal (*Single Source of Truth*) mengen
 
 ---
 
-## 🛠️ Environment & Technology Stack
+## 1. 🛠️ Environment & Technology Stack
 - **Framework Core:** Laravel 12 / PHP 8.2+
 - **Database:** MySQL / MariaDB (Teroptimasi dengan skema B-tree Indexing)
 - **Frontend / Assets:** Vite + Bootstrap 5 (Customized via SCSS tersentralisasi di `app.scss`)
@@ -14,29 +14,16 @@ Dokumen ini merupakan sumber kebenaran tunggal (*Single Source of Truth*) mengen
 
 ---
 
-## 📦 Peta Fitur Penuh (*Full Feature Stack*)
-
-### 1. Manajemen Aset Kendaraan (`VehicleController`)
-- **Pencarian Publik Landing Page:** Antarmuka pencarian bagi masyarakat di rute `/` dan `/vehicle-search`. Input otomatis dibersihkan oleh `VehicleService::formatPlateNumber()` (kapitalisasi, penghapusan spasi ganda, dan filter karakter alfanumerik).
-- **Impor Excel Massal (`/vehicles/import`):** Menggunakan kelas `VehicleImport` yang otomatis memetakan teks mentah instansi dan jenis kendaraan ke dalam relasi `opd_id` dan `vehicle_type_id`. Terdapat cetak biru pengembangan jangka panjang menuju **AI Smart Import** untuk pemetaan kolom dinamis tanpa templat baku.
-- **Ekspor Excel (`/vehicles/export`):** Mengunduh seluruh data aset dalam format sprei terstruktur.
-- **Unduh Templat Impor (`/vehicles/template`):** Mengunduh berkas acuan baku pengisian data Excel.
-- **Reset Massal / Kosongkan Data (`/vehicles/truncate`):** Menghapus seluruh rekaman kendaraan secara cepat (*truncate*) untuk inisialisasi ulang basis data.
-
-### 2. Manajemen Master Data (Hub)
-- Rute terpusat (`/master-data`) untuk mengelola **Jenis Kendaraan** (`VehicleTypeController`) dan **OPD / Dinas** (`OpdController`).
-- Dilengkapi fitur pembersihan otomatis (*atomic cleanup*) untuk menghapus entitas jenis kendaraan yang tidak lagi memiliki relasi aset aktif:
-  ```php
-  VehicleType::whereDoesntHave('vehicles')->delete();
-  ```
-
-### 3. CMS Pengaturan Web (`SettingController`)
-- Antarmuka manajemen konfigurasi situs (`/settings`) untuk memodifikasi identitas web (logo, judul aplikasi, teks *footer*).
-- Berkas gambar/logo diunggah secara aman ke direktori `public/uploads/settings` dengan penamaan UUID untuk mencegah bentrokan nama berkas.
+## 2. 🔐 Autentikasi & Akses Kontrol
+- **Sistem Login:** Menggunakan `Auth::routes()` bawaan Laravel (Login, Register, Reset Password).
+- **Model Akses:** Saat ini menggunakan skema **single-role** — semua user yang terautentikasi memiliki hak akses penuh sebagai Admin.
+- **Proteksi Middleware:** Seluruh rute di dalam grup `Route::middleware('auth')` hanya dapat diakses setelah login.
+- **Halaman Publik:** Hanya Landing Page (`/`) dan endpoint pencarian AJAX (`/vehicle-search`) yang dapat diakses tanpa login.
+- **Catatan:** Belum diimplementasikan sistem *Role-Based Access Control* (RBAC). Jika diperlukan di masa depan, pertimbangkan penggunaan package seperti `spatie/laravel-permission`.
 
 ---
 
-## 🗄️ Skema Database & Relasi Kunci
+## 3. 🗄️ Skema Database & Relasi Kunci
 
 ### Tabel `vehicles`
 Menyimpan entitas aset utama dengan arsitektur kolom ternormalisasi:
@@ -51,11 +38,6 @@ Menyimpan entitas aset utama dengan arsitektur kolom ternormalisasi:
 - **Foreign Keys:**
   - `opd_id` (Nullable FK ke `opds.id`, ON DELETE SET NULL)
   - `vehicle_type_id` (Nullable FK ke `vehicle_types.id`, ON DELETE SET NULL)
-
-### Strategi Indeksasi Database (*Query Optimization*)
-Telah diterapkan indeks lapis ganda melalui *migration* `2026_05_14_151900` untuk mencegah *Full Table Scan*:
-- **B-tree Index:** Pada kolom `status`, `opd_id`, dan `vehicle_type_id`.
-- **Composite Index:** Pada kombinasi `['no_polisi', 'status']` untuk kueri pencarian yang difilter.
 
 ### Tabel `vehicle_types`
 Master data klasifikasi jenis kendaraan:
@@ -78,28 +60,76 @@ Konfigurasi CMS yang dapat diubah melalui antarmuka admin:
 - `type` (String, Default: 'text') — Tipe input: `text`, `image`, `textarea`.
 - `group` (String, Default: 'general') — Grup pengelompokan: `general`, `landing`, `login`.
 
+### Strategi Indeksasi Database (*Query Optimization*)
+Telah diterapkan indeks lapis ganda melalui *migration* `2026_05_14_151900` untuk mencegah *Full Table Scan*:
+- **B-tree Index:** Pada kolom `status`, `opd_id`, dan `vehicle_type_id`.
+- **Composite Index:** Pada kombinasi `['no_polisi', 'status']` untuk kueri pencarian yang difilter.
+
 ---
 
-## 🎨 Design System & Estetika Pemerintahan Resmi
+## 4. ⚙️ Backend Architecture & Aturan Validasi
+
+### Lapisan Layanan (*Service Layer*)
+Logika bisnis dan kalkulasi diletakkan di dalam kelas *Service* (`VehicleService`).
+
+### Validasi Kelas Permintaan (*Form Request Validation*)
+Penyimpanan dan pembaruan data wajib menggunakan kelas validasi terpisah demi menjaga keamanan dan kebersihan pengontrol:
+- `StoreVehicleRequest`: Menjamin `no_polisi` unik dan atribut wajib terisi saat penambahan.
+- `UpdateVehicleRequest`: Memvalidasi keunikan `no_polisi` dengan mengecualikan ID kendaraan yang sedang diperbarui (`unique:vehicles,no_polisi,' . $vehicle->id`).
+
+### Konvensi Middleware & Akses Rute
+- Semua *Controller* wajib mengimplementasikan antarmuka `HasMiddleware` standar Laravel 12 dengan metode statis `middleware()`.
+- Karena operasi menggunakan antarmuka *Modal*, rute halaman formulir tradisional wajib dibatasi:
+```php
+Route::resource('vehicles', VehicleController::class)->except(['create', 'edit', 'show']);
+```
+
+### Standar Kode & Enum
+Aplikasi menggunakan Enum (PHP 8.1+) untuk menjaga integritas data:
+- `VehicleStatus`: Mengelola status operasional (Tersedia, Dipinjam, Nonaktif).
+- `VehicleCondition`: Mengelola kondisi fisik, dilengkapi method `fromImport()` untuk normalisasi singkatan Excel (RB, RR, B, dll).
+
+### Logika Smart Import (Normalisasi)
+Sistem melakukan pembersihan data otomatis saat import Excel:
+1. **Penerjemahan Singkatan**: Mengonversi variasi teks mentah (misal: "RB", "RR", "B") menjadi standar "Rusak Berat", "Rusak Ringan", dsb.
+2. **Penentuan Status Otomatis**: Jika kondisi fisik adalah 'Rusak Berat' atau 'Hilang', sistem otomatis mengatur status operasional ke 'Nonaktif'.
+
+### Strategi Caching
+- **Statistik Dashboard**: Menggunakan 1 kueri agregasi kondisional yang di-cache via `cache()->remember('dashboard.stats', 300)` (5 menit).
+- **Cache Invalidation**: Cache wajib dihapus (`cache()->forget('dashboard.stats')`) setiap kali terjadi operasi **Store, Update, Destroy, Import,** atau **Truncate** pada data kendaraan.
+- **Pengaturan Global**: Di-cache via `cache()->remember('setting.{key}', 3600)` (1 jam) dengan penghapusan otomatis (`cache()->forget`) saat data diperbarui.
+
+---
+
+## 5. 🎨 Design System, Estetika & Standar UI
 Aplikasi **tidak menggunakan efek visual berlebihan** (*glassmorphism* pudar atau gradien mencolok) demi mengutamakan kecepatan muat, kejelasan data, dan identitas formal instansi pemerintah.
 
-### 1. Palet & Gaya Visual
+### Palet & Gaya Visual
 - **Skema Warna Formal:** Memprioritaskan **Navy, Putih, dan Abu-abu (Gray)** yang stabil dan profesional.
 - **Batas Tabel Tajam:** Menggunakan pembatas (*border*) tabel yang tegas guna mempermudah pemindaian ribuan baris data.
 - **Plat Nomor Identik:** Nomor Polisi wajib dibungkus dengan kelas `.plate-number` (font **Monospace** tebal) agar konsisten secara visual.
+- **Format Akuntansi**: Seluruh tampilan mata uang (seperti `nilai_perolehan`) wajib menggunakan format titik ribuan (Contoh: Rp 150.000.000). 
+  - Di Blade: `number_format($val, 0, ',', '.')`.
+  - Di JavaScript (Modal): `.toLocaleString('id-ID')`.
+- **Bahasa Antarmuka**: Seluruh notifikasi, pesan kesalahan (validation errors), peringatan (warnings), dan label UI **WAJIB** menggunakan Bahasa Indonesia yang profesional dan mudah dimengerti.
 
-### 2. Standar Responsivitas Tabel Seluler (*Mobile-First UX*)
+### Standar Responsivitas Tabel Seluler (*Mobile-First UX*)
 - **Sticky First Column:** Kolom pertama tabel dikunci menggunakan CSS `position: sticky` agar tidak hilang saat digeser horizontal di layar HP.
 - **Responsive Column Hiding:** Kolom pelengkap disembunyikan di layar kecil melalui utilitas `d-none d-md-table-cell`.
 - **Visual Swipe Hint:** Indikator *swipe* di bagian bawah tabel pada mode *mobile* sebagai panduan UX.
 
----
+### Standar Tampilan Tabel & Komponen Reusable
+- **Paginasi Global**: Menggunakan `Paginator::useBootstrapFive()` di `AppServiceProvider` untuk memastikan template navigasi yang bersih dan konsisten.
+- **Penomoran Tabel**: Menggunakan `$loop->iteration` yang dikombinasikan dengan metadata paginasi: `($collection->currentPage() - 1) * $collection->perPage() + $loop->iteration`.
+- **Komponen Lainnya**: Menggunakan `x-modal` sebagai shell modal, `x-stat-card` untuk kartu statistik, dan `x-condition-badge` untuk label kondisi.
 
-## 🧩 Standar Komponen Blade (Wajib Dipakai)
+### Standar Komponen Blade (Wajib Dipakai)
 Dilarang keras menulis elemen mentah berulang. Gunakan komponen Blade berikut:
 
-### `<x-table-card>`
+#### `<x-table-card>`
 Pembungkus tabel utama yang otomatis menyediakan slot pencarian, *empty state*, dan pembungkus *scroll* responsif.
+- Wajib mengirimkan `:collection="$data"` agar informasi *"Menampilkan X sampai Y dari Z data"* muncul secara otomatis.
+- Slot `:pagination` digunakan untuk merender tombol navigasi `{{ $data->links() }}`.
 ```html
 <x-table-card title="Daftar Kendaraan" :search="true" placeholder="Cari aset...">
     <x-slot name="actions">
@@ -109,12 +139,39 @@ Pembungkus tabel utama yang otomatis menyediakan slot pencarian, *empty state*, 
 </x-table-card>
 ```
 
-### `<x-modal>`
+#### `<x-modal>`
 Komponen modal untuk CRUD *Single Page Interaction*, mendukung perilaku *mobile-first full-screen*, serta *header/footer* yang tetap (*sticky*).
+
+### Penanganan Foto Kendaraan
+- Maksimal 4 foto per kendaraan disimpam dalam kolom JSON `foto_kendaraan`.
+- Logika Edit menggunakan **Replace All**: Mengunggah foto baru akan menghapus seluruh foto lama.
+- Foto disimpan di disk `public/vehicles`. Wajib menjalankan `php artisan storage:link`.
 
 ---
 
-## 🗺️ Peta Rute Aplikasi (*Route Map*)
+## 6. 📦 Peta Fitur Penuh (*Full Feature Stack*)
+
+### Manajemen Aset Kendaraan (`VehicleController`)
+- **Pencarian Publik Landing Page:** Antarmuka pencarian bagi masyarakat di rute `/` dan `/vehicle-search`. Input otomatis dibersihkan oleh `VehicleService::formatPlateNumber()` (kapitalisasi, penghapusan spasi ganda, dan filter karakter alfanumerik).
+- **Impor Excel Massal (`/vehicles/import`):** Menggunakan kelas `VehicleImport` yang otomatis memetakan teks mentah instansi dan jenis kendaraan ke dalam relasi `opd_id` dan `vehicle_type_id`. Terdapat cetak biru pengembangan jangka panjang menuju **AI Smart Import** untuk pemetaan kolom dinamis tanpa templat baku.
+- **Ekspor Excel (`/vehicles/export`):** Mengunduh seluruh data aset dalam format sprei terstruktur.
+- **Unduh Templat Impor (`/vehicles/template`):** Mengunduh berkas acuan baku pengisian data Excel.
+- **Reset Massal / Kosongkan Data (`/vehicles/truncate`):** Menghapus seluruh rekaman kendaraan secara cepat (*truncate*) untuk inisialisasi ulang basis data.
+
+### Manajemen Master Data (Hub)
+- Rute terpusat (`/master-data`) untuk mengelola **Jenis Kendaraan** (`VehicleTypeController`) dan **OPD / Dinas** (`OpdController`).
+- Dilengkapi fitur pembersihan otomatis (*atomic cleanup*) untuk menghapus entitas jenis kendaraan yang tidak lagi memiliki relasi aset aktif:
+  ```php
+  VehicleType::whereDoesntHave('vehicles')->delete();
+  ```
+
+### CMS Pengaturan Web (`SettingController`)
+- Antarmuka manajemen konfigurasi situs (`/settings`) untuk memodifikasi identitas web (logo, judul aplikasi, teks *footer*).
+- Berkas gambar/logo diunggah secara aman ke direktori `public/uploads/settings` dengan penamaan UUID untuk mencegah bentrokan nama berkas.
+
+---
+
+## 7. 🗺️ Peta Rute Aplikasi (*Route Map*)
 
 | Metode | URI | Controller@Method | Akses | Keterangan |
 |--------|-----|-------------------|-------|------------|
@@ -138,61 +195,7 @@ Komponen modal untuk CRUD *Single Page Interaction*, mendukung perilaku *mobile-
 
 ---
 
-## 🔐 Autentikasi & Akses Kontrol
-- **Sistem Login:** Menggunakan `Auth::routes()` bawaan Laravel (Login, Register, Reset Password).
-- **Model Akses:** Saat ini menggunakan skema **single-role** — semua user yang terautentikasi memiliki hak akses penuh sebagai Admin.
-- **Proteksi Middleware:** Seluruh rute di dalam grup `Route::middleware('auth')` hanya dapat diakses setelah login.
-- **Halaman Publik:** Hanya Landing Page (`/`) dan endpoint pencarian AJAX (`/vehicle-search`) yang dapat diakses tanpa login.
-- **Catatan:** Belum diimplementasikan sistem *Role-Based Access Control* (RBAC). Jika diperlukan di masa depan, pertimbangkan penggunaan package seperti `spatie/laravel-permission`.
-
----
-
-## ⚙️ Backend Architecture & Aturan Validasi
-
-### 1. Validasi Kelas Permintaan (*Form Request Validation*)
-Penyimpanan dan pembaruan data wajib menggunakan kelas validasi terpisah demi menjaga keamanan dan kebersihan pengontrol:
-- `StoreVehicleRequest`: Menjamin `no_polisi` unik dan atribut wajib terisi saat penambahan.
-- `UpdateVehicleRequest`: Memvalidasi keunikan `no_polisi` dengan mengecualikan ID kendaraan yang sedang diperbarui (`unique:vehicles,no_polisi,' . $vehicle->id`).
-
-### 2. Lapisan Layanan (*Service Layer*)
-Logika bisnis dan kalkulasi diletakkan di dalam kelas *Service* (`VehicleService`).
-
-### 3. Konvensi Middleware
-Semua *Controller* wajib mengimplementasikan antarmuka `HasMiddleware` standar Laravel 12 dengan metode statis `middleware()`.
-
-### 4. Pembatasan Rute Akses
-Karena operasi menggunakan antarmuka *Modal*, rute halaman formulir tradisional wajib dibatasi:
-```php
-Route::resource('vehicles', VehicleController::class)->except(['create', 'edit', 'show']);
-```
-
-### 3. Strategi Caching
-- **Statistik Dashboard**: Menggunakan 1 kueri agregasi kondisional yang di-cache via `cache()->remember('dashboard.stats', 300)` (5 menit).
-- **Cache Invalidation**: Cache wajib dihapus (`cache()->forget('dashboard.stats')`) setiap kali terjadi operasi **Store, Update, Destroy, Import,** atau **Truncate** pada data kendaraan.
-- **Pengaturan Global**: Di-cache via `cache()->remember('setting.{key}', 3600)` (1 jam) dengan penghapusan otomatis (`cache()->forget`) saat data diperbarui.
-
-### 4. Standar Kode & Enum
-Aplikasi menggunakan Enum (PHP 8.1+) untuk menjaga integritas data:
-- `VehicleStatus`: Mengelola status operasional (Tersedia, Dipinjam, Nonaktif).
-- `VehicleCondition`: Mengelola kondisi fisik, dilengkapi method `fromImport()` untuk normalisasi singkatan Excel (RB, RR, B, dll).
-
-### 5. Logika Smart Import (Normalisasi)
-Sistem melakukan pembersihan data otomatis saat import Excel:
-1. **Penerjemahan Singkatan**: Mengonversi variasi teks mentah (misal: "RB", "RR", "B") menjadi standar "Rusak Berat", "Rusak Ringan", dsb.
-2. **Penentuan Status Otomatis**: Jika kondisi fisik adalah 'Rusak Berat' atau 'Hilang', sistem otomatis mengatur status operasional ke 'Nonaktif'.
-
-### 6. Standar Tampilan & UI
-- **Paginasi Global**: Menggunakan `Paginator::useBootstrapFive()` di `AppServiceProvider` untuk memastikan template navigasi yang bersih dan konsisten.
-- **Penomoran Tabel**: Menggunakan `$loop->iteration` yang dikombinasikan dengan metadata paginasi: `($collection->currentPage() - 1) * $collection->perPage() + $loop->iteration`.
-- **Format Akuntansi**: Seluruh tampilan mata uang (seperti `nilai_perolehan`) wajib menggunakan format titik ribuan (Contoh: Rp 150.000.000). 
-  - Di Blade: `number_format($val, 0, ',', '.')`.
-  - Di JavaScript (Modal): `.toLocaleString('id-ID')`.
-- **Komponen Reusable (table-card)**:
-  - Wajib mengirimkan `:collection="$data"` agar informasi *"Menampilkan X sampai Y dari Z data"* muncul secara otomatis.
-  - Slot `:pagination` digunakan untuk merender tombol navigasi `{{ $data->links() }}`.
-- **Komponen Lainnya**: Menggunakan `x-modal` sebagai shell modal, `x-stat-card` untuk kartu statistik, dan `x-condition-badge` untuk label kondisi.
-
-### 7. Standar Dokumentasi Kode (PHPDoc)
+## 8. 📚 Standar Dokumentasi Kode (PHPDoc)
 Seluruh kode backend (Models, Controllers, Services, Enums, dll) wajib memiliki dokumentasi **PHPDoc dalam Bahasa Indonesia**.
 - **Kelas/Enum:** Berikan penjelasan singkat mengenai tujuan dan fungsi utama kelas tersebut.
 - **Properti Model:** Gunakan anotasi `@property` untuk mendefinisikan kolom database agar *auto-complete* pada editor berfungsi optimal.
@@ -213,7 +216,7 @@ Seluruh kode backend (Models, Controllers, Services, Enums, dll) wajib memiliki 
 
 ---
 
-## 🚨 Aturan Kritis untuk Sesi AI Berikutnya
+## 9. 🚨 Aturan Kritis untuk Sesi AI Berikutnya
 1. **Jangan asumsikan konteks:** Selalu gunakan `view_file` untuk membaca berkas sebelum memodifikasi.
 2. **Kepatuhan Desain:** Dilarang mengembalikan efek *glassmorphism* atau warna mencolok. Pertahankan gaya formal pemerintah (Navy/Putih/Gray).
 3. **Penyusunan Aset:** Selalu jalankan `npm run dev` saat mengedit file SCSS atau JS.

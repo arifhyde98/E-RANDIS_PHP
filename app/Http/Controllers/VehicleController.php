@@ -17,6 +17,7 @@ use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Illuminate\Support\Facades\Storage;
 
 use App\Services\VehicleService;
 
@@ -129,6 +130,7 @@ class VehicleController extends Controller
                 'pemegang' => $vehicle->pemegang,
                 'kondisi' => \App\Enums\VehicleCondition::tryFrom($vehicle->kondisi)?->label() ?? $vehicle->kondisi,
                 'status' => \App\Enums\VehicleStatus::tryFrom($vehicle->status)?->label() ?? $vehicle->status,
+                'foto_kendaraan' => $vehicle->foto_kendaraan,
             ] : null,
         ]);
     }
@@ -160,6 +162,15 @@ class VehicleController extends Controller
 
         // Format nomor polisi menggunakan Service
         $validated['no_polisi'] = $this->vehicleService->formatPlateNumber($validated['no_polisi']);
+
+        // Handle Foto Kendaraan
+        if ($request->hasFile('foto_kendaraan')) {
+            $paths = [];
+            foreach ($request->file('foto_kendaraan') as $image) {
+                $paths[] = $image->store('vehicles', 'public');
+            }
+            $validated['foto_kendaraan'] = $paths;
+        }
 
         Vehicle::create($validated);
         cache()->forget('dashboard.stats');
@@ -209,6 +220,23 @@ class VehicleController extends Controller
         // Format nomor polisi menggunakan Service
         $validated['no_polisi'] = $this->vehicleService->formatPlateNumber($validated['no_polisi']);
 
+        // Handle Foto Kendaraan (Replace All)
+        if ($request->hasFile('foto_kendaraan')) {
+            // Hapus foto lama
+            if ($vehicle->foto_kendaraan) {
+                foreach ($vehicle->foto_kendaraan as $oldPath) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+
+            // Simpan foto baru
+            $paths = [];
+            foreach ($request->file('foto_kendaraan') as $image) {
+                $paths[] = $image->store('vehicles', 'public');
+            }
+            $validated['foto_kendaraan'] = $paths;
+        }
+
         $vehicle->update($validated);
         cache()->forget('dashboard.stats');
 
@@ -223,6 +251,13 @@ class VehicleController extends Controller
      */
     public function destroy(Vehicle $vehicle): RedirectResponse
     {
+        // Hapus foto fisik
+        if ($vehicle->foto_kendaraan) {
+            foreach ($vehicle->foto_kendaraan as $path) {
+                Storage::disk('public')->delete($path);
+            }
+        }
+        
         $vehicle->delete();
         cache()->forget('dashboard.stats');
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil dihapus.');
@@ -235,6 +270,9 @@ class VehicleController extends Controller
      */
     public function truncate(): RedirectResponse
     {
+        // Hapus seluruh folder foto kendaraan
+        Storage::disk('public')->deleteDirectory('vehicles');
+        
         Vehicle::truncate();
         cache()->forget('dashboard.stats');
         return redirect()->route('vehicles.index')->with('success', 'Seluruh data kendaraan berhasil dikosongkan.');
