@@ -87,6 +87,9 @@ class OpdController extends Controller
         // Untuk saat ini langsung hapus (Master Data)
         $opd->delete();
 
+        // Bersihkan cache karena penghapusan OPD akan memicu penghapusan kendaraan (Cascade)
+        \Illuminate\Support\Facades\Cache::flush();
+
         return redirect()->route('opds.index')->with('success', 'Data OPD berhasil dihapus.');
     }
 
@@ -100,6 +103,9 @@ class OpdController extends Controller
         \App\Models\Opd::all()->each(function($opd) {
             $opd->delete();
         });
+
+        // Bersihkan cache secara total karena seluruh data kendaraan juga terhapus
+        \Illuminate\Support\Facades\Cache::flush();
 
         return redirect()->route('opds.index')->with('success', 'Seluruh data Master OPD berhasil dikosongkan.');
     }

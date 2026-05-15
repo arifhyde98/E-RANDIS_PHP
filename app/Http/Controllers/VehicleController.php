@@ -174,10 +174,8 @@ class VehicleController extends Controller
 
         Vehicle::create($validated);
         
-        // Bersihkan Cache spesifik user
-        $user = auth()->user();
-        $cacheKey = 'dashboard.stats.' . ($user->role->value ?? 'guest') . '.' . ($user->opd_id ?? 'global');
-        cache()->forget($cacheKey);
+        // Bersihkan seluruh cache aplikasi agar statistik sinkron
+        \Illuminate\Support\Facades\Cache::flush();
 
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil ditambahkan.');
     }
@@ -243,10 +241,8 @@ class VehicleController extends Controller
 
         $vehicle->update($validated);
         
-        // Bersihkan Cache spesifik user
-        $user = auth()->user();
-        $cacheKey = 'dashboard.stats.' . ($user->role->value ?? 'guest') . '.' . ($user->opd_id ?? 'global');
-        cache()->forget($cacheKey);
+        // Bersihkan seluruh cache aplikasi agar statistik sinkron
+        \Illuminate\Support\Facades\Cache::flush();
 
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil diperbarui.');
     }
@@ -268,10 +264,8 @@ class VehicleController extends Controller
         
         $vehicle->delete();
         
-        // Bersihkan Cache spesifik user
-        $user = auth()->user();
-        $cacheKey = 'dashboard.stats.' . ($user->role->value ?? 'guest') . '.' . ($user->opd_id ?? 'global');
-        cache()->forget($cacheKey);
+        // Bersihkan seluruh cache aplikasi agar statistik sinkron
+        \Illuminate\Support\Facades\Cache::flush();
 
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil dihapus.');
     }
@@ -288,10 +282,8 @@ class VehicleController extends Controller
         
         Vehicle::truncate();
         
-        // Bersihkan Cache spesifik user
-        $user = auth()->user();
-        $cacheKey = 'dashboard.stats.' . ($user->role->value ?? 'guest') . '.' . ($user->opd_id ?? 'global');
-        cache()->forget($cacheKey);
+        // Bersihkan seluruh cache aplikasi agar statistik sinkron
+        \Illuminate\Support\Facades\Cache::flush();
 
         return redirect()->route('vehicles.index')->with('success', 'Seluruh data kendaraan berhasil dikosongkan.');
     }
@@ -331,10 +323,8 @@ class VehicleController extends Controller
         try {
             Excel::import(new VehicleImport, $request->file('file'));
             
-            // Bersihkan Cache spesifik user
-            $user = auth()->user();
-            $cacheKey = 'dashboard.stats.' . ($user->role->value ?? 'guest') . '.' . ($user->opd_id ?? 'global');
-            cache()->forget($cacheKey);
+            // Bersihkan seluruh cache aplikasi agar statistik sinkron
+            \Illuminate\Support\Facades\Cache::flush();
 
             return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil diimport.');
         } catch (\Exception $e) {
