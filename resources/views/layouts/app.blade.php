@@ -7,11 +7,7 @@
 
     <title>{{ config('app.name', 'E-RANDIS PHP') }} - Admin Dashboard</title>
 
-    {{-- Bootstrap Icons --}}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
     @vite(['resources/css/app.scss', 'resources/js/app.js'])
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-light" id="theme-root">
     <script>

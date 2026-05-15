@@ -1,5 +1,14 @@
-// Fonts
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+// Fonts (Local via NPM)
+@import "@fontsource/plus-jakarta-sans/index.css";
+@import "@fontsource/plus-jakarta-sans/300.css";
+@import "@fontsource/plus-jakarta-sans/400.css";
+@import "@fontsource/plus-jakarta-sans/500.css";
+@import "@fontsource/plus-jakarta-sans/600.css";
+@import "@fontsource/plus-jakarta-sans/700.css";
+
+// Icons (NPM)
+$bootstrap-icons-font-dir: "bootstrap-icons/font/fonts";
+@import "bootstrap-icons/font/bootstrap-icons.scss";
 
 // Variables Modification (Reference Image Theme)
 $family-sans-serif: 'Plus Jakarta Sans', sans-serif;

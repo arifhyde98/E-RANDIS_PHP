@@ -9,7 +9,13 @@ Dokumen ini merupakan sumber kebenaran tunggal (*Single Source of Truth*) mengen
 ## 1. 🛠️ Environment & Technology Stack
 - **Framework Core:** Laravel 12 / PHP 8.2+
 - **Database:** MySQL / MariaDB (Teroptimasi dengan skema B-tree Indexing)
-- **Frontend / Assets:** Vite + Bootstrap 5 (Customized via SCSS tersentralisasi di `app.scss`)
+- **Frontend / Assets:** 
+  - **Bundler:** Vite
+  - **UI Framework:** Bootstrap 5 (Customized via SCSS tersentralisasi di `app.scss`)
+  - **Iconography:** Bootstrap Icons (Local via NPM/Vite)
+  - **Notifications:** SweetAlert2 (Local via NPM/Vite) untuk peringatan, validasi *real-time*, & konfirmasi aksi
+  - **Typography:** Plus Jakarta Sans (Local via @fontsource)
+- **Data Engine:** Laravel Excel (Maatwebsite/Excel) sebagai mesin utama pengolahan Impor & Ekspor data massal.
 - **Infrastruktur / Deployment:** Mendukung eksekusi lokal berbasis **Laragon** serta telah disiapkan konfigurasi **Docker** (`Dockerfile` & `docker-compose.yml`) untuk kemudahan kontainerisasi.
 
 ---
