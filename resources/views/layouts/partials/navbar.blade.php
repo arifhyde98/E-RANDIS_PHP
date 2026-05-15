@@ -29,18 +29,21 @@
 
                 <!-- Profile Dropdown -->
                 <div class="dropdown">
-                    <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark fw-medium" data-bs-toggle="dropdown">
-                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2 fw-bold" style="width: 35px; height: 35px;">
-                            {{ substr(Auth::user()->name, 0, 1) }}
-                        </div>
+                    <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark fw-medium" data-bs-dropdown-toggle="dropdown" data-bs-toggle="dropdown">
+                        <img src="{{ Auth::user()->avatar_url }}" 
+                             alt="{{ Auth::user()->name }}" 
+                             class="rounded-circle me-2 border shadow-sm" 
+                             style="width: 35px; height: 35px; object-fit: cover;">
                         <div class="d-none d-md-block text-start lh-1">
                             <div class="fw-bold" style="font-size: 0.9rem;">{{ Auth::user()->name }}</div>
-                            <small class="text-secondary" style="font-size: 0.75rem;">Administrator</small>
+                            <small class="text-secondary" style="font-size: 0.75rem;">{{ Auth::user()->role->label() }}</small>
                         </div>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end border-0 shadow mt-2 rounded-3">
-                        <li><a class="dropdown-item py-2" href="#"><i class="bi bi-person me-2 text-secondary"></i> Profil Saya</a></li>
-                        <li><a class="dropdown-item py-2" href="#"><i class="bi bi-gear me-2 text-secondary"></i> Pengaturan Akun</a></li>
+                        <li><a class="dropdown-item py-2" href="{{ route('profile.index') }}"><i class="bi bi-person me-2 text-secondary"></i> Profil Saya</a></li>
+                        @if(Auth::user()->role === \App\Enums\UserRole::SUPERADMIN)
+                            <li><a class="dropdown-item py-2" href="{{ route('settings.index') }}"><i class="bi bi-gear me-2 text-secondary"></i> Pengaturan Sistem</a></li>
+                        @endif
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <a class="dropdown-item py-2 text-danger fw-medium" href="{{ route('logout') }}"

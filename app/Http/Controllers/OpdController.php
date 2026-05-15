@@ -10,6 +10,13 @@ use Illuminate\Http\Request;
  */
 class OpdController extends Controller
 {
+    protected $accountService;
+
+    public function __construct(\App\Services\AccountService $accountService)
+    {
+        $this->accountService = $accountService;
+    }
+
     /**
      * Menampilkan daftar semua OPD dengan fitur pencarian dan paginasi.
      * 
@@ -18,7 +25,7 @@ class OpdController extends Controller
      */
     public function index(Request $request): \Illuminate\View\View
     {
-        $query = Opd::query();
+        $query = Opd::query()->with('user');
 
         if ($request->filled('q')) {
             $query->where('nama', 'like', '%' . $request->q . '%')
@@ -44,9 +51,9 @@ class OpdController extends Controller
             'alamat' => 'nullable|string',
         ]);
 
-        Opd::create($validated);
-
-        return redirect()->route('opds.index')->with('success', 'Data OPD berhasil ditambahkan.');
+        $opd = Opd::create($validated);
+        
+        return redirect()->route('opds.index')->with('success', "Data OPD {$opd->nama} berhasil ditambahkan.");
     }
 
     /**
@@ -81,6 +88,20 @@ class OpdController extends Controller
         $opd->delete();
 
         return redirect()->route('opds.index')->with('success', 'Data OPD berhasil dihapus.');
+    }
+
+    /**
+     * Mengosongkan seluruh data OPD (Master Data).
+     */
+    public function truncate(): \Illuminate\Http\RedirectResponse
+    {
+        // Gunakan get()->each->delete() agar event 'deleting' terpanggil 
+        // (untuk hapus avatar user via cascade dan observer)
+        \App\Models\Opd::all()->each(function($opd) {
+            $opd->delete();
+        });
+
+        return redirect()->route('opds.index')->with('success', 'Seluruh data Master OPD berhasil dikosongkan.');
     }
 }
 

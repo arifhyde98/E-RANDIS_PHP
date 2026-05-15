@@ -17,7 +17,14 @@
             </nav>
             <h3 class="fw-bold text-navy mb-0">Manajemen Data OPD / Instansi</h3>
         </div>
-        <div class="action-toolbar">
+        <div class="action-toolbar d-flex gap-2">
+            <form action="{{ route('opds.truncate') }}" method="POST" class="d-inline truncate-confirm">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-light border shadow-sm fw-medium d-flex align-items-center gap-2">
+                    <i class="bi bi-trash3 text-danger"></i> Kosongkan Master OPD
+                </button>
+            </form>
             <button type="button" class="btn btn-primary shadow-sm fw-medium d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addOpdModal">
                 <i class="bi bi-plus-lg"></i> Tambah OPD
             </button>
@@ -53,6 +60,7 @@
                 <th class="py-3 px-4 border-bottom-0 fw-semibold" style="width: 50px;">No</th>
                 <th class="py-3 border-bottom-0 fw-semibold">Nama Instansi / OPD</th>
                 <th class="py-3 border-bottom-0 fw-semibold">Singkatan</th>
+                <th class="py-3 border-bottom-0 fw-semibold">Akun Admin</th>
                 <th class="py-3 border-bottom-0 fw-semibold d-none d-md-table-cell">Alamat</th>
                 <th class="py-3 px-4 border-bottom-0 fw-semibold text-center">Aksi</th>
             </tr>
@@ -68,6 +76,14 @@
                 </td>
                 <td class="py-3">
                     <span class="badge bg-light text-primary border border-primary border-opacity-25 px-2 py-1">{{ $opd->singkatan ?? '-' }}</span>
+                </td>
+                <td class="py-3">
+                    @if($opd->user)
+                        <div class="small fw-medium text-dark">{{ $opd->user->email }}</div>
+                        <span class="badge bg-success-subtle text-success small border-0 py-0" style="font-size: 0.65rem;">AKTIF</span>
+                    @else
+                        <span class="text-secondary small italic">Tidak ada akun</span>
+                    @endif
                 </td>
                 <td class="py-3 text-secondary small d-none d-md-table-cell">
                     {{ Str::limit($opd->alamat ?? '-', 50) }}
@@ -147,6 +163,28 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Notifikasi Akun Baru
+        @if(session('new_account'))
+            Swal.fire({
+                title: 'Akun Admin OPD Dibuat!',
+                html: `
+                    <div class="text-start p-3 bg-light rounded-3 border">
+                        <div class="mb-2"><strong>OPD:</strong> {{ session('new_account')['opd_nama'] }}</div>
+                        <div class="mb-2"><strong>Email/User:</strong> <code class="bg-white px-2 py-1 border rounded">{{ session('new_account')['email'] }}</code></div>
+                        <div class="mb-0"><strong>Password:</strong> <code class="bg-white px-2 py-1 border rounded">{{ session('new_account')['password'] }}</code></div>
+                    </div>
+                    <div class="alert alert-warning mt-3 small mb-0">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        Harap catat password ini. Password hanya akan ditampilkan satu kali demi keamanan.
+                    </div>
+                `,
+                icon: 'success',
+                confirmButtonText: 'Saya Sudah Mencatatnya',
+                confirmButtonColor: '#1e40af',
+                allowOutsideClick: false
+            });
+        @endif
+
         const editModal = document.getElementById('editOpdModal');
         if (editModal) {
             editModal.addEventListener('show.bs.modal', function (event) {
@@ -164,6 +202,28 @@
                 document.getElementById('edit_nama').value = nama || '';
                 document.getElementById('edit_singkatan').value = (singkatan && singkatan !== '-') ? singkatan : '';
                 document.getElementById('edit_alamat').value = (alamat && alamat !== '-') ? alamat : '';
+            });
+        }
+
+        // Truncate Confirmation
+        const truncateForm = document.querySelector('.truncate-confirm');
+        if (truncateForm) {
+            truncateForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Kosongkan Master OPD?',
+                    text: "Seluruh data instansi DAN AKUN ADMIN terkait akan dihapus permanen. Lanjutkan?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Ya, Kosongkan!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.submit();
+                    }
+                });
             });
         }
     });

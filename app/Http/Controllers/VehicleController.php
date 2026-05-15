@@ -173,7 +173,11 @@ class VehicleController extends Controller
         }
 
         Vehicle::create($validated);
-        cache()->forget('dashboard.stats');
+        
+        // Bersihkan Cache spesifik user
+        $user = auth()->user();
+        $cacheKey = 'dashboard.stats.' . ($user->role->value ?? 'guest') . '.' . ($user->opd_id ?? 'global');
+        cache()->forget($cacheKey);
 
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil ditambahkan.');
     }
@@ -238,7 +242,11 @@ class VehicleController extends Controller
         }
 
         $vehicle->update($validated);
-        cache()->forget('dashboard.stats');
+        
+        // Bersihkan Cache spesifik user
+        $user = auth()->user();
+        $cacheKey = 'dashboard.stats.' . ($user->role->value ?? 'guest') . '.' . ($user->opd_id ?? 'global');
+        cache()->forget($cacheKey);
 
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil diperbarui.');
     }
@@ -259,7 +267,12 @@ class VehicleController extends Controller
         }
         
         $vehicle->delete();
-        cache()->forget('dashboard.stats');
+        
+        // Bersihkan Cache spesifik user
+        $user = auth()->user();
+        $cacheKey = 'dashboard.stats.' . ($user->role->value ?? 'guest') . '.' . ($user->opd_id ?? 'global');
+        cache()->forget($cacheKey);
+
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil dihapus.');
     }
 
@@ -274,7 +287,12 @@ class VehicleController extends Controller
         Storage::disk('public')->deleteDirectory('vehicles');
         
         Vehicle::truncate();
-        cache()->forget('dashboard.stats');
+        
+        // Bersihkan Cache spesifik user
+        $user = auth()->user();
+        $cacheKey = 'dashboard.stats.' . ($user->role->value ?? 'guest') . '.' . ($user->opd_id ?? 'global');
+        cache()->forget($cacheKey);
+
         return redirect()->route('vehicles.index')->with('success', 'Seluruh data kendaraan berhasil dikosongkan.');
     }
 
@@ -312,7 +330,12 @@ class VehicleController extends Controller
 
         try {
             Excel::import(new VehicleImport, $request->file('file'));
-            cache()->forget('dashboard.stats');
+            
+            // Bersihkan Cache spesifik user
+            $user = auth()->user();
+            $cacheKey = 'dashboard.stats.' . ($user->role->value ?? 'guest') . '.' . ($user->opd_id ?? 'global');
+            cache()->forget($cacheKey);
+
             return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil diimport.');
         } catch (\Exception $e) {
             return redirect()->route('vehicles.index')->with('error', 'Gagal mengimport data: ' . $e->getMessage());

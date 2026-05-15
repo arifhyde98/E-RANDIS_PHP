@@ -40,6 +40,26 @@ class Vehicle extends Model
     use HasFactory;
 
     /**
+     * Bootstrap the model and its traits.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new \App\Models\Scopes\TenantScope);
+
+        // Otomatis set opd_id saat create jika user adalah Admin OPD
+        static::creating(function ($vehicle) {
+            if (auth()->check() && auth()->user()->role === \App\Enums\UserRole::OPD) {
+                $vehicle->opd_id = auth()->user()->opd_id;
+                
+                // Sinkronisasi teks OPD jika tersedia
+                if (auth()->user()->opd) {
+                    $vehicle->opd = auth()->user()->opd->nama;
+                }
+            }
+        });
+    }
+
+    /**
      * Kolom yang dapat diisi secara massal.
      * 
      * @var array<int, string>

@@ -12,7 +12,13 @@
         @endif
         <div>
             <div class="fw-bold fs-5 lh-1 text-white">E-RANDIS</div>
-            <small class="text-white-50" style="font-size: 0.75rem;">Panel Admin</small>
+            <small class="text-white-50 d-block mt-1" style="font-size: 0.65rem; line-height: 1.2;">
+                @if(auth()->user()->role === \App\Enums\UserRole::OPD)
+                    {{ auth()->user()->opd->singkatan ?: auth()->user()->opd->nama }}
+                @else
+                    {{ auth()->user()->role->label() }}
+                @endif
+            </small>
         </div>
     </div>
 
@@ -41,6 +47,7 @@
             <small class="text-uppercase fw-bold text-white-50" style="font-size: 0.7rem; letter-spacing: 0.5px;">Operasional</small>
         </li>
 
+        @if(auth()->user()->role !== \App\Enums\UserRole::OPD)
         <li class="{{ Request::is('master-data*', 'opds*', 'vehicle-types*') ? 'active' : '' }}">
             <a href="javascript:void(0)" 
                class="has-submenu {{ Request::is('master-data*', 'opds*', 'vehicle-types*') ? '' : 'collapsed' }}"
@@ -64,11 +71,9 @@
                 <li>
                     <a href="#"><i class="bi bi-check-circle small me-2"></i> Status Kendaraan</a>
                 </li>
-                <li>
-                    <a href="#"><i class="bi bi-window-sidebar small me-2"></i> Landing Page Setting</a>
-                </li>
             </ul>
         </li>
+        @endif
         
         <li>
             <a href="#"><i class="bi bi-tools"></i> Maintenance</a>
@@ -78,8 +83,15 @@
             <a href="#"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
         </li>
 
+        @if(auth()->user()->role === \App\Enums\UserRole::SUPERADMIN)
         <li class="mt-4 mb-2 ps-3">
             <small class="text-uppercase fw-bold text-white-50" style="font-size: 0.7rem; letter-spacing: 0.5px;">Sistem</small>
+        </li>
+
+        <li class="{{ Request::is('users*') ? 'active' : '' }}">
+            <a href="{{ route('users.index') }}">
+                <i class="bi bi-people-fill"></i> Manajemen Pengguna
+            </a>
         </li>
 
         <li class="{{ request()->routeIs('settings.*') ? 'active' : '' }}">
@@ -87,6 +99,7 @@
                 <i class="bi bi-gear"></i> Pengaturan
             </a>
         </li>
+        @endif
 
         <li>
             <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="text-danger">

@@ -20,16 +20,21 @@ Dokumen ini merupakan sumber kebenaran tunggal (*Single Source of Truth*) mengen
 
 ---
 
-## 2. 🔐 Autentikasi & Akses Kontrol
-- **Sistem Login:** Menggunakan `Auth::routes()` bawaan Laravel (Login, Register, Reset Password).
-- **Model Akses:** Saat ini menggunakan skema **single-role** — semua user yang terautentikasi memiliki hak akses penuh sebagai Admin.
-- **Proteksi Middleware:** Seluruh rute di dalam grup `Route::middleware('auth')` hanya dapat diakses setelah login.
-- **Halaman Publik:** Hanya Landing Page (`/`) dan endpoint pencarian AJAX (`/vehicle-search`) yang dapat diakses tanpa login.
-- **Catatan:** Belum diimplementasikan sistem *Role-Based Access Control* (RBAC). Jika diperlukan di masa depan, pertimbangkan penggunaan package seperti `spatie/laravel-permission`.
+## 2. Arsitektur & Keamanan (Multi-Role & Multi-Tenancy)
+*   **Role System**: Menggunakan Enum `App\Enums\UserRole` (SUPERADMIN, ADMIN, OPD).
+*   **Data Isolation**: Implementasi `App\Models\Scopes\TenantScope` pada model `Vehicle`. Admin OPD hanya dapat melihat/mengelola data milik instansinya sendiri.
+*   **Otomasi Akun (Model Level)**: Logika pembuatan akun admin OPD dipindahkan ke `Opd::booted()` (Event `created`). Hal ini menjamin setiap OPD baru (lewat Form atau Import Excel) selalu memiliki akun admin secara otomatis.
+*   **Mekanisme Caching**: Statistik dashboard menggunakan *cache key* dinamis: `dashboard.stats.[role].[opd_id]`. Seluruh aksi CRUD pada `VehicleController` telah diupdate untuk melakukan *cache flushing* pada kunci yang tepat.
+*   **Integritas Data**: 
+    *   Database: `onDelete('cascade')` pada relasi `opd_id` di tabel `users`.
+    *   Storage: Eloquent Observer pada model `User` (Event `deleting`) otomatis menghapus file fisik `avatar` saat akun dihapus.
 
 ---
 
-## 3. 🗄️ Skema Database & Relasi Kunci
+## 3. Skema Database Utama
+*   **users**: Penambahan kolom `role` (string), `opd_id` (foreignId - Cascade), dan `avatar` (string - nullable).
+*   **vehicles**: Penambahan kolom `opd_id` (foreignId) dan integrasi Global Scope.
+*   **opds**: Master data instansi yang terhubung 1-to-1 dengan user admin OPD.
 
 ### Tabel `vehicles`
 Menyimpan entitas aset utama dengan arsitektur kolom ternormalisasi:

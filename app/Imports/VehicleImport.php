@@ -84,11 +84,20 @@ class VehicleImport implements ToModel, WithStartRow
         );
 
         // 3. Proses OPD / Instansi (Kolom M / Index 12)
-        $opdName = strtoupper(trim($row[12] ?? 'SEKRETARIAT DAERAH'));
-        $opd = \App\Models\Opd::firstOrCreate(
-            ['nama' => $opdName],
-            ['singkatan' => null, 'alamat' => null]
-        );
+        // SECURITY PATCH: Jika yang import adalah Admin OPD, paksa gunakan OPD miliknya.
+        // Abaikan apa pun yang tertulis di file Excel untuk mencegah polusi Master Data.
+        $user = auth()->user();
+        if ($user && $user->role === \App\Enums\UserRole::OPD) {
+            $opdName = $user->opd->nama;
+            $opd = $user->opd;
+        } else {
+            // Jika Superadmin/Admin, baca dari Excel
+            $opdName = strtoupper(trim($row[12] ?? 'SEKRETARIAT DAERAH'));
+            $opd = \App\Models\Opd::firstOrCreate(
+                ['nama' => $opdName],
+                ['singkatan' => null, 'alamat' => null]
+            );
+        }
 
         // 4. Persiapkan Data untuk Insert/Update
         $tglPerolehan = $this->transformDate($row[5] ?? null);

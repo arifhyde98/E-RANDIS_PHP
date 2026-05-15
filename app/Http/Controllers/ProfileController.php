@@ -1,0 +1,63 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\Password;
+
+/**
+ * Controller untuk Manajemen Profil Pengguna
+ */
+class ProfileController extends Controller
+{
+    /**
+     * Menampilkan halaman profil.
+     */
+    public function index()
+    {
+        return view('profile.index', [
+            'user' => auth()->user()
+        ]);
+    }
+
+    /**
+     * Memperbarui profil pengguna.
+     */
+    public function update(Request $request)
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'password' => ['nullable', 'confirmed', Password::defaults()],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+        ]);
+
+        // Update data dasar
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+
+        // Update password jika diisi
+        if ($request->filled('password')) {
+            $user->password = $validated['password']; // hashed via model cast
+        }
+
+        // Update avatar jika diunggah
+        if ($request->hasFile('avatar')) {
+            // Hapus avatar lama jika ada
+            if ($user->avatar) {
+                Storage::delete($user->avatar);
+            }
+
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = $path;
+        }
+
+        $user->save();
+
+        return redirect()->route('profile.index')->with('success', 'Profil Anda berhasil diperbarui.');
+    }
+}
