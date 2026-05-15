@@ -469,6 +469,11 @@
                     div.textContent = str || '-';
                     return div.innerHTML;
                 };
+
+                const formatRupiah = (num) => {
+                    if (!num) return 'Rp 0';
+                    return 'Rp ' + Number(num).toLocaleString('id-ID');
+                };
                 
                 detailContent.innerHTML = `
                     <div class="row g-4">
@@ -498,6 +503,17 @@
                                 <div class="col-md-4">
                                     <label class="small text-secondary fw-bold text-uppercase" style="font-size: 0.65rem;">Pemegang</label>
                                     <div class="fw-semibold text-dark">${escapeHtml(vehicle.pemegang)}</div>
+                                </div>
+                                <div class="col-md-12 mt-2">
+                                    <div class="p-3 border rounded-3 bg-white d-flex align-items-center">
+                                        <div class="bg-success bg-opacity-10 text-success p-2 rounded-3 me-3">
+                                            <i class="bi bi-cash-stack fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <small class="text-secondary d-block mb-0" style="font-size: 0.7rem;">Nilai Perolehan / Aset</small>
+                                            <h5 class="fw-bold text-navy mb-0">${formatRupiah(vehicle.nilai_perolehan)}</h5>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
