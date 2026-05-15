@@ -94,7 +94,8 @@
 
         <x-slot:thead>
             <tr>
-                <th class="py-3 px-4 border-bottom-0 fw-semibold">No. Polisi</th>
+                <th class="py-3 px-4 border-bottom-0 fw-semibold text-center" style="width: 50px;">No.</th>
+                <th class="py-3 border-bottom-0 fw-semibold">No. Polisi</th>
                 <th class="py-3 border-bottom-0 fw-semibold">Nama Kendaraan</th>
                 <th class="py-3 border-bottom-0 fw-semibold d-none d-md-table-cell">Jenis / Tahun</th>
                 <th class="py-3 border-bottom-0 fw-semibold">Pengguna / OPD</th>
@@ -106,7 +107,10 @@
 
         @foreach($vehicles as $vehicle)
             <tr>
-                <td class="px-4 py-3">
+                <td class="px-4 py-3 text-center fw-medium text-secondary">
+                    {{ ($vehicles->currentPage() - 1) * $vehicles->perPage() + $loop->iteration }}
+                </td>
+                <td class="py-3">
                     <span class="badge bg-light text-dark border border-secondary border-opacity-25 px-3 py-2 fs-6 rounded-3 fw-bold plate-number">{{ $vehicle->no_polisi }}</span>
                 </td>
                 <td class="py-3">

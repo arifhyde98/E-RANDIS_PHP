@@ -55,7 +55,8 @@
 
                 <x-slot:thead>
                     <tr>
-                        <th class="py-3 px-4 border-bottom-0 fw-semibold">Kendaraan</th>
+                        <th class="py-3 px-4 border-bottom-0 fw-semibold text-center" style="width: 50px;">#</th>
+                        <th class="py-3 border-bottom-0 fw-semibold">Kendaraan</th>
                         <th class="py-3 border-bottom-0 fw-semibold">Pengguna / OPD</th>
                         <th class="py-3 border-bottom-0 fw-semibold text-center">Kondisi</th>
                         <th class="py-3 border-bottom-0 fw-semibold text-center">Status</th>
@@ -65,7 +66,8 @@
 
                 @foreach($latestVehicles as $v)
                     <tr>
-                        <td class="px-4 py-3">
+                        <td class="px-4 py-3 text-center fw-medium text-secondary">{{ $loop->iteration }}</td>
+                        <td class="py-3">
                             <div class="fw-bold text-navy plate-number">{{ $v->no_polisi }}</div>
                             <small class="text-secondary">{{ $v->merk }} {{ $v->tipe }}</small>
                         </td>
