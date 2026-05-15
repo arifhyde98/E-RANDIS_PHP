@@ -45,7 +45,8 @@ Menyimpan entitas aset utama dengan arsitektur kolom ternormalisasi:
 - `merk`, `tipe`, `warna`, `no_rangka`, `no_mesin` — Detail fisik aset.
 - `tahun_pembuatan`, `tgl_perolehan`, `nilai_perolehan` — Akuntansi aset.
 - `stnk_ada`, `bpkb_ada` (String: 'Ada' / 'Tidak') — Status kelengkapan dokumen.
-- `status` (String) — Status operasional (Tersedia, Dipinjam, Rusak, Maintenance).
+- `status` (String) — Status operasional (Tersedia, Dipinjam, Nonaktif).
+- `kondisi` (String) — Kondisi fisik kendaraan (Baik, Rusak Ringan, Rusak Berat, Hilang, Dalam Penelusuran).
 - `opd` (String) & `pemegang` (String) — Teks penanggung jawab historis.
 - **Foreign Keys:**
   - `opd_id` (Nullable FK ke `opds.id`, ON DELETE SET NULL)
@@ -168,6 +169,16 @@ Route::resource('vehicles', VehicleController::class)->except(['create', 'edit',
 ### 5. Strategi Caching
 - **Statistik Dashboard:** Menggunakan 1 kueri agregasi kondisional yang di-cache via `cache()->remember('dashboard.stats', 300)` (5 menit).
 - **Pengaturan Global:** Di-cache via `cache()->remember('setting.{key}', 3600)` (1 jam) dengan penghapusan otomatis (`cache()->forget`) saat diperbarui.
+
+### 4. Standar Kode & Enum
+Aplikasi menggunakan Enum (PHP 8.1+) untuk menjaga integritas data:
+- `VehicleStatus`: Mengelola status operasional (Tersedia, Dipinjam, Nonaktif).
+- `VehicleCondition`: Mengelola kondisi fisik, dilengkapi method `fromImport()` untuk normalisasi singkatan Excel (RB, RR, B, dll).
+
+### 5. Logika Smart Import (Normalisasi)
+Sistem melakukan pembersihan data otomatis saat import Excel:
+1. **Penerjemahan Singkatan**: Mengonversi variasi teks mentah (misal: "RB", "RR", "B") menjadi standar "Rusak Berat", "Rusak Ringan", dsb.
+2. **Penentuan Status Otomatis**: Jika kondisi fisik adalah 'Rusak Berat' atau 'Hilang', sistem otomatis mengatur status operasional ke 'Nonaktif'.
 
 ### 6. Standar Dokumentasi Kode (PHPDoc)
 Seluruh kode backend (Models, Controllers, Services, Enums, dll) wajib memiliki dokumentasi **PHPDoc dalam Bahasa Indonesia**.

@@ -45,7 +45,7 @@ class VehicleTemplateExport implements FromArray, WithHeadings, WithStyles
     /**
      * Menentukan struktur header multi-baris untuk template.
      * 
-     * @return array
+     * @return array<int, mixed>
      */
     public function headings(): array
     {
@@ -66,8 +66,8 @@ class VehicleTemplateExport implements FromArray, WithHeadings, WithStyles
                 'Nilai Perolehan',
                 'STNK (Ada/Tidak)',
                 'BPKB (Ada/Tidak)',
-                'Kondisi',
-                'Penggunaan',
+                'Kondisi (B/RR/RB/Hilang)',
+                'Pemegang',
                 'Keterangan',
                 'OPD / DINAS'
             ]

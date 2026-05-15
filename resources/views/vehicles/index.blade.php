@@ -42,16 +42,16 @@
     <!-- OPTIONAL SIDEBAR SUMMARY (Displayed as top cards on smaller screens) -->
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-lg-3">
-            <x-stat-card title="Total Kendaraan" :value="$stats['total']" icon="car-front" gradient="primary" />
+            <x-stat-card title="Kondisi Baik" :value="$stats['baik']" icon="check-circle" gradient="success" subtitle="Aset Layak Pakai" />
         </div>
         <div class="col-sm-6 col-lg-3">
-            <x-stat-card title="Kendaraan Aktif" :value="$stats['available']" icon="check-circle" gradient="success" />
+            <x-stat-card title="Rusak Ringan" :value="$stats['rusak_ringan']" icon="exclamation-triangle" gradient="warning" subtitle="Butuh Maintenance" />
         </div>
         <div class="col-sm-6 col-lg-3">
-            <x-stat-card title="Maintenance" :value="$stats['damaged']" icon="tools" gradient="danger" />
+            <x-stat-card title="Rusak Berat" :value="$stats['rusak_berat']" icon="x-octagon" gradient="danger" subtitle="Tidak Operasional" />
         </div>
         <div class="col-sm-6 col-lg-3">
-            <x-stat-card title="Dipinjam" :value="$stats['borrowed']" icon="key" gradient="warning" />
+            <x-stat-card title="Hilang / TD" :value="$stats['hilang']" icon="question-circle" gradient="secondary" subtitle="Dalam Penelusuran" />
         </div>
     </div>
 
@@ -72,21 +72,21 @@
                 <div class="col-md-3">
                     <select class="form-select form-select-sm shadow-none" name="status">
                         <option value="">Semua Status</option>
-                        <option value="Tersedia" {{ request('status') == 'Tersedia' ? 'selected' : '' }}>Aktif / Tersedia</option>
-                        <option value="Dipinjam" {{ request('status') == 'Dipinjam' ? 'selected' : '' }}>Dipinjam</option>
-                        <option value="Rusak" {{ request('status') == 'Rusak' ? 'selected' : '' }}>Maintenance</option>
+                        @foreach($statuses as $key => $label)
+                            <option value="{{ $key }}" {{ request('status') == $key ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <select class="form-select form-select-sm shadow-none" name="jenis">
-                        <option value="">Semua Jenis</option>
-                        @foreach($vehicleTypes as $type)
-                            <option value="{{ $type->name }}" {{ request('jenis') == $type->name ? 'selected' : '' }}>{{ $type->name }}</option>
+                    <select class="form-select form-select-sm shadow-none" name="kondisi">
+                        <option value="">Semua Kondisi</option>
+                        @foreach($conditions as $key => $label)
+                            <option value="{{ $key }}" {{ request('kondisi') == $key ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium">Terapkan</button>
+                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium">Filter</button>
                     <a href="{{ route('vehicles.index') }}" class="btn btn-light border btn-sm bg-white" title="Reset Filter"><i class="bi bi-arrow-clockwise"></i></a>
                 </div>
             </form>
@@ -97,9 +97,9 @@
                 <th class="py-3 px-4 border-bottom-0 fw-semibold">No. Polisi</th>
                 <th class="py-3 border-bottom-0 fw-semibold">Nama Kendaraan</th>
                 <th class="py-3 border-bottom-0 fw-semibold d-none d-md-table-cell">Jenis / Tahun</th>
-                <th class="py-3 border-bottom-0 fw-semibold">Pengguna</th>
+                <th class="py-3 border-bottom-0 fw-semibold">Pengguna / OPD</th>
+                <th class="py-3 border-bottom-0 fw-semibold text-center">Kondisi Fisik</th>
                 <th class="py-3 border-bottom-0 fw-semibold text-center">Status</th>
-                <th class="py-3 border-bottom-0 fw-semibold d-none d-md-table-cell">Terakhir Aktif</th>
                 <th class="py-3 px-4 border-bottom-0 fw-semibold text-center">Aksi</th>
             </tr>
         </x-slot:thead>
@@ -121,13 +121,13 @@
                 </td>
                 <td class="py-3">
                     <div class="fw-medium text-dark"><i class="bi bi-person-fill text-secondary me-1"></i> {{ $vehicle->pemegang }}</div>
-                    <div class="small text-secondary">{{ $vehicle->opd }}</div>
+                    <div class="small text-secondary">{{ Str::limit($vehicle->opd, 30) }}</div>
+                </td>
+                <td class="text-center">
+                    <x-condition-badge :kondisi="$vehicle->kondisi" />
                 </td>
                 <td class="text-center">
                     <x-status-badge :status="$vehicle->status" />
-                </td>
-                <td class="py-3 text-secondary small d-none d-md-table-cell">
-                    {{ $vehicle->updated_at ? $vehicle->updated_at->diffForHumans() : '-' }}
                 </td>
                 <td class="px-4 py-3 text-center">
                     <div class="d-flex justify-content-center gap-2">
@@ -260,9 +260,17 @@
                     <label class="form-label fw-semibold small text-uppercase">Pemegang <span class="text-danger">*</span></label>
                     <input type="text" name="pemegang" class="form-control" placeholder="Nama Pemegang" required>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold small text-uppercase">Status <span class="text-danger">*</span></label>
-                    <select name="status" class="form-select" required>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small text-uppercase">Kondisi Fisik <span class="text-danger">*</span></label>
+                    <select name="kondisi" class="form-select shadow-none" required>
+                        @foreach($conditions as $key => $label)
+                            <option value="{{ $key }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small text-uppercase">Status Operasional <span class="text-danger">*</span></label>
+                    <select name="status" class="form-select shadow-none" required>
                         @foreach($statuses as $key => $label)
                             <option value="{{ $key }}">{{ $label }}</option>
                         @endforeach
@@ -368,9 +376,17 @@
                     <label class="form-label fw-semibold small text-uppercase">Pemegang <span class="text-danger">*</span></label>
                     <input type="text" name="pemegang" id="edit_pemegang" class="form-control" required>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold small text-uppercase">Status <span class="text-danger">*</span></label>
-                    <select name="status" id="edit_status" class="form-select" required>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small text-uppercase">Kondisi Fisik <span class="text-danger">*</span></label>
+                    <select name="kondisi" id="edit_kondisi" class="form-select shadow-none" required>
+                        @foreach($conditions as $key => $label)
+                            <option value="{{ $key }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small text-uppercase">Status Operasional <span class="text-danger">*</span></label>
+                    <select name="status" id="edit_status" class="form-select shadow-none" required>
                         @foreach($statuses as $key => $label)
                             <option value="{{ $key }}">{{ $label }}</option>
                         @endforeach
@@ -507,7 +523,8 @@
                 document.getElementById('edit_opd_id').value = vehicle.opd_id || '';
                 document.getElementById('edit_opd_text').value = vehicle.opd || '';
                 document.getElementById('edit_pemegang').value = vehicle.pemegang || '';
-                document.getElementById('edit_status').value = vehicle.status || '';
+                document.getElementById('edit_kondisi').value = vehicle.kondisi || 'Baik';
+                document.getElementById('edit_status').value = vehicle.status || 'Tersedia';
                 document.getElementById('edit_tahun_pembuatan').value = vehicle.tahun_pembuatan || '';
                 document.getElementById('edit_warna').value = vehicle.warna || '';
                 document.getElementById('edit_stnk_ada').value = vehicle.stnk_ada || 'Ada';

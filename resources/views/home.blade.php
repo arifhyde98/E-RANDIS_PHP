@@ -26,13 +26,13 @@
             <x-stat-card title="Total Kendaraan" :value="$stats['total']" icon="car-front-fill" gradient="primary" subtitle="Seluruh Aset" />
         </div>
         <div class="col-sm-6 col-lg-3">
-            <x-stat-card title="Tersedia / Aktif" :value="$stats['available']" icon="check-circle-fill" gradient="success" subtitle="Siap digunakan" />
+            <x-stat-card title="Kondisi Baik" :value="$stats['baik']" icon="check-circle-fill" gradient="success" subtitle="Aset Layak Pakai" />
         </div>
         <div class="col-sm-6 col-lg-3">
-            <x-stat-card title="Dipinjam" :value="$stats['borrowed']" icon="geo-alt-fill" gradient="warning" subtitle="Sedang beroperasi" />
+            <x-stat-card title="Rusak Ringan" :value="$stats['rusak_ringan']" icon="exclamation-triangle-fill" gradient="warning" subtitle="Butuh Maintenance" />
         </div>
         <div class="col-sm-6 col-lg-3">
-            <x-stat-card title="Maintenance" :value="$stats['damaged']" icon="tools" gradient="danger" subtitle="Dalam perbaikan" />
+            <x-stat-card title="Rusak Berat" :value="$stats['rusak_berat']" icon="x-octagon-fill" gradient="danger" subtitle="Tidak Operasional" />
         </div>
     </div>
 
@@ -57,7 +57,7 @@
                     <tr>
                         <th class="py-3 px-4 border-bottom-0 fw-semibold">Kendaraan</th>
                         <th class="py-3 border-bottom-0 fw-semibold">Pengguna / OPD</th>
-                        <th class="py-3 border-bottom-0 fw-semibold">Waktu Update</th>
+                        <th class="py-3 border-bottom-0 fw-semibold text-center">Kondisi</th>
                         <th class="py-3 border-bottom-0 fw-semibold text-center">Status</th>
                         <th class="py-3 px-4 border-bottom-0 fw-semibold text-end">Aksi</th>
                     </tr>
@@ -73,8 +73,8 @@
                             <div class="fw-medium text-dark"><i class="bi bi-person-fill text-secondary me-1"></i> {{ $v->pemegang }}</div>
                             <small class="text-secondary">{{ Str::limit($v->opd, 30) }}</small>
                         </td>
-                        <td class="py-3 text-secondary small">
-                            {{ $v->updated_at ? $v->updated_at->diffForHumans() : 'Baru saja' }}
+                        <td class="py-3 text-center">
+                            <x-condition-badge :kondisi="$v->kondisi" />
                         </td>
                         <td class="py-3 text-center">
                             <x-status-badge :status="$v->status" />
@@ -113,10 +113,17 @@
                     </li>
                     <li class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center border-bottom border-light">
                         <div>
-                            <div class="fw-semibold text-dark mb-1">Maintenance Hari Ini</div>
-                            <small class="text-secondary d-block">Terjadwal untuk perbaikan rutin</small>
+                            <div class="fw-semibold text-dark mb-1">Rusak Ringan</div>
+                            <small class="text-secondary d-block">Butuh maintenance rutin</small>
                         </div>
-                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2">{{ $stats['damaged'] }} Unit</span>
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2">{{ $stats['rusak_ringan'] }} Unit</span>
+                    </li>
+                    <li class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center border-bottom border-light">
+                        <div>
+                            <div class="fw-semibold text-danger mb-1">Rusak Berat / Hilang</div>
+                            <small class="text-secondary d-block">Aset tidak operasional</small>
+                        </div>
+                        <span class="badge bg-danger text-white rounded-pill px-3 py-2">{{ $stats['rusak_berat'] + $stats['hilang'] }} Unit</span>
                     </li>
                     <li class="list-group-item px-0 py-3 pb-0 d-flex justify-content-between align-items-center border-0">
                         <div>

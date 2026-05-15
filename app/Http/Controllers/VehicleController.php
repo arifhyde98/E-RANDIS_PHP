@@ -49,6 +49,7 @@ class VehicleController extends Controller
     {
         $query = Vehicle::with(['user', 'vehicleType'])->latest();
 
+        // Filter Pencarian Global
         if ($request->filled('q')) {
             $search = strtoupper(preg_replace('/\s+/', ' ', trim($request->q)));
             $query->where(function($q) use ($search) {
@@ -59,17 +60,17 @@ class VehicleController extends Controller
             });
         }
 
+        // Filter Berdasarkan Status Operasional
         if ($request->filled('status')) {
-            $status = $request->status;
-            if ($status === 'Rusak') {
-                $query->whereIn('status', ['Rusak', 'Rusak Berat', 'Rusak Ringan', 'Maintenance', 'maintenance', 'rusak']);
-            } elseif ($status === 'Tersedia') {
-                $query->whereIn('status', ['Tersedia', 'Aktif', 'aktif']);
-            } else {
-                $query->where('status', $status);
-            }
+            $query->where('status', $request->status);
         }
 
+        // Filter Berdasarkan Kondisi Fisik
+        if ($request->filled('kondisi')) {
+            $query->where('kondisi', $request->kondisi);
+        }
+
+        // Filter Berdasarkan Jenis Kendaraan
         if ($request->filled('jenis')) {
             $query->whereHas('vehicleType', function($q) use ($request) {
                 $q->where('name', $request->jenis);
@@ -82,8 +83,9 @@ class VehicleController extends Controller
         $stats = $this->vehicleService->getDashboardStats();
         $opds = Opd::orderBy('nama')->get();
         $statuses = Vehicle::getStatuses();
+        $conditions = Vehicle::getConditions();
 
-        return view('vehicles.index', compact('vehicles', 'stats', 'vehicleTypes', 'opds', 'statuses'));
+        return view('vehicles.index', compact('vehicles', 'stats', 'vehicleTypes', 'opds', 'statuses', 'conditions'));
     }
 
     /**
@@ -125,7 +127,8 @@ class VehicleController extends Controller
                 'nama' => trim($vehicle->merk.' '.$vehicle->tipe),
                 'opd' => $vehicle->opd,
                 'pemegang' => $vehicle->pemegang,
-                'status' => \App\Models\Vehicle::getStatuses()[$vehicle->status] ?? $vehicle->status,
+                'kondisi' => \App\Enums\VehicleCondition::tryFrom($vehicle->kondisi)?->label() ?? $vehicle->kondisi,
+                'status' => \App\Enums\VehicleStatus::tryFrom($vehicle->status)?->label() ?? $vehicle->status,
             ] : null,
         ]);
     }
@@ -140,8 +143,9 @@ class VehicleController extends Controller
         $users = User::all();
         $vehicleTypes = VehicleType::orderBy('name')->get();
         $statuses = Vehicle::getStatuses();
+        $conditions = Vehicle::getConditions();
         $opds = Opd::orderBy('nama')->get();
-        return view('vehicles.create', compact('users', 'vehicleTypes', 'statuses', 'opds'));
+        return view('vehicles.create', compact('users', 'vehicleTypes', 'statuses', 'conditions', 'opds'));
     }
 
     /**
@@ -158,6 +162,7 @@ class VehicleController extends Controller
         $validated['no_polisi'] = $this->vehicleService->formatPlateNumber($validated['no_polisi']);
 
         Vehicle::create($validated);
+        cache()->forget('dashboard.stats');
 
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil ditambahkan.');
     }
@@ -185,8 +190,9 @@ class VehicleController extends Controller
         $users = User::all();
         $vehicleTypes = VehicleType::orderBy('name')->get();
         $statuses = Vehicle::getStatuses();
+        $conditions = Vehicle::getConditions();
         $opds = Opd::orderBy('nama')->get();
-        return view('vehicles.edit', compact('vehicle', 'users', 'vehicleTypes', 'statuses', 'opds'));
+        return view('vehicles.edit', compact('vehicle', 'users', 'vehicleTypes', 'statuses', 'conditions', 'opds'));
     }
 
     /**
@@ -204,6 +210,7 @@ class VehicleController extends Controller
         $validated['no_polisi'] = $this->vehicleService->formatPlateNumber($validated['no_polisi']);
 
         $vehicle->update($validated);
+        cache()->forget('dashboard.stats');
 
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil diperbarui.');
     }
@@ -217,6 +224,7 @@ class VehicleController extends Controller
     public function destroy(Vehicle $vehicle): RedirectResponse
     {
         $vehicle->delete();
+        cache()->forget('dashboard.stats');
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil dihapus.');
     }
 
@@ -228,6 +236,7 @@ class VehicleController extends Controller
     public function truncate(): RedirectResponse
     {
         Vehicle::truncate();
+        cache()->forget('dashboard.stats');
         return redirect()->route('vehicles.index')->with('success', 'Seluruh data kendaraan berhasil dikosongkan.');
     }
 
@@ -265,6 +274,7 @@ class VehicleController extends Controller
 
         try {
             Excel::import(new VehicleImport, $request->file('file'));
+            cache()->forget('dashboard.stats');
             return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil diimport.');
         } catch (\Exception $e) {
             return redirect()->route('vehicles.index')->with('error', 'Gagal mengimport data: ' . $e->getMessage());

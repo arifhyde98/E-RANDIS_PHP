@@ -37,7 +37,7 @@ class StoreVehicleRequest extends FormRequest
     /**
      * Mendapatkan aturan validasi yang berlaku untuk request ini.
      *
-     * @return array
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -58,7 +58,8 @@ class StoreVehicleRequest extends FormRequest
             'tgl_stnk' => 'nullable|date',
             'opd' => 'required',
             'pemegang' => 'required',
-            'status' => 'required',
+            'status' => 'required|in:Tersedia,Dipinjam,Nonaktif',
+            'kondisi' => 'required|in:Baik,Rusak Ringan,Rusak Berat,Hilang,Dalam Penelusuran',
             'keterangan' => 'nullable',
             'user_id' => 'nullable|exists:users,id',
         ];

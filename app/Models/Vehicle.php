@@ -6,68 +6,53 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Enums\VehicleStatus;
+use App\Enums\VehicleCondition;
 
 /**
- * Model untuk Kendaraan
+ * Model untuk Kendaraan Dinas.
  * 
- * @property int $id
- * @property string $no_polisi Nomor Polisi Kendaraan (Unik)
+ * @property int $id ID Utama
+ * @property string $no_polisi Nomor Polisi / Plat
  * @property string $merk Merk Kendaraan
  * @property string $tipe Tipe/Model Kendaraan
- * @property string $jenis Jenis Kendaraan (Mobil, Motor, dll)
- * @property int|null $vehicle_type_id ID relasi ke tipe kendaraan
- * @property int|null $tahun_pembuatan Tahun pembuatan kendaraan
- * @property string|null $tgl_perolehan Tanggal perolehan kendaraan
- * @property float|null $nilai_perolehan Nilai/Harga perolehan
- * @property string $stnk_ada Status keberadaan STNK
- * @property string $bpkb_ada Status keberadaan BPKB
- * @property string|null $no_rangka Nomor rangka kendaraan
- * @property string|null $no_mesin Nomor mesin kendaraan
- * @property string|null $warna Warna kendaraan
- * @property string|null $tgl_stnk Tanggal masa berlaku STNK
- * @property string $opd Nama OPD (denormalisasi)
- * @property int|null $opd_id ID relasi ke tabel OPD
- * @property string $pemegang Nama pemegang/pengguna kendaraan
- * @property string $status Status operasional (Tersedia, Rusak, dll)
- * @property string|null $keterangan Catatan tambahan
- * @property int|null $user_id ID user pengelola
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * 
- * @property-read \App\Models\User|null $user
- * @property-read \App\Models\VehicleType|null $vehicleType
- * @property-read \App\Models\Opd|null $opdRelation
+ * @property string $jenis Jenis Kendaraan
+ * @property int|null $vehicle_type_id ID Tipe Kendaraan (Relasi)
+ * @property int|null $tahun_pembuatan Tahun Produksi
+ * @property string|null $tgl_perolehan Tanggal Pengadaan
+ * @property float|null $nilai_perolehan Harga Perolehan
+ * @property string $stnk_ada Ketersediaan STNK
+ * @property string $bpkb_ada Ketersediaan BPKB
+ * @property string|null $no_rangka Nomor Rangka
+ * @property string|null $no_mesin Nomor Mesin
+ * @property string|null $warna Warna Kendaraan
+ * @property string|null $tgl_stnk Masa Berlaku STNK
+ * @property string $opd Nama OPD Penanggung Jawab
+ * @property int|null $opd_id ID OPD (Relasi)
+ * @property string $pemegang Nama Pemegang Kendaraan
+ * @property string $status Status Operasional
+ * @property string $kondisi Kondisi Fisik Kendaraan
+ * @property string|null $keterangan Catatan Tambahan
+ * @property int|null $user_id ID Admin Pengelola
  */
 class Vehicle extends Model
 {
-    /** @use HasFactory<\Database\Factories\VehicleFactory> */
     use HasFactory;
 
+    /**
+     * Kolom yang dapat diisi secara massal.
+     * 
+     * @var array<int, string>
+     */
     protected $fillable = [
-        'no_polisi',
-        'merk',
-        'tipe',
-        'jenis',
-        'vehicle_type_id',
-        'tahun_pembuatan',
-        'tgl_perolehan',
-        'nilai_perolehan',
-        'stnk_ada',
-        'bpkb_ada',
-        'no_rangka',
-        'no_mesin',
-        'warna',
-        'tgl_stnk',
-        'opd',
-        'opd_id',
-        'pemegang',
-        'status',
-        'keterangan',
-        'user_id',
+        'no_polisi', 'merk', 'tipe', 'jenis', 'vehicle_type_id', 
+        'tahun_pembuatan', 'tgl_perolehan', 'nilai_perolehan', 
+        'stnk_ada', 'bpkb_ada', 'no_rangka', 'no_mesin', 'warna', 
+        'tgl_stnk', 'opd', 'opd_id', 'pemegang', 'status', 'kondisi', 
+        'keterangan', 'user_id',
     ];
 
     /**
-     * Mendapatkan user yang memiliki/mengelola kendaraan ini.
+     * Relasi ke model User (Admin).
      * 
      * @return BelongsTo
      */
@@ -77,7 +62,7 @@ class Vehicle extends Model
     }
 
     /**
-     * Mendapatkan tipe kendaraan.
+     * Relasi ke model VehicleType (Tipe Kendaraan).
      * 
      * @return BelongsTo
      */
@@ -87,17 +72,7 @@ class Vehicle extends Model
     }
 
     /**
-     * Mendapatkan data OPD (Organisasi Perangkat Daerah) pemilik kendaraan.
-     * 
-     * @return BelongsTo
-     */
-    public function opdRelation(): BelongsTo
-    {
-        return $this->belongsTo(\App\Models\Opd::class, 'opd_id');
-    }
-
-    /**
-     * Mendapatkan daftar label status kendaraan dari Enum.
+     * Mendapatkan daftar status operasional yang tersedia.
      * 
      * @return array<string, string>
      */
@@ -105,5 +80,14 @@ class Vehicle extends Model
     {
         return VehicleStatus::labels();
     }
-}
 
+    /**
+     * Mendapatkan daftar kondisi fisik yang tersedia.
+     * 
+     * @return array<string, string>
+     */
+    public static function getConditions(): array
+    {
+        return VehicleCondition::labels();
+    }
+}

@@ -39,7 +39,7 @@ class UpdateVehicleRequest extends FormRequest
      * 
      * Memastikan keunikan nomor polisi dikecualikan untuk ID kendaraan yang sedang diperbarui.
      *
-     * @return array
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -62,7 +62,8 @@ class UpdateVehicleRequest extends FormRequest
             'tgl_stnk' => 'nullable|date',
             'opd' => 'required',
             'pemegang' => 'required',
-            'status' => 'required',
+            'status' => 'required|in:Tersedia,Dipinjam,Nonaktif',
+            'kondisi' => 'required|in:Baik,Rusak Ringan,Rusak Berat,Hilang,Dalam Penelusuran',
             'keterangan' => 'nullable',
             'user_id' => 'nullable|exists:users,id',
         ];

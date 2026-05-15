@@ -18,24 +18,28 @@ class VehicleService
      * 
      * Data di-cache selama 5 menit untuk performa optimal.
      * 
-     * @return array{total: int, available: int, damaged: int, borrowed: int, late: int}
+     * @return array<string, int>
      */
     public function getDashboardStats(): array
     {
         return cache()->remember('dashboard.stats', 300, function () {
             $result = DB::table('vehicles')
                 ->selectRaw('COUNT(*) as total')
-                ->selectRaw("SUM(CASE WHEN status IN ('Tersedia', 'Aktif', 'aktif') THEN 1 ELSE 0 END) as available")
-                ->selectRaw("SUM(CASE WHEN status IN ('Rusak', 'Rusak Berat', 'Rusak Ringan', 'Maintenance', 'maintenance', 'rusak') THEN 1 ELSE 0 END) as damaged")
-                ->selectRaw("SUM(CASE WHEN status IN ('Dipinjam', 'dipinjam') THEN 1 ELSE 0 END) as borrowed")
+                ->selectRaw("SUM(CASE WHEN kondisi = 'Baik' THEN 1 ELSE 0 END) as baik")
+                ->selectRaw("SUM(CASE WHEN kondisi = 'Rusak Ringan' THEN 1 ELSE 0 END) as rusak_ringan")
+                ->selectRaw("SUM(CASE WHEN kondisi = 'Rusak Berat' THEN 1 ELSE 0 END) as rusak_berat")
+                ->selectRaw("SUM(CASE WHEN kondisi IN ('Hilang', 'Dalam Penelusuran') THEN 1 ELSE 0 END) as hilang")
+                ->selectRaw("SUM(CASE WHEN status = 'Dipinjam' THEN 1 ELSE 0 END) as dipinjam")
                 ->first();
 
             return [
                 'total' => (int) ($result->total ?? 0),
-                'available' => (int) ($result->available ?? 0),
-                'damaged' => (int) ($result->damaged ?? 0),
-                'borrowed' => (int) ($result->borrowed ?? 0),
-                'late' => 0,
+                'baik' => (int) ($result->baik ?? 0),
+                'available' => (int) ($result->baik ?? 0), // Alias untuk kompatibilitas jika diperlukan
+                'rusak_ringan' => (int) ($result->rusak_ringan ?? 0),
+                'rusak_berat' => (int) ($result->rusak_berat ?? 0),
+                'hilang' => (int) ($result->hilang ?? 0),
+                'borrowed' => (int) ($result->dipinjam ?? 0),
             ];
         });
     }

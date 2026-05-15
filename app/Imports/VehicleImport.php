@@ -94,6 +94,10 @@ class VehicleImport implements ToModel, WithStartRow
         $tglPerolehan = $this->transformDate($row[5] ?? null);
         $tahunPembuatan = $tglPerolehan ? \Carbon\Carbon::parse($tglPerolehan)->year : null;
 
+        // Normalisasi Kondisi dan Status (Smart Mapping)
+        $kondisi = \App\Enums\VehicleCondition::fromImport($row[9] ?? null);
+        $status = $kondisi->toDefaultStatus();
+
         $data = [
             'jenis'           => $jenisName,
             'vehicle_type_id' => $vehicleType->id,
@@ -107,7 +111,8 @@ class VehicleImport implements ToModel, WithStartRow
             'nilai_perolehan' => $this->transformCurrency($row[6] ?? 0),
             'stnk_ada'        => $row[7] ?? 'Tidak',
             'bpkb_ada'        => $row[8] ?? 'Tidak',
-            'status'          => (isset($row[9]) && (strtoupper($row[9]) == 'BAIK' || strtoupper($row[9]) == 'RUSAK RINGAN')) ? 'Tersedia' : ($row[9] ?? 'Tersedia'),
+            'kondisi'         => $kondisi->value,
+            'status'          => $status->value,
             'pemegang'        => $row[10] ?? '-',
             'keterangan'      => $row[11] ?? null,
             'opd'             => $opdName,

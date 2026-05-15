@@ -28,7 +28,7 @@ class VehicleExport implements FromCollection, WithHeadings, WithMapping
     /**
      * Menentukan header (judul kolom) untuk file Excel.
      * 
-     * @return array
+     * @return array<int, string>
      */
     public function headings(): array
     {
@@ -42,7 +42,8 @@ class VehicleExport implements FromCollection, WithHeadings, WithMapping
             'Nilai Perolehan',
             'STNK',
             'BPKB',
-            'Kondisi',
+            'Kondisi Fisik',
+            'Status Operasional',
             'Pemegang',
             'Keterangan',
             'OPD'
@@ -53,7 +54,7 @@ class VehicleExport implements FromCollection, WithHeadings, WithMapping
      * Memetakan setiap baris model Vehicle menjadi array baris Excel.
      * 
      * @param Vehicle $vehicle
-     * @return array
+     * @return array<int, mixed>
      */
     public function map($vehicle): array
     {
@@ -67,6 +68,7 @@ class VehicleExport implements FromCollection, WithHeadings, WithMapping
             $vehicle->nilai_perolehan,
             $vehicle->stnk_ada,
             $vehicle->bpkb_ada,
+            $vehicle->kondisi,
             $vehicle->status,
             $vehicle->pemegang,
             $vehicle->keterangan,

@@ -3,49 +3,46 @@
 namespace App\Enums;
 
 /**
- * Enum untuk Status Kendaraan
+ * Enum untuk Status Operasional Kendaraan.
  * 
- * Merepresentasikan berbagai status operasional yang dapat dimiliki oleh kendaraan.
+ * Mengatur ketersediaan kendaraan untuk dipinjam atau digunakan.
  */
 enum VehicleStatus: string
 {
     case TERSEDIA = 'Tersedia';
     case DIPINJAM = 'Dipinjam';
-    case RUSAK = 'Rusak';
     case NONAKTIF = 'Nonaktif';
 
     /**
-     * Mendapatkan label yang mudah dibaca untuk status tersebut.
+     * Mendapatkan label tampilan status.
      * 
      * @return string
      */
     public function label(): string
     {
-        return match($this) {
-            self::TERSEDIA => 'Aktif / Tersedia',
-            self::DIPINJAM => 'Sedang Dipinjam',
-            self::RUSAK => 'Maintenance / Rusak',
-            self::NONAKTIF => 'Nonaktif / Dilelang',
+        return match ($this) {
+            self::TERSEDIA => 'Tersedia',
+            self::DIPINJAM => 'Dipinjam',
+            self::NONAKTIF => 'Nonaktif',
         };
     }
 
     /**
-     * Mendapatkan class warna latar belakang Bootstrap untuk status tersebut.
+     * Mendapatkan class CSS warna untuk badge status.
      * 
      * @return string
      */
     public function colorClass(): string
     {
-        return match($this) {
+        return match ($this) {
             self::TERSEDIA => 'bg-success',
-            self::DIPINJAM => 'bg-warning',
-            self::RUSAK => 'bg-danger',
+            self::DIPINJAM => 'bg-info',
             self::NONAKTIF => 'bg-secondary',
         };
     }
 
     /**
-     * Mendapatkan semua label status sebagai array asosiatif.
+     * Mendapatkan semua label status untuk dropdown.
      * 
      * @return array<string, string>
      */
@@ -57,4 +54,3 @@ enum VehicleStatus: string
         }, []);
     }
 }
-
