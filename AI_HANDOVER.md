@@ -166,9 +166,10 @@ Karena operasi menggunakan antarmuka *Modal*, rute halaman formulir tradisional 
 Route::resource('vehicles', VehicleController::class)->except(['create', 'edit', 'show']);
 ```
 
-### 5. Strategi Caching
-- **Statistik Dashboard:** Menggunakan 1 kueri agregasi kondisional yang di-cache via `cache()->remember('dashboard.stats', 300)` (5 menit).
-- **Pengaturan Global:** Di-cache via `cache()->remember('setting.{key}', 3600)` (1 jam) dengan penghapusan otomatis (`cache()->forget`) saat diperbarui.
+### 3. Strategi Caching
+- **Statistik Dashboard**: Menggunakan 1 kueri agregasi kondisional yang di-cache via `cache()->remember('dashboard.stats', 300)` (5 menit).
+- **Cache Invalidation**: Cache wajib dihapus (`cache()->forget('dashboard.stats')`) setiap kali terjadi operasi **Store, Update, Destroy, Import,** atau **Truncate** pada data kendaraan.
+- **Pengaturan Global**: Di-cache via `cache()->remember('setting.{key}', 3600)` (1 jam) dengan penghapusan otomatis (`cache()->forget`) saat data diperbarui.
 
 ### 4. Standar Kode & Enum
 Aplikasi menggunakan Enum (PHP 8.1+) untuk menjaga integritas data:
@@ -180,7 +181,14 @@ Sistem melakukan pembersihan data otomatis saat import Excel:
 1. **Penerjemahan Singkatan**: Mengonversi variasi teks mentah (misal: "RB", "RR", "B") menjadi standar "Rusak Berat", "Rusak Ringan", dsb.
 2. **Penentuan Status Otomatis**: Jika kondisi fisik adalah 'Rusak Berat' atau 'Hilang', sistem otomatis mengatur status operasional ke 'Nonaktif'.
 
-### 6. Standar Dokumentasi Kode (PHPDoc)
+### 6. Standar Tampilan & UI
+- **Penomoran Tabel**: Menggunakan `$loop->iteration` untuk nomor urut. Pada tabel paginasi, nomor dikalikan dengan posisi halaman agar tetap berkelanjutan.
+- **Format Akuntansi**: Seluruh tampilan mata uang (seperti `nilai_perolehan`) wajib menggunakan format titik ribuan (Contoh: Rp 150.000.000). 
+  - Di Blade: `number_format($val, 0, ',', '.')`.
+  - Di JavaScript (Modal): `.toLocaleString('id-ID')`.
+- **Komponen Reusable**: Menggunakan `x-modal` sebagai shell modal, `x-stat-card` untuk kartu statistik, dan `x-condition-badge` untuk label kondisi.
+
+### 7. Standar Dokumentasi Kode (PHPDoc)
 Seluruh kode backend (Models, Controllers, Services, Enums, dll) wajib memiliki dokumentasi **PHPDoc dalam Bahasa Indonesia**.
 - **Kelas/Enum:** Berikan penjelasan singkat mengenai tujuan dan fungsi utama kelas tersebut.
 - **Properti Model:** Gunakan anotasi `@property` untuk mendefinisikan kolom database agar *auto-complete* pada editor berfungsi optimal.
