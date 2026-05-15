@@ -138,37 +138,77 @@
                 </ul>
             </div>
 
-            <!-- RIGHT PANEL OPTIONAL: Aktivitas Terbaru -->
+            <!-- RIGHT PANEL: Aktivitas Terbaru -->
             <div class="admin-card p-4 flex-grow-1">
-                <h6 class="fw-bold text-navy mb-4"><i class="bi bi-activity text-primary me-2"></i> Aktivitas Terbaru</h6>
-                
-                <div class="position-relative border-start border-2 border-light ms-3 ps-4 pb-1">
-                    
-                    <div class="position-relative mb-4">
-                        <span class="position-absolute top-0 start-0 translate-middle bg-info border border-white border-3 rounded-circle" style="width: 16px; height: 16px; margin-left: -25px;"></span>
-                        <div class="fw-medium text-dark small">Kendaraan Dipinjam</div>
-                        <div class="text-secondary mb-1" style="font-size: 0.8rem;">B 1234 XY oleh Dinas Kesehatan</div>
-                        <small class="text-muted" style="font-size: 0.7rem;">10 menit yang lalu</small>
-                    </div>
-
-                    <div class="position-relative mb-4">
-                        <span class="position-absolute top-0 start-0 translate-middle bg-success border border-white border-3 rounded-circle" style="width: 16px; height: 16px; margin-left: -25px;"></span>
-                        <div class="fw-medium text-dark small">Maintenance Selesai</div>
-                        <div class="text-secondary mb-1" style="font-size: 0.8rem;">DD 9991 AA siap digunakan</div>
-                        <small class="text-muted" style="font-size: 0.7rem;">2 jam yang lalu</small>
-                    </div>
-
-                    <div class="position-relative">
-                        <span class="position-absolute top-0 start-0 translate-middle bg-primary border border-white border-3 rounded-circle" style="width: 16px; height: 16px; margin-left: -25px;"></span>
-                        <div class="fw-medium text-dark small">Pengguna Baru Ditambahkan</div>
-                        <div class="text-secondary mb-1" style="font-size: 0.8rem;">Akun Admin aktif</div>
-                        <small class="text-muted" style="font-size: 0.7rem;">Baru Saja</small>
-                    </div>
-
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h6 class="fw-bold text-navy mb-0"><i class="bi bi-activity text-primary me-2"></i> Aktivitas Terbaru</h6>
+                    @if(!$activities->isEmpty())
+                        <form action="{{ route('activities.clear') }}" method="POST" class="clear-activities-confirm">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-link btn-sm text-danger text-decoration-none p-0 fw-semibold" style="font-size: 0.7rem;">
+                                <i class="bi bi-trash3 me-1"></i> Bersihkan
+                            </button>
+                        </form>
+                    @endif
                 </div>
+                
+                @if($activities->isEmpty())
+                    <div class="text-center py-5">
+                        <i class="bi bi-journal-text fs-1 text-light"></i>
+                        <p class="text-secondary small mt-2">Belum ada riwayat aktivitas</p>
+                    </div>
+                @else
+                    <div class="position-relative border-start border-2 border-light ms-3 ps-4 pb-1">
+                        @foreach($activities as $activity)
+                            <div class="position-relative mb-4">
+                                @php
+                                    $dotClass = match($activity->type) {
+                                        'success' => 'bg-success',
+                                        'danger' => 'bg-danger',
+                                        'warning' => 'bg-warning',
+                                        default => 'bg-info',
+                                    };
+                                @endphp
+                                <span class="position-absolute top-0 start-0 translate-middle {{ $dotClass }} border border-white border-3 rounded-circle" style="width: 16px; height: 16px; margin-left: -25px;"></span>
+                                <div class="fw-medium text-dark small">{{ $activity->description }}</div>
+                                <div class="text-secondary mb-1" style="font-size: 0.8rem;">
+                                    Oleh: <span class="fw-semibold">{{ $activity->user->name ?? 'Sistem' }}</span>
+                                </div>
+                                <small class="text-muted" style="font-size: 0.7rem;">{{ $activity->created_at->diffForHumans() }}</small>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
 
         </div>
     </div>
 </div>
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const clearForm = document.querySelector('.clear-activities-confirm');
+        if (clearForm) {
+            clearForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Bersihkan Riwayat?',
+                    text: "Seluruh catatan aktivitas akan dihapus permanen.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Ya, Bersihkan',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.submit();
+                    }
+                });
+            });
+        }
+    });
+</script>
+@endpush
 @endsection

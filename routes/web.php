@@ -33,6 +33,9 @@ Route::middleware('auth')->group(function () {
         Route::resource('vehicle-types', \App\Http\Controllers\VehicleTypeController::class)->except(['create', 'edit', 'show']);
         Route::delete('opds/truncate', [\App\Http\Controllers\OpdController::class, 'truncate'])->name('opds.truncate');
         Route::resource('opds', \App\Http\Controllers\OpdController::class)->except(['create', 'edit', 'show']);
+        
+        // Activity Management
+        Route::delete('activities/clear', [\App\Http\Controllers\ActivityController::class, 'clear'])->name('activities.clear');
     });
 
     // Settings & User Management (Khusus Superadmin)

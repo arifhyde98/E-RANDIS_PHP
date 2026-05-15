@@ -57,6 +57,14 @@ class Vehicle extends Model
                 }
             }
         });
+
+        static::created(function ($vehicle) {
+            \App\Models\Activity::log("Menambahkan kendaraan baru: {$vehicle->no_polisi} ({$vehicle->merk})", 'success');
+        });
+
+        static::deleted(function ($vehicle) {
+            \App\Models\Activity::log("Menghapus data kendaraan: {$vehicle->no_polisi}", 'danger');
+        });
     }
 
     /**

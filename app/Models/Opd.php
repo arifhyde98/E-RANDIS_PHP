@@ -39,6 +39,12 @@ class Opd extends Model
                     'password' => $result['password']
                 ]);
             }
+
+            \App\Models\Activity::log("Menambahkan Master Data OPD: {$opd->nama}", 'success');
+        });
+
+        static::deleted(function ($opd) {
+            \App\Models\Activity::log("Menghapus Master Data OPD: {$opd->nama}", 'danger');
         });
     }
 

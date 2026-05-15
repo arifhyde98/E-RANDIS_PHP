@@ -14,7 +14,7 @@
             <div class="fw-bold fs-5 lh-1 text-white">E-RANDIS</div>
             <small class="text-white-50 d-block mt-1" style="font-size: 0.65rem; line-height: 1.2;">
                 @if(auth()->user()->role === \App\Enums\UserRole::OPD)
-                    {{ auth()->user()->opd->singkatan ?: auth()->user()->opd->nama }}
+                    {{ auth()->user()->opd?->singkatan ?: auth()->user()->opd?->nama ?: 'Instansi Tidak Ditemukan' }}
                 @else
                     {{ auth()->user()->role->label() }}
                 @endif

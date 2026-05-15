@@ -22,11 +22,13 @@ Dokumen ini merupakan sumber kebenaran tunggal (*Single Source of Truth*) mengen
 
 ## 2. Arsitektur & Keamanan (Multi-Role & Multi-Tenancy)
 *   **Role System**: Menggunakan Enum `App\Enums\UserRole` (SUPERADMIN, ADMIN, OPD).
-*   **Data Isolation**: Implementasi `App\Models\Scopes\TenantScope` pada model `Vehicle`. Admin OPD hanya dapat melihat/mengelola data milik instansinya sendiri.
+*   **Data Isolation (Fail-Safe)**: Implementasi `App\Models\Scopes\TenantScope` pada model `Vehicle`. Admin OPD secara otomatis dibatasi aksesnya hanya pada `opd_id` miliknya. Jika `opd_id` hilang/null, sistem tetap mengunci akses (bukan membuka akses global) untuk keamanan maksimal.
 *   **Otomasi Akun (Model Level)**: Logika pembuatan akun admin OPD dipindahkan ke `Opd::booted()` (Event `created`). Hal ini menjamin setiap OPD baru (lewat Form atau Import Excel) selalu memiliki akun admin secara otomatis.
+*   **Sistem Log Aktivitas (Audit Trail)**: Menggunakan tabel `activities` dan model `Activity`. Log dicatat secara otomatis melalui **Eloquent Observers** (`created`, `deleted`) pada model `Vehicle`, `Opd`, dan `User`.
 *   **Mekanisme Caching**: Statistik dashboard menggunakan *cache key* dinamis: `dashboard.stats.[role].[opd_id]`. Seluruh aksi CRUD pada `VehicleController` telah diupdate untuk melakukan *cache flushing* pada kunci yang tepat.
-*   **Integritas Data**: 
-    *   Database: `onDelete('cascade')` pada relasi `opd_id` di tabel `users`.
+*   **Integritas Data (Hardened)**: 
+    *   Database: `onDelete('cascade')` pada relasi `opd_id` di tabel `users` (telah disinkronkan ke mesin database MariaDB/MySQL).
+    *   Audit: `onDelete('set null')` pada `user_id` di tabel `activities` untuk menjaga riwayat log tetap utuh meski akun dihapus.
     *   Storage: Eloquent Observer pada model `User` (Event `deleting`) otomatis menghapus file fisik `avatar` saat akun dihapus.
 
 ---
@@ -35,6 +37,7 @@ Dokumen ini merupakan sumber kebenaran tunggal (*Single Source of Truth*) mengen
 *   **users**: Penambahan kolom `role` (string), `opd_id` (foreignId - Cascade), dan `avatar` (string - nullable).
 *   **vehicles**: Penambahan kolom `opd_id` (foreignId) dan integrasi Global Scope.
 *   **opds**: Master data instansi yang terhubung 1-to-1 dengan user admin OPD.
+*   **activities**: Tabel log audit dengan relasi `user_id` (Set Null), menyimpan `description` dan `type` (untuk UI badging).
 
 ### Tabel `vehicles`
 Menyimpan entitas aset utama dengan arsitektur kolom ternormalisasi:

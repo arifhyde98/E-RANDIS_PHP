@@ -25,8 +25,10 @@ class TenantScope implements Scope
         if (Auth::check()) {
             $user = Auth::user();
 
-            // Jika role adalah OPD, batasi kueri hanya untuk opd_id milik user tersebut
-            if ($user->role === UserRole::OPD && $user->opd_id) {
+            // Jika role adalah OPD, SELALU batasi kuerinya.
+            // Walaupun opd_id-nya null (karena instansi terhapus), 
+            // dia tidak boleh mendapatkan akses Global.
+            if ($user->role === UserRole::OPD) {
                 $builder->where('opd_id', $user->opd_id);
             }
         }
