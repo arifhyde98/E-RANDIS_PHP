@@ -15,8 +15,8 @@
             <!-- Logo Replikasi Persis Referensi -->
             <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url('/') }}">
                 @php
-                    $siteLogo = \App\Models\Setting::get('site_logo');
-                    $siteName = \App\Models\Setting::get('site_name', 'PEMERINTAH DAERAH');
+                    $siteLogo = $settings['site_logo'];
+                    $siteName = $settings['site_name'];
                 @endphp
                 
                 @if($siteLogo)
@@ -60,7 +60,7 @@
     <!-- Hero Section -->
     <section id="hero-section" style="
         @php
-            $heroBg = \App\Models\Setting::get('hero_bg_image', 'images/hero-illustration.png');
+            $heroBg = $settings['hero_bg_image'];
             $bgUrl = \App\Models\Setting::imageUrl($heroBg);
         @endphp
         background: linear-gradient(rgba(30, 64, 175, 0.85), rgba(30, 58, 138, 0.95)), url('{{ $bgUrl }}');
@@ -71,9 +71,9 @@
             <div class="row align-items-center pt-3 pt-lg-0">
                 <div class="col-lg-7 mb-5 mb-lg-0 pe-lg-4">
                     <!-- Judul 1 baris persis seperti referensi -->
-                    <h1 class="mb-4 fw-bold text-white lh-sm" style="font-size: 2.85rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">{{ \App\Models\Setting::get('hero_title', 'E-RANDIS') }}</h1>
+                    <h1 class="mb-4 fw-bold text-white lh-sm" style="font-size: 2.85rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">{{ $settings['hero_title'] }}</h1>
                     <p class="lead mb-5 text-white opacity-90 fw-normal" style="max-width: 560px; font-size: 1.15rem; line-height: 1.6; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
-                        {{ \App\Models\Setting::get('hero_subtitle', 'Sistem Monitoring Kendaraan Dinas Pemerintah Daerah') }}
+                        {{ $settings['hero_subtitle'] }}
                     </p>
                     <div class="d-flex flex-wrap gap-3">
                         <a href="#search-section" class="btn btn-primary px-4 py-2 fs-6 fw-semibold">Cek Kendaraan</a>
@@ -83,7 +83,7 @@
                 <div class="col-lg-5 text-center text-lg-end mt-4 mt-lg-0">
                     <div class="hero-image-wrapper">
                         @php
-                            $heroImage = \App\Models\Setting::get('hero_image', 'images/hero-illustration.png');
+                            $heroImage = $settings['hero_image'];
                         @endphp
                         <img src="{{ \App\Models\Setting::imageUrl($heroImage) }}" alt="Monitoring Illustration" style="max-height: 400px; width: auto;">
                     </div>
@@ -229,8 +229,8 @@
         <div class="container text-center pt-2">
             <!-- Logo Replikasi Persis Referensi di Footer -->
             <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
-                @if($siteLogo)
-                    <img src="{{ \App\Models\Setting::imageUrl($siteLogo) }}" alt="Logo" style="height: 30px; width: auto;">
+                @if($settings['site_logo'])
+                    <img src="{{ \App\Models\Setting::imageUrl($settings['site_logo']) }}" alt="Logo" style="height: 30px; width: auto;">
                 @else
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" style="width: 24px; height: 28px;">
                         <path d="M50 0 L90 20 V70 C90 95 50 120 50 120 C50 120 10 95 10 70 V20 Z" fill="#15803d" stroke="#facc15" stroke-width="6"/>
@@ -239,7 +239,7 @@
                         <path d="M40 85 L50 70 L60 85 Z" fill="#ffffff"/>
                     </svg>
                 @endif
-                <span class="fw-bold text-navy fs-6 letter-spacing-1">{{ $siteName }}</span>
+                <span class="fw-bold text-navy fs-6 letter-spacing-1">{{ $settings['site_name'] }}</span>
             </div>
             
             <!-- Garis pemisah di bawah logo persis referensi -->

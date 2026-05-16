@@ -26,16 +26,26 @@ class VehicleService
         $cacheKey = 'dashboard.stats.' . ($user?->role?->value ?? 'guest') . '.' . ($user?->opd_id ?? 'global');
 
         return cache()->remember($cacheKey, 300, function () {
-            $query = Vehicle::query();
+            // Menggunakan kueri agregasi tunggal untuk performa maksimal
+            $stats = Vehicle::query()
+                ->selectRaw("
+                    COUNT(*) as total,
+                    SUM(CASE WHEN kondisi = 'Baik' THEN 1 ELSE 0 END) as baik,
+                    SUM(CASE WHEN kondisi = 'Rusak Ringan' THEN 1 ELSE 0 END) as rusak_ringan,
+                    SUM(CASE WHEN kondisi = 'Rusak Berat' THEN 1 ELSE 0 END) as rusak_berat,
+                    SUM(CASE WHEN kondisi IN ('Hilang', 'Dalam Penelusuran') THEN 1 ELSE 0 END) as hilang,
+                    SUM(CASE WHEN status = 'Dipinjam' THEN 1 ELSE 0 END) as borrowed
+                ")
+                ->first();
 
             return [
-                'total' => (int) $query->count(),
-                'baik' => (int) $query->clone()->where('kondisi', 'Baik')->count(),
-                'available' => (int) $query->clone()->where('kondisi', 'Baik')->count(),
-                'rusak_ringan' => (int) $query->clone()->where('kondisi', 'Rusak Ringan')->count(),
-                'rusak_berat' => (int) $query->clone()->where('kondisi', 'Rusak Berat')->count(),
-                'hilang' => (int) $query->clone()->whereIn('kondisi', ['Hilang', 'Dalam Penelusuran'])->count(),
-                'borrowed' => (int) $query->clone()->where('status', 'Dipinjam')->count(),
+                'total' => (int) ($stats->total ?? 0),
+                'baik' => (int) ($stats->baik ?? 0),
+                'available' => (int) ($stats->baik ?? 0),
+                'rusak_ringan' => (int) ($stats->rusak_ringan ?? 0),
+                'rusak_berat' => (int) ($stats->rusak_berat ?? 0),
+                'hilang' => (int) ($stats->hilang ?? 0),
+                'borrowed' => (int) ($stats->borrowed ?? 0),
             ];
         });
     }
@@ -114,6 +124,15 @@ class VehicleService
 
         $search = $this->formatPlateNumber($query);
 
+        // 1. Prioritaskan Exact Match (Sangat cepat jika ada Index)
+        $exact = Vehicle::where('no_polisi', $search)->first();
+        if ($exact) return $exact;
+
+        // 2. Prioritaskan Prefix Match (Masih bisa menggunakan Index)
+        $prefix = Vehicle::where('no_polisi', 'LIKE', "{$search}%")->first();
+        if ($prefix) return $prefix;
+
+        // 3. Fallback ke pencarian luas (Lambat - Full Table Scan)
         return Vehicle::where('no_polisi', 'LIKE', "%{$search}%")
             ->orWhere('pemegang', 'LIKE', "%{$query}%")
             ->first();

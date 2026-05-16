@@ -138,12 +138,12 @@
                     <div class="d-flex justify-content-center gap-2">
                         <button type="button" class="btn btn-sm btn-light border shadow-none text-navy" 
                                 data-bs-toggle="modal" data-bs-target="#detailVehicleModal" 
-                                data-vehicle="{{ json_encode($vehicle->only(['id', 'no_polisi', 'merk', 'tipe', 'jenis', 'opd', 'opd_id', 'pemegang', 'status', 'vehicle_type_id', 'tahun_pembuatan', 'warna', 'stnk_ada', 'bpkb_ada', 'tgl_stnk', 'tgl_perolehan', 'nilai_perolehan', 'no_mesin', 'no_rangka', 'keterangan', 'foto_kendaraan'])) }}" title="Detail Kendaraan">
+                                data-id="{{ $vehicle->id }}" title="Detail Kendaraan">
                             <i class="bi bi-eye"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-light border shadow-none text-primary" 
                                 data-bs-toggle="modal" data-bs-target="#editVehicleModal" 
-                                data-vehicle="{{ json_encode($vehicle->only(['id', 'no_polisi', 'merk', 'tipe', 'jenis', 'opd', 'opd_id', 'pemegang', 'status', 'vehicle_type_id', 'tahun_pembuatan', 'warna', 'stnk_ada', 'bpkb_ada', 'tgl_stnk', 'tgl_perolehan', 'nilai_perolehan', 'no_mesin', 'no_rangka', 'keterangan', 'foto_kendaraan'])) }}" title="Edit Data">
+                                data-id="{{ $vehicle->id }}" title="Edit Data">
                             <i class="bi bi-pencil-square"></i>
                         </button>
                         <form action="{{ route('vehicles.destroy', $vehicle) }}" method="POST" class="d-inline delete-confirm">
@@ -444,8 +444,15 @@
 @endpush
 
 @push('scripts')
+{{-- Centralized Vehicle Data Map (Optimasi Payload Fase 2) --}}
+<script id="vehicle-data-map" type="application/json">
+    @json($vehicleDataMap)
+</script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Vehicle Data Map
+        const vehicleMap = JSON.parse(document.getElementById('vehicle-data-map').textContent);
         // Tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
         tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -457,7 +464,8 @@
         if (detailModal) {
             detailModal.addEventListener('show.bs.modal', function(event) {
                 const button = event.relatedTarget;
-                const vehicle = JSON.parse(button.getAttribute('data-vehicle'));
+                const vehicleId = button.getAttribute('data-id');
+                const vehicle = vehicleMap[vehicleId];
                 const detailContent = document.getElementById('detailContent');
 
                 const escapeHtml = (str) => {
@@ -578,7 +586,8 @@
         if (editModal) {
             editModal.addEventListener('show.bs.modal', function(event) {
                 const button = event.relatedTarget;
-                const vehicle = JSON.parse(button.getAttribute('data-vehicle'));
+                const vehicleId = button.getAttribute('data-id');
+                const vehicle = vehicleMap[vehicleId];
                 const form = document.getElementById('editVehicleForm');
                 
                 // Update Form Action

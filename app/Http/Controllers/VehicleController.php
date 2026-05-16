@@ -87,9 +87,11 @@ class VehicleController extends Controller implements HasMiddleware
 
         // Filter Berdasarkan Jenis Kendaraan
         if ($request->filled('jenis')) {
-            $query->whereHas('vehicleType', function($q) use ($request) {
-                $q->where('name', $request->jenis);
-            })->orWhere('jenis', $request->jenis);
+            $query->where(function($q) use ($request) {
+                $q->whereHas('vehicleType', function($sq) use ($request) {
+                    $sq->where('name', $request->jenis);
+                })->orWhere('jenis', $request->jenis);
+            });
         }
 
         $vehicles = $query->paginate(10)->withQueryString();
@@ -100,7 +102,14 @@ class VehicleController extends Controller implements HasMiddleware
         $statuses = Vehicle::getStatuses();
         $conditions = Vehicle::getConditions();
 
-        return view('vehicles.index', compact('vehicles', 'stats', 'vehicleTypes', 'opds', 'statuses', 'conditions'));
+        $vehicleDataMap = $vehicles->getCollection()->keyBy('id')->map(fn($v) => $v->only([
+            'id', 'no_polisi', 'merk', 'tipe', 'jenis', 'opd', 'opd_id', 'pemegang', 'status', 
+            'vehicle_type_id', 'tahun_pembuatan', 'warna', 'stnk_ada', 'bpkb_ada', 
+            'tgl_stnk', 'tgl_perolehan', 'nilai_perolehan', 'no_mesin', 'no_rangka', 
+            'keterangan', 'foto_kendaraan'
+        ]));
+
+        return view('vehicles.index', compact('vehicles', 'stats', 'vehicleTypes', 'opds', 'statuses', 'conditions', 'vehicleDataMap'));
     }
 
     /**
@@ -120,7 +129,17 @@ class VehicleController extends Controller implements HasMiddleware
         $activeCount = $stats['available'];
         $activePercentage = $total > 0 ? round(($activeCount / $total) * 100) : 0;
 
-        return view('welcome', compact('vehicle', 'query', 'total', 'activePercentage'));
+        // Ambil Pengaturan Web dalam satu kali proses (Optimasi Fase 2)
+        $settings = [
+            'site_name' => \App\Models\Setting::get('site_name', 'PEMERINTAH DAERAH'),
+            'site_logo' => \App\Models\Setting::get('site_logo'),
+            'hero_title' => \App\Models\Setting::get('hero_title', 'E-RANDIS'),
+            'hero_subtitle' => \App\Models\Setting::get('hero_subtitle', 'Sistem Monitoring Kendaraan Dinas Pemerintah Daerah'),
+            'hero_image' => \App\Models\Setting::get('hero_image', 'images/hero-illustration.png'),
+            'hero_bg_image' => \App\Models\Setting::get('hero_bg_image', 'images/hero-illustration.png'),
+        ];
+
+        return view('welcome', compact('vehicle', 'query', 'total', 'activePercentage', 'settings'));
     }
 
     /**
