@@ -4,25 +4,41 @@ namespace App\Imports;
 
 use App\Models\Vehicle;
 use App\Models\VehicleType;
+use App\Models\Opd;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithStartRow;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Carbon\Carbon;
 
 /**
- * Class untuk Mengimport Data Kendaraan dari Excel
+ * Class untuk Mengimport Data Kendaraan dari Excel (Optimized v2.2)
  * 
- * Menggunakan library Maatwebsite Excel untuk memetakan kolom spreadsheet ke model Vehicle,
- * menangani pembersihan data, konversi tanggal, dan pencegahan duplikat.
+ * Menggunakan teknik Batch Inserts dan In-Memory Caching untuk performa maksimal.
  */
-class VehicleImport implements ToModel, WithStartRow
+class VehicleImport implements ToModel, WithStartRow, WithBatchInserts, WithChunkReading
 {
     /** @var int Counter untuk pembuatan ID sementara kendaraan tanpa plat */
     private $rowCount = 0;
 
+    /** @var array Cache memori untuk Master Data */
+    private $typeCache = [];
+    private $opdCache = [];
+    private $existingPlates = [];
+
+    public function __construct()
+    {
+        // Pre-load Master Data ke Memori untuk menghindari kueri N+1
+        $this->typeCache = VehicleType::pluck('id', 'name')->toArray();
+        $this->opdCache = Opd::pluck('id', 'nama')->toArray();
+        
+        // FIX (High Risk): Gunakan withoutGlobalScopes() agar bisa melihat plat secara GLOBAL.
+        // Mencegah error duplicate entry jika plat sudah dipakai OPD lain.
+        $this->existingPlates = Vehicle::withoutGlobalScopes()->pluck('no_polisi')->flip()->toArray();
+    }
+
     /**
-     * Menentukan baris awal dimulainya pembacaan data (Baris 4).
-     * 
-     * @return int
+     * Menentukan baris awal dimulainya pembacaan data.
      */
     public function startRow(): int
     {
@@ -30,89 +46,95 @@ class VehicleImport implements ToModel, WithStartRow
     }
 
     /**
+     * Tentukan ukuran batch untuk insert sekaligus.
+     */
+    public function batchSize(): int
+    {
+        return 100;
+    }
+
+    /**
+     * Tentukan ukuran chunk untuk pembacaan file besar.
+     */
+    public function chunkSize(): int
+    {
+        return 100;
+    }
+
+    /**
      * Memetakan baris Excel menjadi model Vehicle.
-     * 
-     * @param array $row Data satu baris dari Excel
-     * @return \Illuminate\Database\Eloquent\Model|null
      */
     public function model(array $row)
     {
-        // Lewati jika baris kosong (Jenis, Merk, dan Plat tidak ada isinya)
+        // Lewati jika baris kosong
         if (empty($row[0]) && empty($row[1]) && empty($row[2])) {
             return null;
         }
 
         // 1. Identifikasi Nomor Polisi (Kolom C / Index 2)
         $raw_no_polisi = $row[2] ?? null;
-        
-        // Bersihkan Nomor Polisi menggunakan Service
         $vehicleService = app(\App\Services\VehicleService::class);
         $no_polisi = $vehicleService->formatPlateNumber($raw_no_polisi);
 
-        // ATURAN TEMPLATE: Jika plat kosong/strip/tanda tanya, buatkan identitas urut
-        if (empty($no_polisi) || $no_polisi == 'NOMOR POLISI' || $no_polisi == '-' || $no_polisi == '?') {
+        // ATURAN TEMPLATE: Jika plat kosong, buatkan identitas urut
+        if (empty($no_polisi) || in_array($no_polisi, ['NOMOR POLISI', '-', '?'])) {
             $this->rowCount++;
             $no_polisi = "TANPA-PLAT-" . str_pad($this->rowCount, 3, '0', STR_PAD_LEFT);
         }
 
-        // Cek duplikat di database
-        $existing = Vehicle::where('no_polisi', $no_polisi)->first();
-        if ($existing) {
-            // Jika plat sama, cek apakah nomor mesin atau nomor rangka beda
-            $isSameEngine = ($existing->no_mesin == ($row[3] ?? null));
-            $isSameChassis = ($existing->no_rangka == ($row[4] ?? null));
-
-            if ($isSameEngine && $isSameChassis) {
-                // Jika mesin dan rangka juga sama, berarti benar-benar duplikat identik, lewati saja.
-                return null;
-            } else {
-                // Jika mesin atau rangka beda, berarti kendaraan beda dengan plat sama.
-                // Tambahkan suffix agar tetap bisa masuk (karena database mewajibkan unik)
-                $original_no_polisi = $no_polisi;
-                $i = 2;
-                while (Vehicle::where('no_polisi', $no_polisi)->exists()) {
-                    $no_polisi = $original_no_polisi . " (" . $i++ . ")";
-                }
+        // Cek duplikat menggunakan Cache Memori (Bukan Database)
+        if (isset($this->existingPlates[$no_polisi])) {
+            // Jika ada duplikat, tambahkan suffix unik sederhana
+            $original_no_polisi = $no_polisi;
+            $i = 2;
+            while (isset($this->existingPlates[$no_polisi])) {
+                $no_polisi = $original_no_polisi . " (" . $i++ . ")";
             }
         }
 
-        // 2. Proses Jenis Kendaraan (Kolom A / Index 0)
-        $jenisName = trim($row[0] ?? 'Lainnya');
-        $vehicleType = VehicleType::firstOrCreate(
-            ['name' => $jenisName],
-            ['description' => 'Otomatis dibuat saat import Excel']
-        );
+        // Tandai plat ini sebagai 'terpakai' dalam sesi ini agar baris berikutnya tidak bentrok
+        $this->existingPlates[$no_polisi] = true;
 
-        // 3. Proses OPD / Instansi (Kolom M / Index 12)
-        // SECURITY PATCH: Jika yang import adalah Admin OPD, paksa gunakan OPD miliknya.
-        // Abaikan apa pun yang tertulis di file Excel untuk mencegah polusi Master Data.
+        // 2. Proses Jenis Kendaraan menggunakan Cache Memori
+        $jenisName = trim($row[0] ?? 'Lainnya');
+        if (!isset($this->typeCache[$jenisName])) {
+            $vt = VehicleType::firstOrCreate(
+                ['name' => $jenisName],
+                ['description' => 'Otomatis dibuat saat import Excel']
+            );
+            $this->typeCache[$jenisName] = $vt->id;
+        }
+        $typeId = $this->typeCache[$jenisName];
+
+        // 3. Proses OPD menggunakan Cache Memori
         $user = auth()->user();
         if ($user && $user->role === \App\Enums\UserRole::OPD) {
-            $opdName = $user->opd->nama;
-            $opd = $user->opd;
+            $opdName = $user->opd?->nama ?? 'INSTANSI TIDAK DIKENAL';
+            $opdId = $user->opd_id;
         } else {
-            // Jika Superadmin/Admin, baca dari Excel
             $opdName = strtoupper(trim($row[12] ?? 'SEKRETARIAT DAERAH'));
-            $opd = \App\Models\Opd::firstOrCreate(
-                ['nama' => $opdName],
-                ['singkatan' => null, 'alamat' => null]
-            );
+            if (!isset($this->opdCache[$opdName])) {
+                $newOpd = Opd::firstOrCreate(
+                    ['nama' => $opdName],
+                    ['singkatan' => null, 'alamat' => null]
+                );
+                $this->opdCache[$opdName] = $newOpd->id;
+            }
+            $opdId = $this->opdCache[$opdName];
         }
 
-        // 4. Persiapkan Data untuk Insert/Update
+        // 4. Persiapkan Data
         $tglPerolehan = $this->transformDate($row[5] ?? null);
         $tahunPembuatan = $tglPerolehan ? \Carbon\Carbon::parse($tglPerolehan)->year : null;
-
-        // Normalisasi Kondisi dan Status (Smart Mapping)
         $kondisi = \App\Enums\VehicleCondition::fromImport($row[9] ?? null);
-        $status = $kondisi->toDefaultStatus();
 
-        $data = [
+        return new Vehicle([
             'jenis'           => $jenisName,
-            'vehicle_type_id' => $vehicleType->id,
+            'vehicle_type_id' => $typeId,
             'merk'            => trim($row[1] ?? '-'),
             'tipe'            => trim($row[1] ?? '-'),
             'no_polisi'       => $no_polisi,
+            'user_id'         => $user?->id,
             'no_mesin'        => $row[3] ?? null,
             'no_rangka'       => $row[4] ?? null,
             'tahun_pembuatan' => $tahunPembuatan,
@@ -121,14 +143,12 @@ class VehicleImport implements ToModel, WithStartRow
             'stnk_ada'        => $row[7] ?? 'Tidak',
             'bpkb_ada'        => $row[8] ?? 'Tidak',
             'kondisi'         => $kondisi->value,
-            'status'          => $status->value,
+            'status'          => $kondisi->toDefaultStatus()->value,
             'pemegang'        => $row[10] ?? '-',
             'keterangan'      => $row[11] ?? null,
             'opd'             => $opdName,
-            'opd_id'          => $opd->id,
-        ];
-
-        return new Vehicle($data);
+            'opd_id'          => $opdId,
+        ]);
     }
 
     /**

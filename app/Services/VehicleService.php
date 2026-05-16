@@ -68,10 +68,11 @@ class VehicleService
         \Illuminate\Support\Facades\Cache::forget('dashboard.stats.admin.global');
         \Illuminate\Support\Facades\Cache::forget('dashboard.stats.guest.global');
 
-        // 2. Hapus statistik OPD spesifik jika ada
+        // 2. Hapus statistik OPD spesifik atau global OPD role jika ada
         if ($opdId) {
             \Illuminate\Support\Facades\Cache::forget("dashboard.stats.opd.{$opdId}");
         }
+        \Illuminate\Support\Facades\Cache::forget("dashboard.stats.opd.global");
 
         // 3. Hapus statistik OPD lama (kasus pindah instansi)
         if ($oldOpdId && $oldOpdId !== $opdId) {
@@ -80,10 +81,15 @@ class VehicleService
 
         // 4. Invalidation massal (untuk Import/Truncate/Hapus OPD)
         if ($invalidateAllOpd) {
+            // Hapus semua cache yang mungkin ada untuk role OPD
             $opdIds = \App\Models\Opd::pluck('id');
             foreach ($opdIds as $id) {
                 \Illuminate\Support\Facades\Cache::forget("dashboard.stats.opd.{$id}");
             }
+            
+            // Tambahan: Pastikan cache admin/superadmin juga terhapus (sudah di poin 1 tapi dipertegas)
+            \Illuminate\Support\Facades\Cache::forget('dashboard.stats.superadmin.global');
+            \Illuminate\Support\Facades\Cache::forget('dashboard.stats.admin.global');
         }
     }
 

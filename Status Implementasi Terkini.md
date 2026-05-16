@@ -21,6 +21,7 @@ Tanggal pembaruan: 2026-05-16
 13. [SELESAI] Pindahkan validasi inline import kendaraan (`VehicleController@import`) ke `FormRequest` khusus agar konsisten penuh.
 14. [SELESAI] Refactor invalidasi cache dari `Cache::flush()` ke invalidasi key terarah melalui helper `invalidateDashboardStats()` di `VehicleService`.
 15. [SELESAI] Optimasi Loading Fase 1 (Single query stats, Production Assets, Optimizer) dan Fase 2 (Index-friendly search, HTML payload reduction, Setting pre-fetch).
+16. [SELESAI] Optimasi Import Kendaraan Massal (Batch Inserts & Observer Disabling).
 
 ## IN PROGRESS
 

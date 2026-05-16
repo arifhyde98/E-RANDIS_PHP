@@ -354,9 +354,19 @@ class VehicleController extends Controller implements HasMiddleware
      */
     public function import(ImportVehicleRequest $request): RedirectResponse
     {
+        // Tingkatkan limit untuk file besar (Optimasi Fase 3)
+        ini_set('memory_limit', '512M');
+        ini_set('max_execution_time', '300');
+
         try {
-            Excel::import(new VehicleImport, $request->file('file'));
+            // Menonaktifkan event (observer) selama import untuk kecepatan maksimal
+            Vehicle::withoutEvents(function () use ($request) {
+                Excel::import(new VehicleImport, $request->file('file'));
+            });
             
+            // Catat satu log aktivitas saja untuk seluruh proses import
+            \App\Models\Activity::log("Melakukan import data kendaraan secara massal", 'success');
+
             // Invalidation massal seluruh OPD (Dashboard stats)
             $this->vehicleService->invalidateDashboardStats(invalidateAllOpd: true);
 

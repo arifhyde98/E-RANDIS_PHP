@@ -21,11 +21,18 @@ Tanggal: 2026-05-16
 2. Kurangi payload HTML halaman kendaraan. (Selesai - resources/views/vehicles/index.blade.php)
 3. Kurangi pemanggilan Setting::get() berulang di view landing. (Selesai - VehicleController & welcome.blade.php)
 
-## 4. Fase 3 - Hardening & Skalabilitas
+## 4. Fase 3 - Hardening & Skalabilitas [IN PROGRESS]
 
 1. Evaluasi driver cache/session (database -> redis jika infrastruktur siap).
 2. Kompres gambar besar dan terapkan lazy loading untuk gambar non-kritis.
 3. Review indeks tambahan berbasis profiling query nyata.
+4. Optimasi Import Kendaraan Massal. (Selesai - app/Imports/VehicleImport.php & VehicleController.php)
+   - Implementasi `WithBatchInserts` & `WithChunkReading`.
+   - In-memory caching untuk master data (OPD & VehicleType) dengan `firstOrCreate` (Anti-Fail).
+   - Penonaktifan model events (observers) selama proses import untuk kecepatan.
+   - **Hardening (Security):** 
+     - Menggunakan `withoutGlobalScopes()` pada pengecekan plat agar deteksi duplikat bersifat GLOBAL (lintas OPD).
+     - Implementasi *Null-Safe Access* pada relasi User-OPD untuk mencegah *crash* saat data tidak lengkap.
 
 ## 5. Aturan Eksekusi untuk Junior
 

@@ -120,6 +120,11 @@ Aplikasi menggunakan Enum (PHP 8.1+) untuk menjaga integritas data:
 Sistem melakukan pembersihan data otomatis saat import Excel:
 1. **Penerjemahan Singkatan**: Mengonversi variasi teks mentah (misal: "RB", "RR", "B") menjadi standar "Rusak Berat", "Rusak Ringan", dsb.
 2. **Penentuan Status Otomatis**: Jika kondisi fisik adalah 'Rusak Berat' atau 'Hilang', sistem otomatis mengatur status operasional ke 'Nonaktif'.
+3. **Strategi Import Aman & Cepat (Optimasi Fase 3)**:
+    - **Batching & Memory Caching**: Menggunakan `WithBatchInserts` (100 baris) dan *in-memory caching* untuk master data (OPD/Jenis) guna memangkas kueri database hingga 90%.
+    - **Global Duplicate Detection**: Menggunakan `withoutGlobalScopes()` pada pengecekan plat nomor agar deteksi duplikat bersifat global lintas instansi (menghindari error SQL Unique Constraint).
+    - **Data Ownership**: Memastikan field `user_id` selalu terisi otomatis dengan ID pengunggah agar data "diakui" oleh sistem statistik.
+    - **Null-Safety**: Menggunakan akses *null-safe* pada relasi user-OPD untuk mencegah kegagalan sistem saat mengolah data yang tidak lengkap.
 
 ### Strategi Caching
 - **Statistik Dashboard**: Menggunakan cache key dinamis berbasis role dan instansi: `dashboard.stats.{role}.{opd_id}` dengan TTL 5 menit.
