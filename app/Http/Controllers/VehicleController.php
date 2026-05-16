@@ -62,7 +62,7 @@ class VehicleController extends Controller implements HasMiddleware
      */
     public function index(Request $request): View
     {
-        $query = Vehicle::with(['user', 'vehicleType'])->latest();
+        $query = Vehicle::with(['user', 'vehicleType', 'opdRelation'])->latest();
 
         // Filter Pencarian Global
         if ($request->filled('q')) {
@@ -102,12 +102,19 @@ class VehicleController extends Controller implements HasMiddleware
         $statuses = Vehicle::getStatuses();
         $conditions = Vehicle::getConditions();
 
-        $vehicleDataMap = $vehicles->getCollection()->keyBy('id')->map(fn($v) => $v->only([
-            'id', 'no_polisi', 'merk', 'tipe', 'jenis', 'opd', 'opd_id', 'pemegang', 'status', 
-            'vehicle_type_id', 'tahun_pembuatan', 'warna', 'stnk_ada', 'bpkb_ada', 
-            'tgl_stnk', 'tgl_perolehan', 'nilai_perolehan', 'no_mesin', 'no_rangka', 
-            'keterangan', 'foto_kendaraan'
-        ]));
+        $vehicleDataMap = $vehicles->getCollection()->keyBy('id')->map(function($v) {
+            $data = $v->only([
+                'id', 'no_polisi', 'merk', 'tipe', 'jenis', 'opd_id', 'pemegang', 'status', 'kondisi',
+                'vehicle_type_id', 'tahun_pembuatan', 'warna', 'stnk_ada', 'bpkb_ada', 
+                'tgl_stnk', 'tgl_perolehan', 'nilai_perolehan', 'no_mesin', 'no_rangka', 
+                'keterangan', 'foto_kendaraan'
+            ]);
+            
+            // Gunakan nama OPD terbaru dari relasi untuk konsistensi Modal
+            $data['opd'] = $v->opdRelation?->nama ?? $v->opd;
+            
+            return $data;
+        });
 
         return view('vehicles.index', compact('vehicles', 'stats', 'vehicleTypes', 'opds', 'statuses', 'conditions', 'vehicleDataMap'));
     }

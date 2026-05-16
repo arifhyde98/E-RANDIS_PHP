@@ -90,6 +90,16 @@ class Vehicle extends Model
     }
 
     /**
+     * Relasi ke model Opd (Instansi).
+     * 
+     * @return BelongsTo
+     */
+    public function opdRelation(): BelongsTo
+    {
+        return $this->belongsTo(Opd::class, 'opd_id');
+    }
+
+    /**
      * Mendapatkan daftar status operasional yang tersedia.
      * 
      * @return array<string, string>

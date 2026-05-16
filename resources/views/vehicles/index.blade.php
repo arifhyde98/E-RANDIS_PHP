@@ -126,7 +126,7 @@
                 </td>
                 <td class="py-3">
                     <div class="fw-medium text-dark"><i class="bi bi-person-fill text-secondary me-1"></i> {{ $vehicle->pemegang }}</div>
-                    <div class="small text-secondary">{{ Str::limit($vehicle->opd, 30) }}</div>
+                    <div class="small text-secondary">{{ Str::limit($vehicle->opdRelation?->nama ?? $vehicle->opd, 40) }}</div>
                 </td>
                 <td class="text-center">
                     <x-condition-badge :kondisi="$vehicle->kondisi" />
