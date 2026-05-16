@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UpdateProfileRequest;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
 /**
  * Controller untuk Manajemen Profil Pengguna
@@ -17,7 +18,7 @@ class ProfileController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            'auth',
+            new Middleware('auth'),
         ];
     }
 

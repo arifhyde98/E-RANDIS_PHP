@@ -9,6 +9,7 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
 /**
  * Controller untuk Manajemen Pengguna & Role (Khusus Superadmin)
@@ -21,8 +22,8 @@ class UserController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            'auth',
-            'role:superadmin',
+            new Middleware('auth'),
+            new Middleware('role:superadmin'),
         ];
     }
 

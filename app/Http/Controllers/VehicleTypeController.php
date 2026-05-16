@@ -6,6 +6,7 @@ use App\Models\VehicleType;
 use App\Http\Requests\StoreVehicleTypeRequest;
 use App\Http\Requests\UpdateVehicleTypeRequest;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
 /**
  * Controller untuk Manajemen Master Data Tipe Kendaraan
@@ -18,8 +19,8 @@ class VehicleTypeController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            'auth',
-            'role:superadmin,admin',
+            new Middleware('auth'),
+            new Middleware('role:superadmin,admin'),
         ];
     }
 

@@ -4,6 +4,8 @@ Dokumen ini merupakan sumber kebenaran tunggal (*Single Source of Truth*) mengen
 
 **Setiap agen AI yang melanjutkan pengembangan proyek ini DIWAJIBKAN membaca dokumen ini terlebih dahulu untuk menjaga konsistensi standar kode dan kelangsungan arsitektur.**
 
+**⚠️ PENTING: Untuk penambahan fitur baru, WAJIB membaca dan mengikuti `ATURAN_PENAMBAHAN_FITUR.md` terlebih dahulu.**
+
 ---
 
 ## 1. 🛠️ Environment & Technology Stack
@@ -104,6 +106,27 @@ Penyimpanan dan pembaruan data wajib menggunakan kelas validasi terpisah demi me
 
 ### Konvensi Middleware & Akses Rute
 - Semua *Controller* wajib mengimplementasikan antarmuka `HasMiddleware` standar Laravel 12 dengan metode statis `middleware()`.
+- **WAJIB menggunakan `new Middleware()` syntax** sesuai Laravel 12 best practice. Dilarang menggunakan string middleware langsung:
+```php
+// ✅ BENAR (Laravel 12 Best Practice)
+public static function middleware(): array
+{
+    return [
+        new Middleware('auth'),
+        new Middleware('role:superadmin,admin'),
+        new Middleware('role:superadmin', only: ['truncate']),
+    ];
+}
+
+// ❌ SALAH (Cara Lama - Deprecated)
+public static function middleware(): array
+{
+    return [
+        'auth',
+        'role:superadmin,admin',
+    ];
+}
+```
 - Seluruh aturan otorisasi (`auth`, `role`, `only`, `except`) menjadi **sumber kebenaran di level Controller** untuk memudahkan audit akses per modul.
 - Berkas `routes/web.php` difokuskan untuk deklarasi URI, nama rute, dan pemetaan Controller, tanpa duplikasi grup middleware besar yang berlapis.
 - Karena operasi menggunakan antarmuka *Modal*, rute halaman formulir tradisional wajib dibatasi:
@@ -261,3 +284,4 @@ Seluruh kode backend (Models, Controllers, Services, Enums, dll) wajib memiliki 
 5. **Jangan eksekusi tanpa persetujuan:** Jika user meminta perubahan pada area spesifik, jangan memperluas cakupan ke file lain tanpa konfirmasi terlebih dahulu.
 6. **Konsistensi Validasi:** Untuk endpoint `store` dan `update`, utamakan `FormRequest` khusus dibanding validasi inline di controller, kecuali ada alasan teknis yang jelas untuk tidak melakukannya.
 7. **Sinkronisasi Status:** Selalu baca file `Status Implementasi Terkini.md` di awal sesi untuk memahami detail progres pengerjaan fitur yang sudah selesai (DONE) maupun yang masih dalam tahap (IN PROGRESS).
+8. **⚠️ WAJIB: Penambahan Fitur Baru:** Setiap penambahan fitur baru **HARUS** mengikuti prosedur yang tercantum dalam file `ATURAN_PENAMBAHAN_FITUR.md`. Dokumen tersebut berisi checklist lengkap mulai dari perencanaan, analisis dampak (multi-tenancy, cache, observer), implementasi teknis, testing, hingga deployment. **DILARANG KERAS** menambahkan fitur tanpa melalui checklist ini karena sistem memiliki arsitektur kompleks dengan risiko error 60-80% jika tidak mengikuti aturan. Baca dan ikuti `ATURAN_PENAMBAHAN_FITUR.md` sebelum memulai development fitur baru.

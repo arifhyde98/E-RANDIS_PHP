@@ -42,6 +42,11 @@
                                 @endforeach
                             </div>
                             @if(count($vehicle->foto_kendaraan) > 1)
+                                <div class="carousel-indicators mb-0" style="bottom: 10px;">
+                                    @foreach($vehicle->foto_kendaraan as $index => $path)
+                                        <button type="button" data-bs-target="#vehicleCarousel" data-bs-slide-to="{{ $index }}" class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" aria-label="Slide {{ $index + 1 }}"></button>
+                                    @endforeach
+                                </div>
                                 <button class="carousel-control-prev" type="button" data-bs-target="#vehicleCarousel" data-bs-slide="prev">
                                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                                     <span class="visually-hidden">Previous</span>

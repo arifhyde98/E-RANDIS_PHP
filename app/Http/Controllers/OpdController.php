@@ -21,8 +21,8 @@ class OpdController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            'auth',
-            'role:superadmin,admin',
+            new Middleware('auth'),
+            new Middleware('role:superadmin,admin'),
             new Middleware('role:superadmin', only: ['truncate']),
         ];
     }

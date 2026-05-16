@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
 class ActivityController extends Controller implements HasMiddleware
 {
@@ -13,8 +14,8 @@ class ActivityController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            'auth',
-            'role:superadmin',
+            new Middleware('auth'),
+            new Middleware('role:superadmin'),
         ];
     }
 

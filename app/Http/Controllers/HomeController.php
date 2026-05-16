@@ -9,7 +9,7 @@ use Illuminate\Routing\Controllers\Middleware;
 /**
  * Controller untuk Halaman Utama (Dashboard) Admin
  */
-class HomeController extends Controller implements \Illuminate\Routing\Controllers\HasMiddleware
+class HomeController extends Controller implements HasMiddleware
 {
     protected $vehicleService;
 
@@ -19,7 +19,7 @@ class HomeController extends Controller implements \Illuminate\Routing\Controlle
     public static function middleware(): array
     {
         return [
-            new \Illuminate\Routing\Controllers\Middleware('auth'),
+            new Middleware('auth'),
         ];
     }
 

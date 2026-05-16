@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
 /**
  * Controller untuk Manajemen Pengaturan Aplikasi (CMS)
@@ -23,8 +24,8 @@ class SettingController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            'auth',
-            'role:superadmin',
+            new Middleware('auth'),
+            new Middleware('role:superadmin'),
         ];
     }
 

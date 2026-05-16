@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Vehicle;
 use App\Models\User;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
 
 /**
@@ -23,8 +24,8 @@ class MasterDataController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            'auth',
-            'role:superadmin,admin',
+            new Middleware('auth'),
+            new Middleware('role:superadmin,admin'),
         ];
     }
 
