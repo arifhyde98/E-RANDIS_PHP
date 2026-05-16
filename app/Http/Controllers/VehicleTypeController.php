@@ -5,12 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\VehicleType;
 use App\Http\Requests\StoreVehicleTypeRequest;
 use App\Http\Requests\UpdateVehicleTypeRequest;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
 /**
  * Controller untuk Manajemen Master Data Tipe Kendaraan
  */
-class VehicleTypeController extends Controller
+class VehicleTypeController extends Controller implements HasMiddleware
 {
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            'auth',
+            'role:superadmin,admin',
+        ];
+    }
+
     /**
      * Menampilkan daftar semua tipe kendaraan beserta jumlah unit masing-masing.
      * 

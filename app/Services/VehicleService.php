@@ -23,7 +23,7 @@ class VehicleService
     public function getDashboardStats(): array
     {
         $user = auth()->user();
-        $cacheKey = 'dashboard.stats.' . ($user->role->value ?? 'guest') . '.' . ($user->opd_id ?? 'global');
+        $cacheKey = 'dashboard.stats.' . ($user?->role?->value ?? 'guest') . '.' . ($user?->opd_id ?? 'global');
 
         return cache()->remember($cacheKey, 300, function () {
             $query = Vehicle::query();
@@ -38,6 +38,43 @@ class VehicleService
                 'borrowed' => (int) $query->clone()->where('status', 'Dipinjam')->count(),
             ];
         });
+    }
+
+    /**
+     * Membersihkan cache statistik dashboard secara terarah.
+     * 
+     * Digunakan setelah operasi CRUD kendaraan atau OPD untuk memastikan
+     * data di dashboard tetap akurat tanpa melakukan Cache::flush() global.
+     * 
+     * @param int|null $opdId ID OPD yang terdampak (opsional)
+     * @param int|null $oldOpdId ID OPD lama jika terjadi perpindahan instansi (opsional)
+     * @param bool $invalidateAllOpd Jika true, hapus semua cache statistik seluruh OPD
+     * @return void
+     */
+    public function invalidateDashboardStats(?int $opdId = null, ?int $oldOpdId = null, bool $invalidateAllOpd = false): void
+    {
+        // 1. Selalu hapus key statistik global
+        \Illuminate\Support\Facades\Cache::forget('dashboard.stats.superadmin.global');
+        \Illuminate\Support\Facades\Cache::forget('dashboard.stats.admin.global');
+        \Illuminate\Support\Facades\Cache::forget('dashboard.stats.guest.global');
+
+        // 2. Hapus statistik OPD spesifik jika ada
+        if ($opdId) {
+            \Illuminate\Support\Facades\Cache::forget("dashboard.stats.opd.{$opdId}");
+        }
+
+        // 3. Hapus statistik OPD lama (kasus pindah instansi)
+        if ($oldOpdId && $oldOpdId !== $opdId) {
+            \Illuminate\Support\Facades\Cache::forget("dashboard.stats.opd.{$oldOpdId}");
+        }
+
+        // 4. Invalidation massal (untuk Import/Truncate/Hapus OPD)
+        if ($invalidateAllOpd) {
+            $opdIds = \App\Models\Opd::pluck('id');
+            foreach ($opdIds as $id) {
+                \Illuminate\Support\Facades\Cache::forget("dashboard.stats.opd.{$id}");
+            }
+        }
     }
 
     /**

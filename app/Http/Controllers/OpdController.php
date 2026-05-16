@@ -6,17 +6,34 @@ use App\Models\Opd;
 use App\Http\Requests\StoreOpdRequest;
 use App\Http\Requests\UpdateOpdRequest;
 use Illuminate\Http\Request;
+use App\Services\VehicleService;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
 /**
  * Controller untuk Manajemen Master Data OPD (Organisasi Perangkat Daerah)
  */
-class OpdController extends Controller
+class OpdController extends Controller implements HasMiddleware
 {
-    protected $accountService;
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            'auth',
+            'role:superadmin,admin',
+            new Middleware('role:superadmin', only: ['truncate']),
+        ];
+    }
 
-    public function __construct(\App\Services\AccountService $accountService)
+    protected $accountService;
+    protected $vehicleService;
+
+    public function __construct(\App\Services\AccountService $accountService, VehicleService $vehicleService)
     {
         $this->accountService = $accountService;
+        $this->vehicleService = $vehicleService;
     }
 
     /**
@@ -81,8 +98,8 @@ class OpdController extends Controller
         // Untuk saat ini langsung hapus (Master Data)
         $opd->delete();
 
-        // Bersihkan cache karena penghapusan OPD akan memicu penghapusan kendaraan (Cascade)
-        \Illuminate\Support\Facades\Cache::flush();
+        // Invalidation massal karena penghapusan OPD memicu penghapusan kendaraan (Cascade)
+        $this->vehicleService->invalidateDashboardStats(invalidateAllOpd: true);
 
         return redirect()->route('opds.index')->with('success', 'Data OPD berhasil dihapus.');
     }
@@ -98,8 +115,8 @@ class OpdController extends Controller
             $opd->delete();
         });
 
-        // Bersihkan cache secara total karena seluruh data kendaraan juga terhapus
-        \Illuminate\Support\Facades\Cache::flush();
+        // Invalidation massal seluruh statistik dashboard
+        $this->vehicleService->invalidateDashboardStats(invalidateAllOpd: true);
 
         return redirect()->route('opds.index')->with('success', 'Seluruh data Master OPD berhasil dikosongkan.');
     }

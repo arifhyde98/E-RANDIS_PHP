@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Vehicle;
 use App\Models\User;
 use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Routing\Controllers\Middleware;
+
 
 /**
  * Controller untuk Hub Master Data
@@ -23,7 +23,8 @@ class MasterDataController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('auth'),
+            'auth',
+            'role:superadmin,admin',
         ];
     }
 

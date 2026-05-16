@@ -8,12 +8,24 @@ use App\Enums\UserRole;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
 /**
  * Controller untuk Manajemen Pengguna & Role (Khusus Superadmin)
  */
-class UserController extends Controller
+class UserController extends Controller implements HasMiddleware
 {
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            'auth',
+            'role:superadmin',
+        ];
+    }
+
     /**
      * Menampilkan daftar pengguna dengan filter role.
      */

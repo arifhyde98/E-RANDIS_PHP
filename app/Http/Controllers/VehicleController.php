@@ -12,12 +12,15 @@ use App\Http\Requests\UpdateVehicleRequest;
 use App\Exports\VehicleExport;
 use App\Exports\VehicleTemplateExport;
 use App\Imports\VehicleImport;
+use App\Http\Requests\ImportVehicleRequest;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
 use App\Services\VehicleService;
 
@@ -26,8 +29,19 @@ use App\Services\VehicleService;
  * 
  * Menangani CRUD data kendaraan, pencarian, serta fitur import/export Excel.
  */
-class VehicleController extends Controller
+class VehicleController extends Controller implements HasMiddleware
 {
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('auth', except: ['search', 'searchLandingVehicle']),
+            new Middleware('role:superadmin', only: ['truncate']),
+        ];
+    }
+
     protected $vehicleService;
 
     /**
@@ -172,10 +186,10 @@ class VehicleController extends Controller
             $validated['foto_kendaraan'] = $paths;
         }
 
-        Vehicle::create($validated);
+        $vehicle = Vehicle::create($validated);
         
-        // Bersihkan seluruh cache aplikasi agar statistik sinkron
-        \Illuminate\Support\Facades\Cache::flush();
+        // Invalidation terarah (Hanya dashboard stats)
+        $this->vehicleService->invalidateDashboardStats(opdId: $vehicle->opd_id);
 
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil ditambahkan.');
     }
@@ -239,10 +253,14 @@ class VehicleController extends Controller
             $validated['foto_kendaraan'] = $paths;
         }
 
+        $oldOpdId = $vehicle->opd_id;
         $vehicle->update($validated);
         
-        // Bersihkan seluruh cache aplikasi agar statistik sinkron
-        \Illuminate\Support\Facades\Cache::flush();
+        // Invalidation terarah (Handle kasus pindah instansi)
+        $this->vehicleService->invalidateDashboardStats(
+            opdId: $vehicle->opd_id, 
+            oldOpdId: $oldOpdId
+        );
 
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil diperbarui.');
     }
@@ -262,10 +280,11 @@ class VehicleController extends Controller
             }
         }
         
+        $opdId = $vehicle->opd_id;
         $vehicle->delete();
         
-        // Bersihkan seluruh cache aplikasi agar statistik sinkron
-        \Illuminate\Support\Facades\Cache::flush();
+        // Invalidation terarah
+        $this->vehicleService->invalidateDashboardStats(opdId: $opdId);
 
         return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil dihapus.');
     }
@@ -282,8 +301,8 @@ class VehicleController extends Controller
         
         Vehicle::truncate();
         
-        // Bersihkan seluruh cache aplikasi agar statistik sinkron
-        \Illuminate\Support\Facades\Cache::flush();
+        // Invalidation massal seluruh OPD (Dashboard stats)
+        $this->vehicleService->invalidateDashboardStats(invalidateAllOpd: true);
 
         return redirect()->route('vehicles.index')->with('success', 'Seluruh data kendaraan berhasil dikosongkan.');
     }
@@ -314,17 +333,13 @@ class VehicleController extends Controller
      * @param Request $request
      * @return RedirectResponse
      */
-    public function import(Request $request): RedirectResponse
+    public function import(ImportVehicleRequest $request): RedirectResponse
     {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv'
-        ]);
-
         try {
             Excel::import(new VehicleImport, $request->file('file'));
             
-            // Bersihkan seluruh cache aplikasi agar statistik sinkron
-            \Illuminate\Support\Facades\Cache::flush();
+            // Invalidation massal seluruh OPD (Dashboard stats)
+            $this->vehicleService->invalidateDashboardStats(invalidateAllOpd: true);
 
             return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil diimport.');
         } catch (\Exception $e) {

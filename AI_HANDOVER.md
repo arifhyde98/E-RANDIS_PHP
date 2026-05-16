@@ -23,9 +23,9 @@ Dokumen ini merupakan sumber kebenaran tunggal (*Single Source of Truth*) mengen
 ## 2. Arsitektur & Keamanan (Multi-Role & Multi-Tenancy)
 *   **Role System**: Menggunakan Enum `App\Enums\UserRole` (SUPERADMIN, ADMIN, OPD).
 *   **Data Isolation (Fail-Safe)**: Implementasi `App\Models\Scopes\TenantScope` pada model `Vehicle`. Admin OPD secara otomatis dibatasi aksesnya hanya pada `opd_id` miliknya. Jika `opd_id` hilang/null, sistem tetap mengunci akses (bukan membuka akses global) untuk keamanan maksimal.
-*   **Otomasi Akun (Model Level)**: Logika pembuatan akun admin OPD dipindahkan ke `Opd::booted()` (Event `created`). Hal ini menjamin setiap OPD baru (lewat Form atau Import Excel) selalu memiliki akun admin secara otomatis.
+*   **Otomasi Akun (Observer Level)**: Logika pembuatan akun admin OPD dijalankan melalui `OpdObserver::created()`. Hal ini menjamin setiap OPD baru (lewat Form atau Import Excel) selalu memiliki akun admin secara otomatis.
 *   **Sistem Log Aktivitas (Audit Trail)**: Menggunakan tabel `activities` dan model `Activity`. Log dicatat secara otomatis melalui **Eloquent Observers** (`created`, `deleted`) pada model `Vehicle`, `Opd`, dan `User`.
-*   **Mekanisme Caching**: Statistik dashboard menggunakan *cache key* dinamis: `dashboard.stats.[role].[opd_id]`. Seluruh aksi CRUD pada `VehicleController` telah diupdate untuk melakukan *cache flushing* pada kunci yang tepat.
+*   **Mekanisme Caching**: Statistik dashboard menggunakan *cache key* dinamis: `dashboard.stats.[role].[opd_id]`. Seluruh aksi CRUD pada kendaraan dan OPD kini menggunakan helper terpusat `invalidateDashboardStats()` di `VehicleService` untuk melakukan *targeted invalidation* (bukan `Cache::flush()` global), sehingga cache pengaturan sistem (`setting.{key}`) tetap terjaga dan performa lebih optimal.
 *   **Integritas Data (Hardened)**: 
     *   Database: `onDelete('cascade')` pada relasi `opd_id` di tabel `users` (telah disinkronkan ke mesin database MariaDB/MySQL).
     *   Audit: `onDelete('set null')` pada `user_id` di tabel `activities` untuk menjaga riwayat log tetap utuh meski akun dihapus.
@@ -96,10 +96,16 @@ Penyimpanan dan pembaruan data wajib menggunakan kelas validasi terpisah demi me
 - `UpdateProfileRequest`: Mengelola validasi pembaruan profil pengguna, email unik, kata sandi terkonfirmasi, dan avatar.
 - `UpdateSettingRequest`: Mengelola validasi pembaruan pengaturan CMS secara dinamis berdasarkan tipe setting (`text`, `textarea`, `image`).
 
-**Aturan implementasi terbaru:** Controller `OpdController`, `VehicleTypeController`, `UserController`, `ProfileController`, dan `SettingController` tidak lagi menulis validasi inline melalui `$request->validate()`. Semua validasi input pada area tersebut sudah dipindahkan ke kelas `FormRequest` khusus agar konsisten dengan pola Laravel 12 dan modul kendaraan.
+### Konvensi Validasi & FormRequest
+- **Wajib FormRequest**: Dilarang menggunakan validasi inline `$request->validate()` di dalam Controller.
+- **Cakupan Luas**: Standar ini berlaku untuk operasi CRUD dasar hingga operasi data massal seperti import Excel (contoh: `ImportVehicleRequest`).
+- **Status Implementasi**: Controller `OpdController`, `VehicleTypeController`, `UserController`, `ProfileController`, dan `SettingController` telah sepenuhnya menggunakan pola ini.
+- **Penanganan Enum**: Validasi status dan kondisi wajib menggunakan `Rule::enum()` untuk menjamin sinkronisasi dengan Domain Model.
 
 ### Konvensi Middleware & Akses Rute
 - Semua *Controller* wajib mengimplementasikan antarmuka `HasMiddleware` standar Laravel 12 dengan metode statis `middleware()`.
+- Seluruh aturan otorisasi (`auth`, `role`, `only`, `except`) menjadi **sumber kebenaran di level Controller** untuk memudahkan audit akses per modul.
+- Berkas `routes/web.php` difokuskan untuk deklarasi URI, nama rute, dan pemetaan Controller, tanpa duplikasi grup middleware besar yang berlapis.
 - Karena operasi menggunakan antarmuka *Modal*, rute halaman formulir tradisional wajib dibatasi:
 ```php
 Route::resource('vehicles', VehicleController::class)->except(['create', 'edit', 'show']);
@@ -116,8 +122,8 @@ Sistem melakukan pembersihan data otomatis saat import Excel:
 2. **Penentuan Status Otomatis**: Jika kondisi fisik adalah 'Rusak Berat' atau 'Hilang', sistem otomatis mengatur status operasional ke 'Nonaktif'.
 
 ### Strategi Caching
-- **Statistik Dashboard**: Menggunakan 1 kueri agregasi kondisional yang di-cache via `cache()->remember('dashboard.stats', 300)` (5 menit).
-- **Cache Invalidation**: Cache wajib dihapus (`cache()->forget('dashboard.stats')`) setiap kali terjadi operasi **Store, Update, Destroy, Import,** atau **Truncate** pada data kendaraan.
+- **Statistik Dashboard**: Menggunakan cache key dinamis berbasis role dan instansi: `dashboard.stats.{role}.{opd_id}` dengan TTL 5 menit.
+- **Cache Invalidation**: Seluruh mutasi data kendaraan dan OPD (**Store, Update, Destroy, Import, Truncate**) wajib menggunakan helper terpusat `VehicleService::invalidateDashboardStats()` untuk *targeted invalidation* (global + OPD terdampak), bukan `Cache::flush()` global.
 - **Pengaturan Global**: Di-cache via `cache()->remember('setting.{key}', 3600)` (1 jam) dengan penghapusan otomatis (`cache()->forget`) saat data diperbarui.
 
 ---
@@ -249,3 +255,4 @@ Seluruh kode backend (Models, Controllers, Services, Enums, dll) wajib memiliki 
 4. **Bahasa Indonesia Wajib:** Seluruh dokumentasi kode (PHPDoc, komentar inline, pesan commit) dan komunikasi pengembangan wajib menggunakan **Bahasa Indonesia** secara konsisten.
 5. **Jangan eksekusi tanpa persetujuan:** Jika user meminta perubahan pada area spesifik, jangan memperluas cakupan ke file lain tanpa konfirmasi terlebih dahulu.
 6. **Konsistensi Validasi:** Untuk endpoint `store` dan `update`, utamakan `FormRequest` khusus dibanding validasi inline di controller, kecuali ada alasan teknis yang jelas untuk tidak melakukannya.
+7. **Sinkronisasi Status:** Selalu baca file `Status Implementasi Terkini.md` di awal sesi untuk memahami detail progres pengerjaan fitur yang sudah selesai (DONE) maupun yang masih dalam tahap (IN PROGRESS).

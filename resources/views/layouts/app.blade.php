@@ -31,6 +31,21 @@
             <!-- Main Content Area -->
             <main class="animate-on-scroll">
                 @include('layouts.partials.alerts')
+
+                @auth
+                    @if(auth()->user()->role === \App\Enums\UserRole::OPD && is_null(auth()->user()->opd_id))
+                        <div class="container-fluid">
+                            <div class="alert alert-danger border-0 shadow-sm rounded-3 d-flex align-items-center mb-4" role="alert">
+                                <i class="bi bi-exclamation-octagon-fill fs-4 me-3"></i>
+                                <div>
+                                    <h6 class="alert-heading fw-bold mb-1">Akses Dibatasi (Lock Mode)</h6>
+                                    <p class="mb-0 small">Akun Anda belum terhubung dengan instansi OPD mana pun. Silakan hubungi <strong>Superadmin</strong> untuk menautkan akun Anda agar dapat mengelola data kendaraan.</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                @endauth
+
                 @yield('content')
             </main>
             

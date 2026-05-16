@@ -8,14 +8,26 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
 /**
  * Controller untuk Manajemen Pengaturan Aplikasi (CMS)
  * 
  * Digunakan untuk memperbarui variabel web seperti logo, nama instansi, dll.
  */
-class SettingController extends Controller
+class SettingController extends Controller implements HasMiddleware
 {
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            'auth',
+            'role:superadmin',
+        ];
+    }
+
     /**
      * Menampilkan halaman daftar pengaturan yang dikelompokkan berdasarkan grup.
      * 

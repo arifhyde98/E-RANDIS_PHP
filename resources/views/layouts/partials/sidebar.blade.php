@@ -94,6 +94,12 @@
             </a>
         </li>
 
+        <li class="{{ Request::is('activities*') ? 'active' : '' }}">
+            <a href="{{ route('activities.index') }}">
+                <i class="bi bi-shield-lock"></i> Audit Log
+            </a>
+        </li>
+
         <li class="{{ request()->routeIs('settings.*') ? 'active' : '' }}">
             <a href="{{ route('settings.index') }}">
                 <i class="bi bi-gear"></i> Pengaturan
