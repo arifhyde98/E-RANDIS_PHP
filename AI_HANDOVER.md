@@ -97,6 +97,10 @@ Penyimpanan dan pembaruan data wajib menggunakan kelas validasi terpisah demi me
 - `StoreUserRequest` / `UpdateUserRequest`: Mengelola validasi manajemen pengguna, termasuk validasi enum `UserRole` dan relasi `opd_id`.
 - `UpdateProfileRequest`: Mengelola validasi pembaruan profil pengguna, email unik, kata sandi terkonfirmasi, dan avatar.
 - `UpdateSettingRequest`: Mengelola validasi pembaruan pengaturan CMS secara dinamis berdasarkan tipe setting (`text`, `textarea`, `image`).
+- `ImportVehicleRequest`: Memvalidasi unggahan berkas Excel untuk pratinjau dan jalur impor legacy.
+- `ExecuteSmartImportRequest`: Memvalidasi eksekusi AI Smart Import, termasuk token sesi impor, struktur mapping, larangan mapping ganda, dan kewajiban kolom identitas minimum.
+- `ResolveDuplicateVehicleRequest`: Memvalidasi resolusi kendaraan ganda dan memastikan pasangan `original_id` / `duplicate_id` benar-benar pasangan duplikasi sah menurut hasil diagnosis sistem.
+- `ResolveDuplicateOpdRequest`: Memvalidasi penggabungan OPD ganda serta memastikan pasangan target/sumber memang pasangan OPD terindikasi ganda yang sah.
 
 ### Konvensi Validasi & FormRequest
 - **Wajib FormRequest**: Dilarang menggunakan validasi inline `$request->validate()` di dalam Controller.
@@ -148,6 +152,28 @@ Sistem melakukan pembersihan data otomatis saat import Excel:
     - **Global Duplicate Detection**: Menggunakan `withoutGlobalScopes()` pada pengecekan plat nomor agar deteksi duplikat bersifat global lintas instansi (menghindari error SQL Unique Constraint).
     - **Data Ownership**: Memastikan field `user_id` selalu terisi otomatis dengan ID pengunggah agar data "diakui" oleh sistem statistik.
     - **Null-Safety**: Menggunakan akses *null-safe* pada relasi user-OPD untuk mencegah kegagalan sistem saat mengolah data yang tidak lengkap.
+4. **Keamanan Alur AI Smart Import**:
+    - **Preview Multi-Sheet Dinamis**: `importPreview()` menelusuri seluruh sheet dan memilih sheet pertama yang valid memiliki header terdeteksi, lalu mengembalikan `active_sheet_name` ke frontend.
+    - **Token Sesi Impor**: Setelah preview berhasil, sistem membuat `import_token` acak yang disimpan di cache server selama 30 menit; frontend tidak pernah menerima path berkas fisik secara mentah.
+    - **Validasi Kepemilikan Token**: Eksekusi impor hanya diterima jika token masih aktif, dimiliki oleh user yang sama, dan berkas sementara masih tersedia.
+    - **Pembersihan Otomatis**: Setelah impor berhasil atau token kedaluwarsa, berkas sementara dan cache token dibersihkan otomatis.
+    - **Legacy Fallback Terpisah**: Jalur template tradisional menggunakan endpoint khusus `/vehicles/import-legacy` dengan mapping template standar otomatis, terpisah dari jalur AI Smart Import.
+    - **Normalisasi Dokumen**: Nilai STNK/BPKB dari Excel dinormalisasi ke format baku `Ada` / `Tidak`.
+
+### Logika Diagnosis & Resolusi Duplikasi
+Sistem memiliki modul diagnosis duplikasi data untuk membantu membersihkan inkonsistensi hasil impor tanpa membuka akses global kepada user OPD:
+1. **Akses Terbatas**: Endpoint diagnosis dan resolusi duplikasi hanya dapat diakses role `SUPERADMIN` dan `ADMIN`.
+2. **Deteksi Kendaraan Ganda**:
+   - Mendeteksi suffix plat hasil impor seperti `DN 2806 B (2)` terhadap plat induk exact match `DN 2806 B`.
+   - Mendeteksi kendaraan dengan `no_mesin` identik secara global lintas tenant.
+3. **Validasi Pasangan Aman**:
+   - Setiap aksi merge/delete kendaraan wajib melalui `ResolveDuplicateVehicleRequest`.
+   - Request hanya diterima bila pasangan `original_id` dan `duplicate_id` cocok dengan pasangan duplikasi sah hasil diagnosis service.
+4. **Resolusi Atomik**:
+   - `mergeVehicles()` dan `mergeOpds()` dibungkus transaksi database agar tidak meninggalkan perubahan parsial jika terjadi kegagalan.
+   - Saat merge OPD, sistem menyinkronkan **dua kolom sekaligus** pada kendaraan terdampak: `opd_id` dan teks historis `opd`.
+5. **Catatan Kualitas Data**:
+   - Untuk duplikasi berbasis `no_mesin`, pemilihan record induk saat ini masih mengikuti record pertama hasil kueri. Ini aman secara teknis, tetapi kebijakan bisnis pemilihan induk terbaik masih menjadi area penyempurnaan lanjutan.
 
 ### Strategi Caching
 - **Statistik Dashboard**: Menggunakan cache key dinamis berbasis role dan instansi: `dashboard.stats.{role}.{opd_id}` dengan TTL 5 menit.
@@ -212,10 +238,15 @@ Komponen modal untuk CRUD *Single Page Interaction*, mendukung perilaku *mobile-
 
 ### Manajemen Aset Kendaraan (`VehicleController`)
 - **Pencarian Publik Landing Page:** Antarmuka pencarian bagi masyarakat di rute `/` dan `/vehicle-search`. Input otomatis dibersihkan oleh `VehicleService::formatPlateNumber()` (kapitalisasi, penghapusan spasi ganda, dan filter karakter alfanumerik).
-- **Impor Excel Massal (`/vehicles/import`):** Menggunakan kelas `VehicleImport` yang otomatis memetakan teks mentah instansi dan jenis kendaraan ke dalam relasi `opd_id` dan `vehicle_type_id`. Terdapat cetak biru pengembangan jangka panjang menuju **AI Smart Import** untuk pemetaan kolom dinamis tanpa templat baku.
-- **Ekspor Excel (`/vehicles/export`):** Mengunduh seluruh data aset dalam format sprei terstruktur.
-- **Unduh Templat Impor (`/vehicles/template`):** Mengunduh berkas acuan baku pengisian data Excel.
-- **Reset Massal / Kosongkan Data (`/vehicles/truncate`):** Menghapus seluruh rekaman kendaraan secara cepat (*truncate*) untuk inisialisasi ulang basis data.
+- **Impor Excel Massal AI (`/vehicles/import`):** Menggunakan kelas `VehicleImport` yang mendukung **AI Smart Import** (pemetaan kolom dinamis). Sistem menganalisis header Excel secara otomatis, mencocokkannya menggunakan algoritma kemiripan teks semantik, memilih sheet valid pertama dari berkas multi-sheet, menampilkan visualisasi pratinjau data (3 baris sampel), lalu mengeksekusi impor menggunakan `import_token` aman berbasis cache server.
+- **Impor Excel Tradisional (`/vehicles/import-legacy`):** Menangani unggahan template standar lama secara terpisah menggunakan mapping default template E-RANDIS agar alur non-AI tetap stabil dan tidak bercampur dengan eksekusi Smart Import.
+
+- **Cek & Resolusi Duplikasi Data (Fase 3 - Lanjutan):** Sistem dilengkapi dengan modul pendeteksi dan penyelesai duplikasi data kendaraan serta instansi OPD secara cerdas:
+  - **Deteksi Duplikasi Kendaraan (`checkDuplicates`):** Menganalisis database secara global lintas instansi (`withoutGlobalScopes()`) untuk menemukan kendaraan dengan akhiran plat ganda hasil impor (misal: `DN 2806 B` vs `DN 2806 B (2)`) atau Nomor Mesin identik ganda. Menampilkan tabel perbandingan dinamis di frontend yang menyorot perbedaan atribut secara visual.
+  - **Resolusi Gabung Kendaraan (`mergeVehicles`):** Menggabungkan data kendaraan ganda ke data asli secara atomik (mengisi otomatis kolom kosong pada data asli dengan nilai dari data ganda) lalu menghapus data ganda secara aman.
+  - **Resolusi Hapus Kendaraan (`resolveDuplicateVehicle`):** Menghapus salah satu data ganda hanya jika pasangan duplikatnya tervalidasi sah oleh sistem.
+  - **Deteksi & Gabung OPD Ganda (`mergeOpds`):** Mendeteksi instansi OPD dengan nama yang mirip/sama persis akibat kesalahan ketik saat impor. Menggabungkan instansi tersebut secara atomik, memindahkan seluruh kendaraan dari OPD duplikat ke OPD utama, menyinkronkan `opd_id` dan teks `opd`, lalu menghapus OPD duplikat secara aman.
+  - **Robust OPD Relation & Fallback Mapping:** Mendukung pembacaan nama OPD yang tangguh menggunakan kombinasi relasi Eloquent `opdRelation` dengan fallback kolom string `opd` (`$original->opdRelation?->nama ?? $original->opd ?? 'BELUM DIKETAHUI'`), menjamin data OPD tidak pernah hilang atau tertulis kosong/belum diketahui.
 
 ### Manajemen Master Data (Hub)
 - Rute terpusat (`/master-data`) untuk mengelola **Jenis Kendaraan** (`VehicleTypeController`) dan **OPD / Dinas** (`OpdController`).
@@ -243,8 +274,13 @@ Komponen modal untuk CRUD *Single Page Interaction*, mendukung perilaku *mobile-
 | DELETE | `/vehicles/{id}` | `VehicleController@destroy` | Auth | Hapus kendaraan |
 | GET | `/vehicles/export` | `VehicleController@export` | Auth | Ekspor Excel |
 | GET | `/vehicles/template` | `VehicleController@downloadTemplate` | Auth | Unduh template import |
-| POST | `/vehicles/import` | `VehicleController@import` | Auth | Import dari Excel |
+| POST | `/vehicles/import` | `VehicleController@import` | Auth | Eksekusi AI Smart Import berbasis token sesi |
+| POST | `/vehicles/import-legacy` | `VehicleController@importLegacy` | Auth | Import template standar tradisional |
+| POST | `/vehicles/import-preview` | `VehicleController@importPreview` | Auth | Pratinjau & Analisis Pemetaan Kolom (AI) |
 | POST | `/vehicles/truncate` | `VehicleController@truncate` | Auth | Kosongkan seluruh data |
+| GET | `/vehicles/check-duplicates` | `VehicleController@checkDuplicates` | Admin / Superadmin | Pindai duplikasi kendaraan & OPD (JSON) |
+| POST | `/vehicles/resolve-duplicate-vehicle` | `VehicleController@resolveDuplicateVehicle` | Admin / Superadmin | Gabungkan/hapus kendaraan ganda tervalidasi |
+| POST | `/vehicles/resolve-duplicate-opd` | `VehicleController@resolveDuplicateOpd` | Admin / Superadmin | Gabungkan instansi OPD ganda tervalidasi |
 | GET | `/master-data` | `MasterDataController@index` | Auth | Hub master data |
 | Resource | `/vehicle-types` | `VehicleTypeController` | Auth | CRUD tipe kendaraan |
 | POST | `/vehicle-types/cleanup` | `VehicleTypeController@cleanup` | Auth | Bersihkan tipe kosong |
@@ -287,5 +323,5 @@ Seluruh kode backend (Models, Controllers, Services, Enums, dll) wajib memiliki 
 4. **Bahasa Indonesia Wajib:** Seluruh dokumentasi kode (PHPDoc, komentar inline, pesan commit) dan komunikasi pengembangan wajib menggunakan **Bahasa Indonesia** secara konsisten.
 5. **Jangan eksekusi tanpa persetujuan:** Jika user meminta perubahan pada area spesifik, jangan memperluas cakupan ke file lain tanpa konfirmasi terlebih dahulu.
 6. **Konsistensi Validasi:** Untuk endpoint `store` dan `update`, utamakan `FormRequest` khusus dibanding validasi inline di controller, kecuali ada alasan teknis yang jelas untuk tidak melakukannya.
-7. **Sinkronisasi Status:** Selalu baca file `Status Implementasi Terkini.md` di awal sesi untuk memahami detail progres pengerjaan fitur yang sudah selesai (DONE) maupun yang masih dalam tahap (IN PROGRESS).
+7. **Sinkronisasi Status:** Gunakan `AI_HANDOVER.md`, `PROJECT_MASTER.md`, dan dokumen fitur terbaru sebagai referensi utama sebelum memulai perubahan. Jangan mengandalkan dokumen status lama yang tidak lagi dipelihara.
 8. **⚠️ WAJIB: Penambahan Fitur Baru:** Setiap penambahan fitur baru **HARUS** mengikuti prosedur yang tercantum dalam file `ATURAN_PENAMBAHAN_FITUR.md`. Dokumen tersebut berisi checklist lengkap mulai dari perencanaan, analisis dampak (multi-tenancy, cache, observer), implementasi teknis, testing, hingga deployment. **DILARANG KERAS** menambahkan fitur tanpa melalui checklist ini karena sistem memiliki arsitektur kompleks dengan risiko error 60-80% jika tidak mengikuti aturan. Baca dan ikuti `ATURAN_PENAMBAHAN_FITUR.md` sebelum memulai development fitur baru.

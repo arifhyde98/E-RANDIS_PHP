@@ -13,9 +13,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // 1. Panggil Seeder Bawaan Sistem
+        $this->call([
+            SettingSeeder::class,
+            OpdSeeder::class,
+            VehicleTypeSeeder::class,
+        ]);
+
+        // 2. Buat Akun Superadmin Utama agar Terhindar dari Lock Mode
         User::factory()->create([
             'name' => 'Admin',
             'email' => 'admin@example.com',
+            'role' => 'superadmin',
             'password' => Hash::make('admin123'),
         ]);
     }

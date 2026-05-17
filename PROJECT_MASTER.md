@@ -125,16 +125,17 @@ Status implementasi fitur utama sistem.
 | Import Excel Kendaraan | DONE | Automasi relasi & *Batch Insert* teroptimasi |
 | Audit Trail (Log Sistem) | DONE | Hanya dapat diakses Superadmin |
 | CMS Pengaturan Global | DONE | Tersimpan di *Cache* |
+| Cek & Resolusi Duplikasi | DONE | Analisis ganda cerdas (plat & mesin) & merge OPD |
 
 ---
 
-## 10. Roadmap
 ### Phase 1: Foundation (Selesai)
 - Sistem otorisasi, arsitektur *Tenant*, dan manajemen aset dasar.
 ### Phase 2: Optimization (Selesai)
 - Peningkatan performa kueri (*indexing*), UI responsif, pembersihan kode, dan standarisasi *FormRequest*.
-### Phase 3: Future Expansion (Mendatang)
-- **AI Smart Import**: Pemetaan dinamis header Excel berbasis AI agar tidak terkunci pada satu format *template* baku.
+### Phase 3: Future Expansion (Selesai)
+- **AI Smart Import**: Pemetaan dinamis header Excel berbasis AI semantik agar pengguna dapat mengunggah format file Excel bebas dan memetakan kolom secara visual. Fitur ini didukung oleh kecocokan sinonim otomatis dan fallback kemiripan teks (similar text) > 65%.
+- **Diagnosis & Resolusi Duplikasi**: Modul pendeteksi plat ganda hasil impor serta pencocokan mesin ganda secara global. Dilengkapi fitur resolusi gabung (*merge*) kendaraan dan penggabungan instansi OPD dengan kemiripan nama untuk mencegah inkonsistensi data.
 
 ---
 

@@ -41,7 +41,12 @@ Route::put('profile', [ProfileController::class, 'update'])->name('profile.updat
 Route::get('vehicles/export', [VehicleController::class, 'export'])->name('vehicles.export');
 Route::get('vehicles/template', [VehicleController::class, 'downloadTemplate'])->name('vehicles.template');
 Route::post('vehicles/import', [VehicleController::class, 'import'])->name('vehicles.import');
+Route::post('vehicles/import-legacy', [VehicleController::class, 'importLegacy'])->name('vehicles.import-legacy');
+Route::post('vehicles/import-preview', [VehicleController::class, 'importPreview'])->name('vehicles.import-preview');
 Route::post('vehicles/truncate', [VehicleController::class, 'truncate'])->name('vehicles.truncate');
+Route::get('vehicles/check-duplicates', [VehicleController::class, 'checkDuplicates'])->name('vehicles.check-duplicates');
+Route::post('vehicles/resolve-duplicate-vehicle', [VehicleController::class, 'resolveDuplicateVehicle'])->name('vehicles.resolve-duplicate-vehicle');
+Route::post('vehicles/resolve-duplicate-opd', [VehicleController::class, 'resolveDuplicateOpd'])->name('vehicles.resolve-duplicate-opd');
 Route::resource('vehicles', VehicleController::class)->except(['create', 'edit', 'show']);
 
 // Master Data Hub

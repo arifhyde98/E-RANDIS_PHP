@@ -143,5 +143,275 @@ class VehicleService
             ->orWhere('pemegang', 'LIKE', "%{$query}%")
             ->first();
     }
+
+    /**
+     * Menganalisis header Excel dan merekomendasikan pemetaan kolom ke database E-RANDIS.
+     * 
+     * Menggunakan analisis semantik berbasis kamus sinonim dan pencocokan kemiripan teks.
+     * 
+     * @param array $headers Daftar header kolom dari file Excel
+     * @return array Rekomendasi pemetaan: [ExcelHeader => TargetDbColumn]
+     */
+    public function suggestColumnMapping(array $headers): array
+    {
+        $suggestions = [];
+        
+        // Kamus sinonim kolom target database
+        $synonyms = [
+            'no_polisi' => ['no polisi', 'no. polisi', 'nomor polisi', 'plat', 'no plat', 'no. plat', 'nomor plat', 'nopol', 'plat nomor', 'plate', 'plate number'],
+            'jenis' => ['jenis', 'jenis kendaraan', 'kategori', 'kategori kendaraan', 'roda', 'class', 'category', 'jenis roda'],
+            'merk' => ['merk', 'merek', 'brand', 'pabrikan', 'nama aset', 'nama kendaraan', 'make', 'merk jenis', 'merkjenis', 'merk/jenis'],
+            'tipe' => ['tipe', 'type', 'model', 'jenis tipe', 'tipe kendaraan', 'merk jenis', 'merkjenis', 'merk/jenis'],
+            'no_mesin' => ['no mesin', 'no. mesin', 'nomor mesin', 'engine number', 'engine no', 'nomer mesin'],
+            'no_rangka' => ['no rangka', 'no. rangka', 'nomor rangka', 'chassis number', 'vin', 'chassis no', 'nomer rangka'],
+            'tahun_pembuatan' => ['tahun', 'tahun pembuatan', 'thn', 'tahun rakit', 'tahun buat', 'year', 'thn pembuatan', 'thn buat'],
+            'tgl_perolehan' => ['tgl perolehan', 'tanggal perolehan', 'tgl beli', 'tanggal beli', 'tanggal perolehan aset', 'acquisition date', 'tgl perolehan aset'],
+            'nilai_perolehan' => ['harga', 'nilai perolehan', 'harga perolehan', 'nilai', 'nilai aset', 'harga beli', 'price', 'value', 'jumlah perolehan'],
+            'stnk_ada' => ['stnk', 'status stnk', 'kelengkapan stnk', 'ada stnk', 'surat stnk'],
+            'bpkb_ada' => ['bpkb', 'status bpkb', 'kelengkapan bpkb', 'ada bpkb', 'surat bpkb'],
+            'kondisi' => ['kondisi', 'kondisi fisik', 'keadaan', 'status kondisi', 'condition', 'kondisi aset', 'kondisi kendaraan'],
+            'pemegang' => ['pemegang', 'nama pemegang', 'penanggung jawab', 'peminjam', 'user', 'driver', 'nama pemakai', 'penggunaan', 'pengguna'],
+            'keterangan' => ['keterangan', 'ket', 'note', 'notes', 'keterangan tambahan', 'keterangan aset'],
+            'opd' => ['opd', 'instansi', 'dinas', 'skpd', 'kantor', 'bagian', 'department', 'organisasi'],
+        ];
+
+        foreach ($headers as $header) {
+            $cleanHeader = strtolower(trim($header));
+            $cleanHeader = preg_replace('/[^a-z0-9\s]/', '', $cleanHeader); // Bersihkan simbol
+            $cleanHeader = preg_replace('/\s+/', ' ', $cleanHeader); // Bersihkan spasi ganda
+            
+            $bestMatch = null;
+            $highestSimilarity = 0;
+
+            // 1. Cari kecocokan eksak di kamus sinonim
+            foreach ($synonyms as $targetColumn => $list) {
+                if (in_array($cleanHeader, $list)) {
+                    $bestMatch = $targetColumn;
+                    break;
+                }
+            }
+
+            // 2. Jika tidak ada kecocokan eksak, gunakan String Similarity (similar_text)
+            if (!$bestMatch) {
+                foreach ($synonyms as $targetColumn => $list) {
+                    foreach ($list as $synonym) {
+                        similar_text($cleanHeader, $synonym, $percent);
+                        if ($percent > $highestSimilarity && $percent >= 65) { // Threshold minimal 65% kemiripan
+                            $highestSimilarity = $percent;
+                            $bestMatch = $targetColumn;
+                        }
+                    }
+                }
+            }
+
+            // Jika ada rekomendasi kecocokan, masukkan ke daftar saran
+            if ($bestMatch) {
+                $suggestions[$header] = $bestMatch;
+            } else {
+                $suggestions[$header] = ''; // Biarkan kosong agar user memilih sendiri di UI
+            }
+        }
+
+        return $suggestions;
+    }
+
+    /**
+     * Menganalisis dan mendeteksi daftar kendaraan ganda/identik di database (AI/Sufiks ganda & no_mesin ganda).
+     *
+     * @return array
+     */
+    public function getDuplicateVehiclesList(): array
+    {
+        $vehicles = \App\Models\Vehicle::withoutGlobalScopes()->get();
+        $duplicates = [];
+
+        foreach ($vehicles as $v) {
+            $plate = $v->no_polisi;
+            // Deteksi jika plat berakhir dengan sufiks impor ganda "(2)", "(3)", dst
+            if (preg_match('/^(.+?)\s*\(\d+\)$/', $plate, $matches)) {
+                $originalPlate = trim($matches[1]);
+                
+                // Cari kendaraan asli dengan plat induk
+                $originalVehicle = \App\Models\Vehicle::withoutGlobalScopes()
+                    ->where('no_polisi', $originalPlate)
+                    ->where('id', '!=', $v->id)
+                    ->first();
+
+                if ($originalVehicle) {
+                    $duplicates[] = [
+                        'duplicate_vehicle' => $v,
+                        'original_vehicle'  => $originalVehicle,
+                        'reason'            => "Plat terindikasi ganda hasil impor: \"{$plate}\" vs \"{$originalPlate}\""
+                    ];
+                }
+            }
+        }
+
+        // Deteksi duplikasi berdasarkan Nomor Mesin yang identik
+        $engineDuplicates = \App\Models\Vehicle::withoutGlobalScopes()
+            ->select('no_mesin', \DB::raw('count(*) as count'))
+            ->whereNotNull('no_mesin')
+            ->whereNotIn('no_mesin', ['', '-'])
+            ->groupBy('no_mesin')
+            ->having('count', '>', 1)
+            ->pluck('no_mesin')
+            ->toArray();
+
+        foreach ($engineDuplicates as $noMesin) {
+            $vList = \App\Models\Vehicle::withoutGlobalScopes()
+                ->where('no_mesin', $noMesin)
+                ->get();
+            
+            if ($vList->count() > 1) {
+                $original = $vList->first();
+                for ($i = 1; $i < $vList->count(); $i++) {
+                    $dup = $vList[$i];
+                    
+                    // Hindari duplikasi entri di list jika sudah terdeteksi di plat
+                    $alreadyAdded = collect($duplicates)->contains(function($item) use ($dup) {
+                        return $item['duplicate_vehicle']->id === $dup->id;
+                    });
+
+                    if (!$alreadyAdded) {
+                        $duplicates[] = [
+                            'duplicate_vehicle' => $dup,
+                            'original_vehicle'  => $original,
+                            'reason'            => "Nomor Mesin identik ganda: \"{$noMesin}\""
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $duplicates;
+    }
+
+    /**
+     * Menganalisis dan mendeteksi daftar OPD/Dinas yang terindikasi ganda atau mirip.
+     *
+     * @return array
+     */
+    public function getDuplicateOpdsList(): array
+    {
+        $opds = \App\Models\Opd::all();
+        $duplicates = [];
+        $checked = [];
+
+        foreach ($opds as $opdA) {
+            if (in_array($opdA->id, $checked)) continue;
+
+            foreach ($opds as $opdB) {
+                if ($opdA->id === $opdB->id) continue;
+                if (in_array($opdB->id, $checked)) continue;
+
+                $nameA = strtoupper(trim($opdA->nama));
+                $nameB = strtoupper(trim($opdB->nama));
+
+                // Hilangkan kata-kata umum instansi untuk membandingkan kemiripan inti nama dinas
+                $cleanA = trim(str_replace(['DINAS', 'KANTOR', 'BADAN', 'KABUPATEN', 'KOTA', 'KAB', 'UPTD'], '', $nameA));
+                $cleanB = trim(str_replace(['DINAS', 'KANTOR', 'BADAN', 'KABUPATEN', 'KOTA', 'KAB', 'UPTD'], '', $nameB));
+
+                $isDuplicate = false;
+                $reason = "";
+
+                if ($nameA === $nameB) {
+                    $isDuplicate = true;
+                    $reason = "Nama OPD sama persis (Case-Insensitive): \"{$opdA->nama}\"";
+                } elseif (!empty($cleanA) && !empty($cleanB) && strlen($cleanA) > 3 && ($cleanA === $cleanB)) {
+                    $isDuplicate = true;
+                    $reason = "Indikasi kemiripan nama instansi: \"{$opdA->nama}\" vs \"{$opdB->nama}\"";
+                }
+
+                if ($isDuplicate) {
+                    $countA = \App\Models\Vehicle::withoutGlobalScopes()->where('opd_id', $opdA->id)->count();
+                    $countB = \App\Models\Vehicle::withoutGlobalScopes()->where('opd_id', $opdB->id)->count();
+
+                    $duplicates[] = [
+                        'opd_a'   => $opdA,
+                        'opd_b'   => $opdB,
+                        'count_a' => $countA,
+                        'count_b' => $countB,
+                        'reason'  => $reason
+                    ];
+
+                    $checked[] = $opdB->id;
+                }
+            }
+            $checked[] = $opdA->id;
+        }
+
+        return $duplicates;
+    }
+
+    /**
+     * Menggabungkan data dari kendaraan ganda ke kendaraan asli (mengisi kolom kosong) lalu menghapus yang ganda.
+     *
+     * @param int $originalId
+     * @param int $duplicateId
+     * @return bool
+     */
+    public function mergeVehicles(int $originalId, int $duplicateId): bool
+    {
+        return \DB::transaction(function () use ($originalId, $duplicateId) {
+            $original = \App\Models\Vehicle::withoutGlobalScopes()->find($originalId);
+            $duplicate = \App\Models\Vehicle::withoutGlobalScopes()->find($duplicateId);
+
+            if (!$original || !$duplicate) return false;
+
+            // Salin kolom yang kosong pada data asli dari data ganda
+            $fields = [
+                'jenis', 'merk', 'tipe', 'no_mesin', 'no_rangka', 'tahun_pembuatan',
+                'tgl_stnk', 'tgl_perolehan', 'nilai_perolehan', 'stnk_ada', 'bpkb_ada',
+                'kondisi', 'pemegang', 'keterangan', 'foto_kendaraan'
+            ];
+
+            $updated = false;
+            foreach ($fields as $field) {
+                if (empty($original->{$field}) && !empty($duplicate->{$field})) {
+                    $original->{$field} = $duplicate->{$field};
+                    $updated = true;
+                }
+            }
+
+            if ($updated) {
+                $original->save();
+            }
+
+            // Hapus kendaraan ganda
+            $duplicate->delete();
+            
+            return true;
+        });
+    }
+
+    /**
+     * Menggabungkan OPD duplikat: Memindahkan seluruh kendaraan dari OPD sumber ke OPD target, lalu menghapus OPD sumber.
+     *
+     * @param int $targetOpdId
+     * @param int $sourceOpdId
+     * @return bool
+     */
+    public function mergeOpds(int $targetOpdId, int $sourceOpdId): bool
+    {
+        return \DB::transaction(function () use ($targetOpdId, $sourceOpdId) {
+            $target = \App\Models\Opd::find($targetOpdId);
+            $source = \App\Models\Opd::find($sourceOpdId);
+
+            if (!$target || !$source) return false;
+
+            // Pindahkan seluruh kendaraan dari OPD sumber ke OPD target dan sinkronkan nama OPD-nya
+            \App\Models\Vehicle::withoutGlobalScopes()
+                ->where('opd_id', $sourceOpdId)
+                ->update([
+                    'opd_id' => $targetOpdId,
+                    'opd'    => $target->nama
+                ]);
+
+            // Hapus OPD sumber
+            $source->delete();
+
+            return true;
+        });
+    }
 }
 

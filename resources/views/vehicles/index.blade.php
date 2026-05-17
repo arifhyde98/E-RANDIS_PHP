@@ -31,6 +31,9 @@
                 <span class="btn-action-icon"><i class="bi bi-download"></i></span>
                 <span class="d-none d-sm-inline" data-export-label>Export</span>
             </a>
+            <button type="button" class="btn btn-outline-warning shadow-sm fw-semibold d-flex align-items-center gap-2" id="btnCheckDuplicates">
+                <i class="bi bi-magic text-warning"></i> <span class="d-none d-sm-inline">Cek Duplikasi</span>
+            </button>
             <button type="button" class="btn btn-primary shadow-sm fw-medium d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addVehicleModal">
                 <i class="bi bi-plus-lg"></i> Tambah Kendaraan
             </button>
@@ -168,41 +171,47 @@
 @push('modals')
 <!-- Import Modal -->
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered" id="importModalDialog">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header border-bottom px-4 py-3">
-                <h5 class="modal-title fw-bold text-navy" id="importModalLabel">Import Data Kendaraan</h5>
-                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title fw-bold text-navy d-flex align-items-center gap-2" id="importModalLabel">
+                    <i class="bi bi-file-earmark-arrow-up text-success"></i> Import Data Kendaraan
+                </h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close" id="closeImportModalBtn"></button>
             </div>
-            <form action="{{ route('vehicles.import') }}" method="POST" enctype="multipart/form-data" data-import-form>
-                @csrf
-                <div class="modal-body p-4">
-                    <div class="import-helper d-flex border rounded-3 p-3 mb-4">
-                        <div class="me-3">
-                            <i class="bi bi-info-circle text-primary fs-4"></i>
+            
+            <!-- Menggunakan div container untuk me-render body & footer secara dinamis via AJAX -->
+            <div id="importModalContainer">
+                <form action="{{ route('vehicles.import-preview') }}" method="POST" enctype="multipart/form-data" id="importPreviewForm">
+                    @csrf
+                    <div class="modal-body p-4">
+                        <div class="import-helper d-flex border rounded-3 p-3 mb-4">
+                            <div class="me-3 text-primary">
+                                <i class="bi bi-info-circle fs-4"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-1">Persiapkan Data Anda</h6>
+                                <p class="small text-secondary mb-2">Pastikan data Excel (.xlsx) mengikuti format standar sistem. Sistem mendukung pengimporan banyak sheet (multi-sheet) secara otomatis selama seluruh sheet memiliki struktur kolom yang sama.</p>
+                                <a href="{{ route('vehicles.template') }}" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" data-template-button>
+                                    <i class="bi bi-download"></i> Download Template
+                                </a>
+                            </div>
                         </div>
-                        <div>
-                            <h6 class="fw-bold text-dark mb-1">Persiapkan Data Anda</h6>
-                            <p class="small text-secondary mb-2">Pastikan data Excel (.xlsx) mengikuti format standar sistem agar proses import berjalan lancar.</p>
-                            <a href="{{ route('vehicles.template') }}" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" data-template-button>
-                                <i class="bi bi-download"></i> Download Template
-                            </a>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark small">Pilih File Excel</label>
+                            <input type="file" name="file" class="form-control shadow-none" accept=".xlsx, .xls" required id="importFileField">
+                            <div class="small text-secondary mt-2" id="importFileNameText">Belum ada file dipilih.</div>
                         </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark small">Pilih File Excel</label>
-                        <input type="file" name="file" class="form-control" accept=".xlsx, .xls" required data-import-file>
-                        <div class="small text-secondary mt-2" data-import-file-name>Belum ada file dipilih.</div>
+                    <div class="modal-footer border-top bg-light px-4 py-3 rounded-bottom-4">
+                        <button type="button" class="btn btn-light border fw-medium" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary fw-medium px-4" id="importPreviewSubmit">
+                            <i class="bi bi-cpu me-1"></i> Analisis Kolom (AI)
+                        </button>
                     </div>
-                </div>
-                <div class="modal-footer border-top bg-light px-4 py-3 rounded-bottom-4">
-                    <button type="button" class="btn btn-light border fw-medium" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary fw-medium px-4" data-import-submit>
-                        <i class="bi bi-cloud-arrow-up me-1"></i> Proses Import Data
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -441,6 +450,107 @@
             </div>
         </form>
     </x-modal>
+
+    <!-- DIAGNOSIS DUPLICATES MODAL (Magic Button) -->
+    <x-modal id="diagnosisDuplicatesModal" title="Diagnosis & Bersihkan Data Ganda" size="xl">
+        <div class="modal-body p-4 bg-light">
+            
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs nav-fill mb-4 border-bottom" id="duplicateTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold text-navy py-3 d-flex align-items-center justify-content-center gap-2" id="vehicles-tab" data-bs-toggle="tab" data-bs-target="#vehicles-pane" type="button" role="tab" aria-controls="vehicles-pane" aria-selected="true">
+                        <i class="bi bi-car-front-fill fs-5 text-warning"></i>
+                        <span>Kendaraan Ganda / Identik (<span id="vehicle-dup-count">0</span>)</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold text-navy py-3 d-flex align-items-center justify-content-center gap-2" id="opds-tab" data-bs-toggle="tab" data-bs-target="#opds-pane" type="button" role="tab" aria-controls="opds-pane" aria-selected="false">
+                        <i class="bi bi-building-fill fs-5 text-info"></i>
+                        <span>OPD / Dinas Ganda & Mirip (<span id="opd-dup-count">0</span>)</span>
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="duplicateTabsContent">
+                
+                <!-- PANE 1: VEHICLE DUPLICATES -->
+                <div class="tab-pane fade show active" id="vehicles-pane" role="tabpanel" aria-labelledby="vehicles-tab" tabindex="0">
+                    <div class="alert alert-warning border-0 bg-warning bg-opacity-10 text-navy d-flex align-items-center mb-4 rounded-3 shadow-none">
+                        <div class="fs-4 me-3 text-warning"><i class="bi bi-info-circle-fill"></i></div>
+                        <div>
+                            <h6 class="alert-heading fw-bold mb-1" style="font-size: 0.9rem;">Instruksi Pembersihan Kendaraan</h6>
+                            <p class="mb-0 small text-secondary">
+                                Kendaraan terdeteksi ganda berdasarkan kemiripan Nomor Polisi (plat berakhiran index hasil impor) atau Nomor Mesin identik. Anda dapat:
+                                <br>1. <strong>Gabungkan Data</strong>: Menyalin kelengkapan data kosong dari baris ganda ke baris asli, lalu menghapus baris ganda.
+                                <br>2. <strong>Hapus Duplikat</strong>: Menghapus baris ganda yang salah secara langsung.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive border rounded-3 bg-white shadow-sm" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-navy text-white text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 2;">
+                                <tr>
+                                    <th class="px-3 py-3" style="width: 25%;">Data Ganda (Hasil Impor/Baru)</th>
+                                    <th class="px-3 py-3" style="width: 25%;">Data Induk (Asli/Lama)</th>
+                                    <th class="px-3 py-3" style="width: 30%;">Indikasi Duplikasi</th>
+                                    <th class="px-3 py-3 text-center" style="width: 20%;">Aksi Resolusi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vehicle-dup-list">
+                                <tr>
+                                    <td colspan="4" class="text-center py-5 text-secondary">
+                                        <div class="spinner-border text-warning mb-2" role="status"></div>
+                                        <div class="small fw-medium">Sedang memindai duplikasi kendaraan...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PANE 2: OPD DUPLICATES -->
+                <div class="tab-pane fade" id="opds-pane" role="tabpanel" aria-labelledby="opds-tab" tabindex="0">
+                    <div class="alert alert-info border-0 bg-info bg-opacity-10 text-navy d-flex align-items-center mb-4 rounded-3 shadow-none">
+                        <div class="fs-4 me-3 text-info"><i class="bi bi-info-circle-fill"></i></div>
+                        <div>
+                            <h6 class="alert-heading fw-bold mb-1" style="font-size: 0.9rem;">Instruksi Konsolidasi OPD / Instansi</h6>
+                            <p class="mb-0 small text-secondary">
+                                OPD terdeteksi mirip berdasarkan analisis teks (case-insensitive atau kemiripan nama instansi inti).
+                                <br>Menekan tombol <strong>Gabungkan Instansi</strong> akan **memindahkan seluruh kendaraan** dari OPD duplikat (OPD B) ke OPD utama (OPD A), lalu menghapus OPD duplikat kosong tersebut secara bersih.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive border rounded-3 bg-white shadow-sm" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-navy text-white text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 2;">
+                                <tr>
+                                    <th class="px-3 py-3" style="width: 35%;">OPD Utama (Dipertahankan)</th>
+                                    <th class="px-3 py-3" style="width: 35%;">OPD Duplikat (Akan Dihapus)</th>
+                                    <th class="px-3 py-3" style="width: 15%;">Indikasi</th>
+                                    <th class="px-3 py-3 text-center" style="width: 15%;">Aksi Konsolidasi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="opd-dup-list">
+                                <tr>
+                                    <td colspan="4" class="text-center py-5 text-secondary">
+                                        <div class="spinner-border text-info mb-2" role="status"></div>
+                                        <div class="small fw-medium">Sedang memindai duplikasi OPD...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="modal-footer border-top bg-light px-4 py-3 rounded-bottom-4">
+            <button type="button" class="btn btn-secondary fw-semibold px-4 shadow-sm" data-bs-dismiss="modal">Tutup Diagnosis</button>
+        </div>
+    </x-modal>
 @endpush
 
 @push('scripts')
@@ -451,6 +561,17 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Global Helpers
+        const escapeHtml = (str) => {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
         // Vehicle Data Map
         const vehicleMap = JSON.parse(document.getElementById('vehicle-data-map').textContent);
         // Tooltips
@@ -467,12 +588,6 @@
                 const vehicleId = button.getAttribute('data-id');
                 const vehicle = vehicleMap[vehicleId];
                 const detailContent = document.getElementById('detailContent');
-
-                const escapeHtml = (str) => {
-                    const div = document.createElement('div');
-                    div.textContent = str || '-';
-                    return div.innerHTML;
-                };
 
                 const formatRupiah = (num) => {
                     if (!num) return 'Rp 0';
@@ -632,14 +747,226 @@
             });
         }
 
-        const importForm = document.querySelector('[data-import-form]');
-        const importSubmit = document.querySelector('[data-import-submit]');
-        if (importForm && importSubmit) {
-            importForm.addEventListener('submit', function () {
-                importSubmit.disabled = true;
-                importSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mengimport...';
+        // --- AI SMART IMPORT MULTI-STEP LOGIC ---
+        const importModalElement = document.getElementById('importModal');
+        const importModalDialog = document.getElementById('importModalDialog');
+        const importModalContainer = document.getElementById('importModalContainer');
+        const importFileField = document.getElementById('importFileField');
+        const importFileNameText = document.getElementById('importFileNameText');
+
+        // Simpan HTML form awal sebagai cadangan saat modal di-close/reset
+        const initialFormHtml = importModalContainer.innerHTML;
+
+        if (importFileField && importFileNameText) {
+            // Tampilkan nama file yang dipilih
+            importModalElement.addEventListener('change', function(e) {
+                if (e.target && e.target.id === 'importFileField') {
+                    const file = e.target.files[0];
+                    if (file) {
+                        importFileNameText.textContent = `File terpilih: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                    } else {
+                        importFileNameText.textContent = 'Belum ada file dipilih.';
+                    }
+                }
             });
         }
+
+        // Reset modal ke tampilan awal saat ditutup
+        if (importModalElement) {
+            importModalElement.addEventListener('hidden.bs.modal', function() {
+                importModalContainer.innerHTML = initialFormHtml;
+                importModalDialog.classList.remove('modal-xl');
+                importModalDialog.classList.add('modal-dialog-centered');
+            });
+        }
+
+        // Intersept submit form pratinjau
+        importModalElement.addEventListener('submit', function(e) {
+            if (e.target && e.target.id === 'importPreviewForm') {
+                e.preventDefault();
+                
+                const form = e.target;
+                const submitBtn = document.getElementById('importPreviewSubmit');
+                const formData = new FormData(form);
+
+                // Efek loading premium
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menganalisis Kolom (AI)...';
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Perbesar ukuran modal menjadi modal-xl untuk visualisasi mapping
+                        importModalDialog.classList.remove('modal-dialog-centered');
+                        importModalDialog.classList.add('modal-xl');
+
+                        // Render Halaman Pemetaan (Mapping)
+                        renderMappingInterface(data);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Membaca File',
+                            text: data.message || 'Terjadi kesalahan saat memproses file Excel.',
+                            confirmButtonColor: '#1e40af',
+                        });
+                        // Kembalikan tombol ke sedia kala
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="bi bi-cpu me-1"></i> Analisis Kolom (AI)';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error Sistem',
+                        text: 'Gagal terhubung ke server untuk menganalisis file Excel.',
+                        confirmButtonColor: '#1e40af',
+                    });
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-cpu me-1"></i> Analisis Kolom (AI)';
+                });
+            }
+        });
+
+        // Merender Antarmuka Pemetaan Kolom Excel
+        function renderMappingInterface(data) {
+            const headers = data.headers;
+            const samples = data.samples;
+            const targetColumns = data.target_columns;
+            const suggestedMapping = data.suggested_mapping;
+            const importToken = data.import_token;
+            const headerRowIndex = data.header_row_index;
+
+            // Generate header preview untuk tabel
+            let tableHeaderHtml = '<th class="bg-light px-3 py-2 text-center" style="width: 50px;">No.</th>';
+            headers.forEach(h => {
+                tableHeaderHtml += `<th class="bg-light px-3 py-2">${escapeHtml(h)}</th>`;
+            });
+
+            // Generate baris sampel data
+            let tableBodyHtml = '';
+            samples.forEach((row, rIdx) => {
+                tableBodyHtml += '<tr>';
+                tableBodyHtml += `<td class="text-center text-secondary small px-3 py-2 fw-medium">${rIdx + 1}</td>`;
+                headers.forEach((h, hIdx) => {
+                    const cellVal = row[hIdx] !== undefined && row[hIdx] !== null ? row[hIdx] : '-';
+                    tableBodyHtml += `<td class="px-3 py-2 small text-truncate" style="max-width: 150px;" title="${escapeHtml(cellVal)}">${escapeHtml(cellVal)}</td>`;
+                });
+                tableBodyHtml += '</tr>';
+            });
+
+            // Generate baris form pemetaan kolom
+            let mappingRowsHtml = '';
+            Object.entries(targetColumns).forEach(([dbKey, dbLabel]) => {
+                // Cari apakah ada saran AI yang cocok otomatis
+                let selectOptionsHtml = '<option value="">-- Abaikan Kolom Ini --</option>';
+                headers.forEach(h => {
+                    const isSuggested = suggestedMapping[h] === dbKey;
+                    selectOptionsHtml += `<option value="${escapeHtml(h)}" ${isSuggested ? 'selected' : ''}>${escapeHtml(h)}</option>`;
+                });
+
+                // Cek apakah kolom ini berhasil dipetakan secara otomatis oleh AI
+                const hasMatch = Object.values(suggestedMapping).includes(dbKey);
+                const badgeHtml = hasMatch 
+                    ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1"><i class="bi bi-robot me-1"></i> Cocok (AI)</span>'
+                    : '<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1">Manual</span>';
+
+                mappingRowsHtml += `
+                    <div class="row align-items-center py-2 border-bottom g-3">
+                        <div class="col-md-4">
+                            <div class="fw-bold text-navy small">${escapeHtml(dbLabel)}</div>
+                            <div class="text-secondary" style="font-size: 0.75rem;">Field DB: <code>${dbKey}</code></div>
+                        </div>
+                        <div class="col-md-2 text-md-center">
+                            ${badgeHtml}
+                        </div>
+                        <div class="col-md-6">
+                            <select name="mapping[${dbKey}]" class="form-select form-select-sm shadow-none mapping-select border-primary-hover">
+                                ${selectOptionsHtml}
+                            </select>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Ganti kontainer modal dengan Form Pemetaan Kolom
+            importModalContainer.innerHTML = `
+                <form action="{{ route('vehicles.import') }}" method="POST" id="importExecuteForm">
+                    @csrf
+                    <input type="hidden" name="import_token" value="${escapeHtml(importToken)}">
+                    <input type="hidden" name="header_row_index" value="${headerRowIndex}">
+                    
+                    <!-- Simpan nama header Excel asli ke input JSON untuk dipetakan indeksnya di Backend -->
+                    ${headers.map((h, idx) => `<input type="hidden" name="headers[${idx}]" value="${escapeHtml(h)}">`).join('')}
+
+                    <div class="modal-body p-4">
+                        
+                        <!-- NOTIFIKASI TEMA AI -->
+                        <div class="alert alert-info border-0 bg-info bg-opacity-10 text-navy d-flex align-items-center mb-4 rounded-3">
+                            <div class="fs-4 me-3 text-info">
+                                <i class="bi bi-robot"></i>
+                            </div>
+                            <div>
+                                <h6 class="alert-heading fw-bold mb-1" style="font-size: 0.9rem;">Analisis Semantik AI Selesai</h6>
+                                <p class="mb-0 small text-secondary">AI telah memetakan kolom Excel Anda secara cerdas. Silakan periksa kembali daftar di bawah sebelum melanjutkan.</p>
+                            </div>
+                        </div>
+
+                        <!-- PRATINJAU DOKUMEN EXCEL -->
+                        <h6 class="fw-bold text-navy mb-3"><i class="bi bi-table me-1"></i> Preview Data Excel Anda (3 Baris Sampel)</h6>
+                        <div class="table-responsive border rounded-3 mb-4 bg-white shadow-sm" style="max-height: 200px;">
+                            <table class="table table-hover table-striped table-sm mb-0 align-middle">
+                                <thead>
+                                    <tr>${tableHeaderHtml}</tr>
+                                </thead>
+                                <tbody>
+                                    ${tableBodyHtml}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- DAFTAR PEMETAAN KOLOM -->
+                        <h6 class="fw-bold text-navy mb-3"><i class="bi bi-arrow-left-right me-1"></i> Konfirmasi Pemetaan Kolom Database</h6>
+                        <div class="border rounded-3 p-3 bg-white shadow-sm">
+                            <div class="row border-bottom pb-2 fw-semibold text-secondary small d-none d-md-flex">
+                                <div class="col-md-4">Kolom Aplikasi E-RANDIS</div>
+                                <div class="col-md-2 text-center">Status Pemetaan</div>
+                                <div class="col-md-6">Pilih Kolom dari Excel Anda</div>
+                            </div>
+                            <div class="mapping-rows" style="max-height: 350px; overflow-y: auto; overflow-x: hidden; padding-right: 5px;">
+                                ${mappingRowsHtml}
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    <div class="modal-footer border-top bg-light px-4 py-3 rounded-bottom-4 justify-content-between">
+                        <button type="button" class="btn btn-light border fw-medium" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success fw-medium px-4" id="importExecuteSubmit">
+                            <i class="bi bi-check-all me-1"></i> Mulai Impor Data
+                        </button>
+                    </div>
+                </form>
+            `;
+
+            // Intersept submit form eksekusi impor final
+            const executeForm = document.getElementById('importExecuteForm');
+            if (executeForm) {
+                executeForm.addEventListener('submit', function() {
+                    const submitBtn = document.getElementById('importExecuteSubmit');
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Mengimpor Data Massal...';
+                });
+            }
+        }
+
 
         // 6. Real-time File Count Validation (Max 4 Photos)
         const photoInputs = document.querySelectorAll('input[name="foto_kendaraan[]"]');
@@ -656,6 +983,398 @@
                 }
             });
         });
+
+        // ==========================================
+        // MAGIC BUTTON: DIAGNOSIS DUPLIKASI DATA
+        // ==========================================
+        const btnCheckDuplicates = document.getElementById('btnCheckDuplicates');
+        const diagnosisModal = new bootstrap.Modal(document.getElementById('diagnosisDuplicatesModal'));
+
+        if (btnCheckDuplicates) {
+            btnCheckDuplicates.addEventListener('click', function() {
+                // Tampilkan loading spinner awal di tabel
+                document.getElementById('vehicle-dup-list').innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-secondary">
+                            <div class="spinner-border text-warning mb-2" role="status"></div>
+                            <div class="small fw-medium">Sedang mendiagnosis database kendaraan ganda...</div>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('opd-dup-list').innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-secondary">
+                            <div class="spinner-border text-info mb-2" role="status"></div>
+                            <div class="small fw-medium">Sedang memindai kemiripan instansi OPD...</div>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('vehicle-dup-count').textContent = '0';
+                document.getElementById('opd-dup-count').textContent = '0';
+
+                // Buka modal
+                diagnosisModal.show();
+
+                // Panggil Ajax Diagnosis
+                fetch("{{ route('vehicles.check-duplicates') }}", {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        renderDuplicateVehicles(data.vehicles);
+                        renderDuplicateOpds(data.opds);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Diagnosis Gagal',
+                            text: data.message || 'Terjadi kesalahan internal saat memeriksa data.',
+                            confirmButtonColor: '#1e40af',
+                        });
+                        diagnosisModal.hide();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error Koneksi',
+                        text: 'Gagal terhubung ke database untuk memindai duplikasi.',
+                        confirmButtonColor: '#1e40af',
+                    });
+                    diagnosisModal.hide();
+                });
+            });
+        }
+
+        // Render Kendaraan Ganda
+        function renderDuplicateVehicles(vehicles) {
+            const listContainer = document.getElementById('vehicle-dup-list');
+            document.getElementById('vehicle-dup-count').textContent = vehicles.length;
+
+            if (vehicles.length === 0) {
+                listContainer.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-success">
+                            <i class="bi bi-patch-check-fill fs-1 text-success d-block mb-2"></i>
+                            <h6 class="fw-bold mb-1">Database Bersih!</h6>
+                            <p class="mb-0 small text-secondary">Luar biasa! Tidak terdeteksi adanya plat ganda atau nomor mesin bentrok di sistem.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            vehicles.forEach((item, index) => {
+                // Generate baris perbandingan kolom detail
+                let diffRowsHtml = '';
+                item.differences.forEach(diff => {
+                    const rowClass = diff.is_different ? 'table-danger bg-danger bg-opacity-10' : '';
+                    const badgeHtml = diff.is_different 
+                        ? '<span class="badge bg-danger text-white px-2 py-0.5" style="font-size: 0.65rem;">Berbeda</span>' 
+                        : '<span class="badge bg-light text-secondary border px-2 py-0.5" style="font-size: 0.65rem;">Identik</span>';
+
+                    diffRowsHtml += `
+                        <tr class="${rowClass}">
+                            <td class="fw-bold text-navy py-2 px-3" style="width: 25%; font-size: 0.8rem;">${escapeHtml(diff.label)}</td>
+                            <td class="text-secondary py-2 px-3" style="width: 35%; font-size: 0.8rem;">${escapeHtml(diff.original_val)}</td>
+                            <td class="text-dark fw-bold py-2 px-3" style="width: 30%; font-size: 0.8rem;">${escapeHtml(diff.duplicate_val)}</td>
+                            <td class="text-center py-2 px-3" style="width: 10%;">${badgeHtml}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                    <tr class="align-middle border-bottom-0" id="vehicle-dup-row-${item.duplicate_id}">
+                        <td colspan="4" class="p-0">
+                            <!-- BRIEF INFO ROW -->
+                            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between p-3 bg-white hover-shadow border-bottom transition-all gap-3">
+                                <div class="d-flex flex-wrap align-items-center gap-3 flex-grow-1">
+                                    <div class="text-center bg-light border rounded px-3 py-1.5" style="min-width: 105px;">
+                                        <div class="text-secondary small fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.5px;">PLAT GANDA</div>
+                                        <span class="badge bg-danger text-white fw-bold px-2 py-0.5" style="font-size: 0.8rem;">${escapeHtml(item.duplicate_plate)}</span>
+                                    </div>
+                                    <div class="text-center bg-light border rounded px-3 py-1.5" style="min-width: 105px;">
+                                        <div class="text-secondary small fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.5px;">PLAT INDUK</div>
+                                        <span class="badge bg-success text-white fw-bold px-2 py-0.5" style="font-size: 0.8rem;">${escapeHtml(item.original_plate || '-')}</span>
+                                    </div>
+                                    <div class="ms-2">
+                                        <div class="fw-bold text-navy mb-0" style="font-size: 0.9rem;">${escapeHtml(item.duplicate_merk)}</div>
+                                        <div class="text-secondary small" style="font-size: 0.75rem;"><i class="bi bi-building me-1"></i>${escapeHtml(item.duplicate_opd)}</div>
+                                    </div>
+                                    <div class="ms-md-auto d-flex align-items-center gap-2">
+                                        <span class="badge bg-warning text-dark px-2.5 py-1.5 d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                            <span>${escapeHtml(item.reason)}</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex align-items-center gap-2">
+                                    <!-- MERGE AND DELETE ACTIONS -->
+                                    <button type="button" class="btn btn-sm btn-outline-success fw-bold d-inline-flex align-items-center gap-1 btn-resolve-vehicle shadow-sm" data-action="merge" data-original-id="${item.original_id}" data-duplicate-id="${item.duplicate_id}">
+                                        <i class="bi bi-intersect"></i> <span>Gabungkan</span>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger fw-bold d-inline-flex align-items-center gap-1 btn-resolve-vehicle shadow-sm" data-action="delete" data-original-id="${item.original_id}" data-duplicate-id="${item.duplicate_id}">
+                                        <i class="bi bi-trash3"></i> <span>Hapus</span>
+                                    </button>
+                                    
+                                    <!-- EXPAND BUTTON -->
+                                    <button class="btn btn-sm btn-light border shadow-sm ms-1 fw-medium" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-diff-${item.duplicate_id}" aria-expanded="false" aria-controls="collapse-diff-${item.duplicate_id}">
+                                        <i class="bi bi-eye me-1 text-info"></i> Bandingkan
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- COLLAPSIBLE COMPARISON TABLE -->
+                            <div class="collapse bg-light p-3 border-bottom shadow-inner" id="collapse-diff-${item.duplicate_id}">
+                                <div class="card card-body border-0 shadow-none p-0 bg-transparent">
+                                    <div class="d-flex align-items-center justify-content-between mb-2 px-1">
+                                        <h6 class="fw-bold text-navy mb-0" style="font-size: 0.85rem;"><i class="bi bi-grid-3x3-gap-fill me-1"></i> Perbandingan Atribut Kendaraan Ganda vs Induk</h6>
+                                        <span class="text-secondary small" style="font-size: 0.72rem;"><i class="bi bi-info-circle me-1"></i>Baris berwarna merah menunjukkan nilai yang berbeda</span>
+                                    </div>
+                                    <div class="table-responsive border rounded-3 bg-white">
+                                        <table class="table table-hover table-bordered table-sm mb-0 align-middle">
+                                            <thead class="table-secondary" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                                <tr>
+                                                    <th class="py-2 px-3">Kolom / Atribut</th>
+                                                    <th class="py-2 px-3">Data Induk (Asli)</th>
+                                                    <th class="py-2 px-3">Data Ganda (Impor Baru)</th>
+                                                    <th class="py-2 px-3 text-center">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${diffRowsHtml}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+            attachVehicleResolveEvents();
+        }
+
+        // Render OPD Ganda
+        function renderDuplicateOpds(opds) {
+            const listContainer = document.getElementById('opd-dup-list');
+            document.getElementById('opd-dup-count').textContent = opds.length;
+
+            if (opds.length === 0) {
+                listContainer.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-success">
+                            <i class="bi bi-patch-check-fill fs-1 text-success d-block mb-2"></i>
+                            <h6 class="fw-bold mb-1">Database Bersih!</h6>
+                            <p class="mb-0 small text-secondary">Tidak ada nama OPD/Dinas yang mirip atau terindikasi ganda di sistem.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            opds.forEach(item => {
+                html += `
+                    <tr class="align-middle" id="opd-dup-row-${item.opd_b_id}">
+                        <td class="px-3 py-3">
+                            <div class="fw-bold text-navy">${escapeHtml(item.opd_a_nama)}</div>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-0.5 mt-1 small" style="font-size: 0.7rem;">
+                                Dipertahankan (${item.count_a} Kendaraan)
+                            </span>
+                        </td>
+                        <td class="px-3 py-3">
+                            <div class="fw-bold text-danger">${escapeHtml(item.opd_b_nama)}</div>
+                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-0.5 mt-1 small" style="font-size: 0.7rem;">
+                                Akan Dihapus (${item.count_b} Kendaraan)
+                            </span>
+                        </td>
+                        <td class="px-3 py-3 text-secondary small">
+                            ${escapeHtml(item.reason)}
+                        </td>
+                        <td class="px-3 py-3 text-center">
+                            <button type="button" class="btn btn-primary btn-xs fw-semibold py-2 px-3 btn-resolve-opd" data-target-id="${item.opd_a_id}" data-source-id="${item.opd_b_id}">
+                                <i class="bi bi-signpost-split me-1"></i> Gabungkan Instansi
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+            attachOpdResolveEvents();
+        }
+
+        // Event Resolusi Kendaraan
+        function attachVehicleResolveEvents() {
+            document.querySelectorAll('.btn-resolve-vehicle').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const action = this.getAttribute('data-action');
+                    const originalId = this.getAttribute('data-original-id');
+                    const duplicateId = this.getAttribute('data-duplicate-id');
+                    const row = document.getElementById(`vehicle-dup-row-${duplicateId}`);
+
+                    const confirmText = action === 'merge' 
+                        ? 'Apakah Anda yakin ingin menggabungkan data? Kolom-kolom yang kosong pada data asli akan diisi dari data ganda, lalu data ganda dihapus.'
+                        : 'Apakah Anda yakin ingin menghapus data kendaraan ganda ini dari database?';
+
+                    Swal.fire({
+                        title: 'Konfirmasi Resolusi',
+                        text: confirmText,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#1e40af',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: action === 'merge' ? 'Ya, Gabungkan!' : 'Ya, Hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Tampilkan loading di baris tersebut
+                            const actionsCell = this.closest('td');
+                            const originalHtml = actionsCell.innerHTML;
+                            actionsCell.innerHTML = '<span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
+
+                            fetch("{{ route('vehicles.resolve-duplicate-vehicle') }}", {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: JSON.stringify({
+                                    original_id: originalId,
+                                    duplicate_id: duplicateId,
+                                    action: action
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Sukses',
+                                        text: data.message,
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    });
+                                    // Hapus baris dari tabel diagnosis
+                                    row.style.transition = 'all 0.5s ease';
+                                    row.style.opacity = '0';
+                                    setTimeout(() => {
+                                        row.remove();
+                                        // Update counter
+                                        const countEl = document.getElementById('vehicle-dup-count');
+                                        const newCount = Math.max(0, parseInt(countEl.textContent) - 1);
+                                        countEl.textContent = newCount;
+                                        if (newCount === 0) {
+                                            renderDuplicateVehicles([]);
+                                        }
+                                    }, 500);
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Gagal Resolusi',
+                                        text: data.message,
+                                        confirmButtonColor: '#1e40af'
+                                    });
+                                    actionsCell.innerHTML = originalHtml;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                actionsCell.innerHTML = originalHtml;
+                            });
+                        }
+                    });
+                });
+            });
+        }
+
+        // Event Resolusi OPD
+        function attachOpdResolveEvents() {
+            document.querySelectorAll('.btn-resolve-opd').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target-id');
+                    const sourceId = this.getAttribute('data-source-id');
+                    const row = document.getElementById(`opd-dup-row-${sourceId}`);
+
+                    Swal.fire({
+                        title: 'Gabungkan Instansi OPD?',
+                        text: 'Semua data kendaraan pada OPD duplikat akan otomatis dipindahkan ke OPD utama. Setelah itu, OPD duplikat yang kosong akan dihapus bersih secara otomatis.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#1e40af',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Ya, Gabungkan OPD!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const actionCell = this.closest('td');
+                            const originalHtml = actionCell.innerHTML;
+                            actionCell.innerHTML = '<span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
+
+                            fetch("{{ route('vehicles.resolve-duplicate-opd') }}", {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: JSON.stringify({
+                                    target_opd_id: targetId,
+                                    source_opd_id: sourceId
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Sukses Konsolidasi',
+                                        text: data.message,
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    });
+                                    // Hapus baris dari tabel diagnosis
+                                    row.style.transition = 'all 0.5s ease';
+                                    row.style.opacity = '0';
+                                    setTimeout(() => {
+                                        row.remove();
+                                        // Update counter
+                                        const countEl = document.getElementById('opd-dup-count');
+                                        const newCount = Math.max(0, parseInt(countEl.textContent) - 1);
+                                        countEl.textContent = newCount;
+                                        if (newCount === 0) {
+                                            renderDuplicateOpds([]);
+                                        }
+                                    }, 500);
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Gagal Konsolidasi',
+                                        text: data.message,
+                                        confirmButtonColor: '#1e40af'
+                                    });
+                                    actionCell.innerHTML = originalHtml;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                actionCell.innerHTML = originalHtml;
+                            });
+                        }
+                    });
+                });
+            });
+        }
     });
 </script>
 @endpush

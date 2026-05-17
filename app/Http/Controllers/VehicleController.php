@@ -12,7 +12,11 @@ use App\Http\Requests\UpdateVehicleRequest;
 use App\Exports\VehicleExport;
 use App\Exports\VehicleTemplateExport;
 use App\Imports\VehicleImport;
+use App\Imports\VehicleMultiSheetImport;
 use App\Http\Requests\ImportVehicleRequest;
+use App\Http\Requests\ExecuteSmartImportRequest;
+use App\Http\Requests\ResolveDuplicateVehicleRequest;
+use App\Http\Requests\ResolveDuplicateOpdRequest;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
@@ -39,6 +43,7 @@ class VehicleController extends Controller implements HasMiddleware
         return [
             new Middleware('auth', except: ['search', 'searchLandingVehicle']),
             new Middleware('role:superadmin', only: ['truncate']),
+            new Middleware('role:superadmin,admin', only: ['checkDuplicates', 'resolveDuplicateVehicle', 'resolveDuplicateOpd']),
         ];
     }
 
@@ -354,32 +359,433 @@ class VehicleController extends Controller implements HasMiddleware
     }
 
     /**
-     * Mengimport data kendaraan dari file Excel.
+     * Mengeksekusi impor data kendaraan menggunakan hasil pemetaan AI Smart Import.
      * 
-     * @param Request $request
+     * @param ExecuteSmartImportRequest $request
      * @return RedirectResponse
      */
-    public function import(ImportVehicleRequest $request): RedirectResponse
+    public function import(ExecuteSmartImportRequest $request): RedirectResponse
     {
-        // Tingkatkan limit untuk file besar (Optimasi Fase 3)
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', '300');
 
         try {
-            // Menonaktifkan event (observer) selama import untuk kecepatan maksimal
-            Vehicle::withoutEvents(function () use ($request) {
-                Excel::import(new VehicleImport, $request->file('file'));
-            });
+            $importToken = $request->input('import_token');
             
-            // Catat satu log aktivitas saja untuk seluruh proses import
-            \App\Models\Activity::log("Melakukan import data kendaraan secara massal", 'success');
+            // Ambil metadata sesi impor dari cache
+            $metadata = \Illuminate\Support\Facades\Cache::get($importToken);
+            
+            // Validasi sesi impor
+            if (!$metadata) {
+                return redirect()->route('vehicles.index')->with('error', 'Sesi impor tidak valid atau sudah kedaluwarsa. Silakan unggah ulang berkas.');
+            }
+            
+            if ($metadata['user_id'] !== auth()->id()) {
+                return redirect()->route('vehicles.index')->with('error', 'Akses ditolak: Sesi impor ini milik pengguna lain.');
+            }
+            
+            if (now()->timestamp > $metadata['expires_at']) {
+                if (\Illuminate\Support\Facades\Storage::disk('local')->exists($metadata['file_path'])) {
+                    \Illuminate\Support\Facades\Storage::disk('local')->delete($metadata['file_path']);
+                }
+                \Illuminate\Support\Facades\Cache::forget($importToken);
+                return redirect()->route('vehicles.index')->with('error', 'Sesi impor sudah kedaluwarsa. Silakan lakukan proses ulang.');
+            }
+
+            $filePath = $metadata['file_path'];
+            $mapping = $request->input('mapping', []);
+            $headers = $request->input('headers', []);
+            $headerRowIndex = (int) $request->input('header_row_index', 0);
+            
+            // Konversi startRow (1-indexed, baris setelah header)
+            $startRow = $headerRowIndex + 2; 
+
+            // Pastikan file fisik temp benar-benar ada di storage
+            if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($filePath)) {
+                \Illuminate\Support\Facades\Cache::forget($importToken);
+                return redirect()->route('vehicles.index')->with('error', 'Berkas impor temporer tidak ditemukan pada penyimpanan server.');
+            }
+
+            $fullPath = \Illuminate\Support\Facades\Storage::disk('local')->path($filePath);
+
+            // Eksekusi impor dengan pemetaan dinamis (mendukung multi-sheet)
+            Vehicle::withoutEvents(function () use ($fullPath, $mapping, $headers, $startRow) {
+                Excel::import(
+                    new VehicleMultiSheetImport($mapping, $headers, $startRow, $fullPath), 
+                    $fullPath
+                );
+            });
+
+            // Bersihkan file sementara dan cache sesi setelah sukses eksekusi
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($filePath);
+            \Illuminate\Support\Facades\Cache::forget($importToken);
+
+            // Catat log aktivitas untuk seluruh proses import
+            \App\Models\Activity::log("Melakukan import data kendaraan secara massal (AI Smart Import)", 'success');
 
             // Invalidation massal seluruh OPD (Dashboard stats)
             $this->vehicleService->invalidateDashboardStats(invalidateAllOpd: true);
 
-            return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil diimport.');
+            return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil diimport menggunakan AI Smart Import.');
         } catch (\Exception $e) {
             return redirect()->route('vehicles.index')->with('error', 'Gagal mengimport data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Mengeksekusi impor data kendaraan menggunakan template statis tradisional (Legacy).
+     * 
+     * @param ImportVehicleRequest $request
+     * @return RedirectResponse
+     */
+    public function importLegacy(ImportVehicleRequest $request): RedirectResponse
+    {
+        ini_set('memory_limit', '512M');
+        ini_set('max_execution_time', '300');
+
+        try {
+            $file = $request->file('file');
+            $fullPath = $file->getRealPath();
+
+            // Gunakan default mapping (legacy template) secara otomatis di konstruktor VehicleImport
+            Vehicle::withoutEvents(function () use ($fullPath) {
+                Excel::import(
+                    new VehicleMultiSheetImport([], [], 4, $fullPath), 
+                    $fullPath
+                );
+            });
+
+            // Catat log aktivitas
+            \App\Models\Activity::log("Melakukan import data kendaraan secara massal (Legacy Template)", 'success');
+            
+            // Invalidation massal seluruh OPD (Dashboard stats)
+            $this->vehicleService->invalidateDashboardStats(invalidateAllOpd: true);
+
+            return redirect()->route('vehicles.index')->with('success', 'Data kendaraan berhasil diimport menggunakan format template standar.');
+        } catch (\Exception $e) {
+            return redirect()->route('vehicles.index')->with('error', 'Gagal mengimport data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Membaca file Excel yang diunggah dan mengembalikan preview header & data sampel.
+     * 
+     * Fitur pendukung utama AI Smart Import (Phase 3).
+     * 
+     * @param ImportVehicleRequest $request
+     * @return JsonResponse
+     */
+    public function importPreview(ImportVehicleRequest $request): JsonResponse
+    {
+        try {
+            $file = $request->file('file');
+            
+            // Baca 15 baris pertama file Excel ke dalam array (Konsisten dengan importer: 15 baris)
+            $import = new \App\Imports\VehiclePreviewImport;
+            
+            // Cari sheet pertama yang valid secara dinamis (mencari baris pertama dengan 3+ kolom terisi)
+            $rows = [];
+            $activeSheetName = '';
+            
+            // Dapatkan seluruh data sheets
+            $sheets = Excel::toArray($import, $file);
+            
+            // Dapatkan daftar nama sheet dari berkas menggunakan PhpSpreadsheet dengan penanganan error anggun (offline / mock safe)
+            $sheetNames = [];
+            try {
+                $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($file->getRealPath());
+                $sheetNames = $reader->listWorksheetNames($file->getRealPath());
+            } catch (\Exception $e) {
+                // Abaikan error pembacaan jika format berkas tiruan tidak dikenali (terutama saat unit testing)
+            }
+
+            $headerRowIndex = 0;
+            $headers = [];
+            
+            foreach ($sheets as $sheetIdx => $sheetRows) {
+                if (empty($sheetRows)) continue;
+                
+                foreach ($sheetRows as $rowIndex => $row) {
+                    $nonEmptyCells = array_filter($row, function($cell) {
+                        return !is_null($cell) && trim($cell) !== '';
+                    });
+
+                    if (count($nonEmptyCells) > 2) { // Minimal memiliki 3 kolom terisi
+                        $headerRowIndex = $rowIndex;
+                        $headers = array_map(function($header) {
+                            return trim($header);
+                        }, $row);
+                        $rows = $sheetRows;
+                        $activeSheetName = $sheetNames[$sheetIdx] ?? "Sheet " . ($sheetIdx + 1);
+                        break 2; // Pecahkan pencarian segera setelah menemukan sheet valid pertama!
+                    }
+                }
+            }
+
+            if (empty($rows) || empty($headers)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File Excel kosong atau tidak terdeteksi adanya kolom header di seluruh sheet.'
+                ], 422);
+            }
+
+            // Ambil maksimal 3 sampel baris data setelah header
+            $samples = [];
+            $sampleCount = 0;
+            for ($i = $headerRowIndex + 1; $i < count($rows); $i++) {
+                if ($sampleCount >= 3) break;
+                
+                $nonEmptyCells = array_filter($rows[$i], function($cell) {
+                    return !is_null($cell) && trim($cell) !== '';
+                });
+                
+                if (!empty($nonEmptyCells)) {
+                    $samples[] = $rows[$i];
+                    $sampleCount++;
+                }
+            }
+
+            // Kolom Target Database E-RANDIS yang diharapkan untuk dipetakan
+            $targetColumns = [
+                'no_polisi' => 'Nomor Polisi (Plat)',
+                'jenis' => 'Jenis Kendaraan (Roda 2 / Roda 4 / dll)',
+                'merk' => 'Merk / Pabrikan',
+                'tipe' => 'Tipe / Model',
+                'no_mesin' => 'Nomor Mesin',
+                'no_rangka' => 'Nomor Rangka',
+                'tahun_pembuatan' => 'Tahun Pembuatan',
+                'tgl_perolehan' => 'Tanggal Perolehan Aset',
+                'nilai_perolehan' => 'Harga / Nilai Perolehan',
+                'stnk_ada' => 'Status STNK (Ada/Tidak)',
+                'bpkb_ada' => 'Status BPKB (Ada/Tidak)',
+                'kondisi' => 'Kondisi Fisik Kendaraan',
+                'pemegang' => 'Nama Pemegang / Penanggung Jawab',
+                'keterangan' => 'Keterangan Tambahan',
+                'opd' => 'Nama OPD / Instansi (Jika Superadmin)',
+            ];
+
+            // Analisis Semantik AI untuk mendapatkan rekomendasi pemetaan kolom
+            $suggestedMapping = $this->vehicleService->suggestColumnMapping($headers);
+
+            // Simpan file sementara di storage
+            $filePath = $file->store('temp_imports', 'local');
+            
+            // Generate token keamanan sesi impor temporer (Berlaku 30 Menit)
+            $importToken = 'import_' . \Illuminate\Support\Str::random(40);
+            
+            \Illuminate\Support\Facades\Cache::put($importToken, [
+                'file_path'  => $filePath,
+                'user_id'    => auth()->id(),
+                'expires_at' => now()->addMinutes(30)->timestamp,
+            ], now()->addMinutes(30));
+
+            return response()->json([
+                'success'           => true,
+                'headers'           => $headers,
+                'samples'           => $samples,
+                'target_columns'    => $targetColumns,
+                'suggested_mapping' => $suggestedMapping,
+                'header_row_index'  => $headerRowIndex,
+                'import_token'      => $importToken,
+                'active_sheet_name' => $activeSheetName,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membaca file: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Menganalisis database dan mengembalikan daftar duplikasi kendaraan & OPD untuk modal diagnosis.
+     *
+     * @return JsonResponse
+     */
+    public function checkDuplicates(): JsonResponse
+    {
+        try {
+            $duplicateVehicles = $this->vehicleService->getDuplicateVehiclesList();
+            $duplicateOpds = $this->vehicleService->getDuplicateOpdsList();
+
+            $columnsToCompare = [
+                'no_polisi'       => 'Nomor Polisi',
+                'jenis'           => 'Jenis Kendaraan',
+                'merk'            => 'Merk/Pabrikan',
+                'tipe'            => 'Tipe/Model',
+                'opd'             => 'OPD/Instansi',
+                'pemegang'        => 'Nama Pemegang',
+                'kondisi'         => 'Kondisi Fisik',
+                'tahun_pembuatan' => 'Tahun Pembuatan',
+                'no_mesin'        => 'Nomor Mesin',
+                'no_rangka'       => 'Nomor Rangka',
+                'nilai_perolehan' => 'Nilai Perolehan'
+            ];
+
+            // Transform data kendaraan agar siap dikonsumsi di frontend
+            $formattedVehicles = array_map(function ($item) use ($columnsToCompare) {
+                $differences = [];
+                $original = $item['original_vehicle'];
+                $duplicate = $item['duplicate_vehicle'];
+
+                foreach ($columnsToCompare as $field => $label) {
+                    if ($field === 'opd') {
+                        $valOriginal = $original ? ($original->opdRelation?->nama ?? $original->opd ?? 'BELUM DIKETAHUI') : 'Tidak Ada';
+                        $valDuplicate = $duplicate->opdRelation?->nama ?? $duplicate->opd ?? 'BELUM DIKETAHUI';
+                    } elseif ($field === 'nilai_perolehan') {
+                        $valOriginal = ($original && $original->nilai_perolehan) ? 'Rp ' . number_format($original->nilai_perolehan, 0, ',', '.') : '-';
+                        $valDuplicate = $duplicate->nilai_perolehan ? 'Rp ' . number_format($duplicate->nilai_perolehan, 0, ',', '.') : '-';
+                    } else {
+                        $valOriginal = $original ? ($original->{$field} ?? '-') : '-';
+                        $valDuplicate = $duplicate->{$field} ?? '-';
+                    }
+
+                    // Deteksi perbedaan nilai secara case-insensitive
+                    $isDifferent = (trim(strtoupper($valOriginal)) !== trim(strtoupper($valDuplicate)));
+
+                    $differences[] = [
+                        'label'         => $label,
+                        'original_val'  => $valOriginal,
+                        'duplicate_val' => $valDuplicate,
+                        'is_different'  => $isDifferent
+                    ];
+                }
+
+                return [
+                    'duplicate_id'     => $duplicate->id,
+                    'duplicate_plate'  => $duplicate->no_polisi,
+                    'duplicate_merk'   => $duplicate->merk ?? 'Tidak Diketahui',
+                    'duplicate_opd'    => $duplicate->opdRelation?->nama ?? $duplicate->opd ?? 'BELUM DIKETAHUI',
+                    
+                    'original_id'      => $original ? $original->id : null,
+                    'original_plate'   => $original ? $original->no_polisi : null,
+                    'original_merk'    => $original ? $original->merk : null,
+                    'original_opd'     => $original ? ($original->opdRelation?->nama ?? $original->opd ?? 'BELUM DIKETAHUI') : null,
+                    
+                    'reason'           => $item['reason'],
+                    'differences'      => $differences
+                ];
+            }, $duplicateVehicles);
+
+            // Transform data OPD
+            $formattedOpds = array_map(function ($item) {
+                return [
+                    'opd_a_id'   => $item['opd_a']->id,
+                    'opd_a_nama' => $item['opd_a']->nama,
+                    'count_a'    => $item['count_a'],
+                    
+                    'opd_b_id'   => $item['opd_b']->id,
+                    'opd_b_nama' => $item['opd_b']->nama,
+                    'count_b'    => $item['count_b'],
+                    
+                    'reason'     => $item['reason']
+                ];
+            }, $duplicateOpds);
+
+            return response()->json([
+                'success'  => true,
+                'vehicles' => $formattedVehicles,
+                'opds'     => $formattedOpds
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mendiagnosis duplikasi: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Mengeksekusi penggabungan (merge) kendaraan ganda.
+     *
+     * @param ResolveDuplicateVehicleRequest $request
+     * @return JsonResponse
+     */
+    public function resolveDuplicateVehicle(ResolveDuplicateVehicleRequest $request): JsonResponse
+    {
+        try {
+            $originalId = (int)$request->input('original_id');
+            $duplicateId = (int)$request->input('duplicate_id');
+            $action = $request->input('action');
+
+            if ($action === 'merge') {
+                $success = $this->vehicleService->mergeVehicles($originalId, $duplicateId);
+                if (!$success) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Proses penggabungan gagal. Pasangan kendaraan tidak ditemukan.'
+                    ], 404);
+                }
+                $message = 'Data kendaraan berhasil digabungkan (kolom kosong terisi) dan duplikat dibersihkan.';
+            } else {
+                // Pastikan yang dihapus adalah duplikat yang sah
+                $success = \DB::transaction(function () use ($duplicateId) {
+                    $duplicate = Vehicle::withoutGlobalScopes()->find($duplicateId);
+                    if ($duplicate) {
+                        $duplicate->delete();
+                        return true;
+                    }
+                    return false;
+                });
+
+                if (!$success) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Proses penghapusan gagal. Kendaraan duplikat tidak ditemukan.'
+                    ], 404);
+                }
+                $message = 'Kendaraan duplikat berhasil dibersihkan dari database.';
+            }
+
+            // Simpan audit log lengkap dengan konteks detail (ID, aksi) (Rekomendasi PM #9)
+            \App\Models\Activity::log(
+                "Pembersihan duplikasi kendaraan [Aksi: {$action}, ID Induk: {$originalId}, ID Duplikat: {$duplicateId}]", 
+                'success'
+            );
+            
+            $this->vehicleService->invalidateDashboardStats(invalidateAllOpd: true);
+
+            return response()->json(['success' => true, 'message' => $message]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Mengeksekusi penggabungan (merge) OPD duplikat.
+     *
+     * @param ResolveDuplicateOpdRequest $request
+     * @return JsonResponse
+     */
+    public function resolveDuplicateOpd(ResolveDuplicateOpdRequest $request): JsonResponse
+    {
+        try {
+            $targetId = (int)$request->input('target_opd_id');
+            $sourceId = (int)$request->input('source_opd_id');
+
+            $success = $this->vehicleService->mergeOpds($targetId, $sourceId);
+            if (!$success) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proses konsolidasi gagal. Salah satu atau kedua instansi OPD tidak ditemukan.'
+                ], 404);
+            }
+            
+            // Simpan audit log lengkap dengan konteks detail (ID OPD) (Rekomendasi PM #9)
+            \App\Models\Activity::log(
+                "Pembersihan dan konsolidasi OPD duplikat [OPD Target ID: {$targetId}, OPD Sumber ID: {$sourceId}]", 
+                'success'
+            );
+            
+            $this->vehicleService->invalidateDashboardStats(invalidateAllOpd: true);
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'OPD berhasil dikonsolidasikan. Semua kendaraan dipindahkan ke instansi utama.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }
