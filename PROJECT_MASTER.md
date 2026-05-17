@@ -31,11 +31,13 @@
 - **Arsitektur Umum**: Monolith (MVC Laravel) yang teroptimasi.
 - **Pola Desain Utama**:
   - **Service Layer**: Logika bisnis kompleks dan kalkulasi *cache* diletakkan di dalam *Service* (contoh: `VehicleService`), bukan di *Controller*.
+  - **Reporting Architecture**: Modul Laporan memakai kombinasi *Service Layer*, *Registry Pattern*, dan *Strategy Pattern* melalui `ReportService`, `ReportRegistry`, dan strategy laporan modular agar jenis laporan baru dapat ditambahkan tanpa merombak controller inti.
   - **Observer Pattern**: Automasi sistem dan pencatatan riwayat (Audit Log) dikendalikan penuh oleh *Eloquent Observers* (`VehicleObserver`, `OpdObserver`, `UserObserver`).
   - **Multi-Tenancy (Data Isolation)**: Menggunakan `TenantScope` (Global Scope) pada model `Vehicle` untuk mengunci data pengguna OPD agar hanya bisa melihat aset instansinya sendiri. *Fail-safe*: Jika `opd_id` null, akses otomatis terkunci total.
 - **Auth & Permission Flow**: 
   - Otorisasi berbasis tipe *Enum* `UserRole`.
   - Aturan *middleware* dideklarasikan eksplisit di level *Controller* (menggunakan antarmuka `HasMiddleware` Laravel 12), bukan ditumpuk di `routes/web.php`.
+  - Lapisan request ikut memperkuat isolasi tenant: `StoreVehicleRequest` dan `UpdateVehicleRequest` memaksa `opd_id` serta teks `opd` user OPD kembali ke instansi miliknya sendiri.
 
 ---
 
@@ -96,6 +98,7 @@ resources/
 - **Table Style**: Batas tabel wajib tegas (sharp borders). Kolom pertama wajib *sticky* di mode responsif. Penomoran otomatis berbasis paginasi.
 - **Form Style**: Menggunakan antarmuka interaksi halaman tunggal (*Single Page Interaction*) dengan komponen `<x-modal>`.
 - **Format Akuntansi**: Mata uang wajib berformat titik ribuan (`Rp 150.000.000`). Plat nomor wajib monospace (`.plate-number`).
+- **Kepatuhan Tema**: Halaman baru, termasuk Modul Laporan, wajib memakai token warna tema agar konsisten pada light mode dan dark mode.
 
 ---
 
@@ -126,6 +129,7 @@ Status implementasi fitur utama sistem.
 | Audit Trail (Log Sistem) | DONE | Hanya dapat diakses Superadmin |
 | CMS Pengaturan Global | DONE | Tersimpan di *Cache* |
 | Cek & Resolusi Duplikasi | DONE | Analisis ganda cerdas (plat & mesin) & merge OPD |
+| Modul Laporan | DONE | Strategy modular, preview AJAX, ekspor Excel, cetak browser, dan isolasi tenant |
 
 ---
 
@@ -136,6 +140,7 @@ Status implementasi fitur utama sistem.
 ### Phase 3: Future Expansion (Selesai)
 - **AI Smart Import**: Pemetaan dinamis header Excel berbasis AI semantik agar pengguna dapat mengunggah format file Excel bebas dan memetakan kolom secara visual. Fitur ini didukung oleh kecocokan sinonim otomatis dan fallback kemiripan teks (similar text) > 65%.
 - **Diagnosis & Resolusi Duplikasi**: Modul pendeteksi plat ganda hasil impor serta pencocokan mesin ganda secara global. Dilengkapi fitur resolusi gabung (*merge*) kendaraan dan penggabungan instansi OPD dengan kemiripan nama untuk mencegah inkonsistensi data.
+- **Modul Laporan Modular**: Menyediakan laporan status kendaraan, distribusi aset OPD, dan masa berlaku dokumen melalui arsitektur strategy modular, preview HTML AJAX, ekspor Excel, serta cetak browser dengan isolasi tenant yang tervalidasi.
 
 ---
 

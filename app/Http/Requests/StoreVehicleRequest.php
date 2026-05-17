@@ -32,6 +32,14 @@ class StoreVehicleRequest extends FormRequest
                 'no_polisi' => strtoupper(str_replace('.', '', preg_replace('/\s+/', ' ', trim($this->no_polisi))))
             ]);
         }
+
+        // Kunci tenant: paksa opd_id dan nama opd sesuai user login jika rolenya adalah OPD
+        if (auth()->check() && auth()->user()->role === \App\Enums\UserRole::OPD) {
+            $this->merge([
+                'opd_id' => auth()->user()->opd_id,
+                'opd' => auth()->user()->opd?->nama,
+            ]);
+        }
     }
 
     /**
@@ -64,6 +72,7 @@ class StoreVehicleRequest extends FormRequest
             'foto_kendaraan.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
             'keterangan' => 'nullable',
             'user_id' => 'nullable|exists:users,id',
+            'opd_id' => 'nullable|exists:opds,id',
         ];
     }
 

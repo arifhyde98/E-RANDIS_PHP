@@ -247,13 +247,21 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-semibold small text-uppercase">OPD / Instansi <span class="text-danger">*</span></label>
-                    <select name="opd_id" class="form-select" required onchange="document.getElementById('add_opd_text').value = this.options[this.selectedIndex].text">
-                        <option value="">-- Pilih OPD --</option>
-                        @foreach($opds as $opd)
-                            <option value="{{ $opd->id }}">{{ $opd->nama }}</option>
-                        @endforeach
-                    </select>
-                    <input type="hidden" name="opd" id="add_opd_text" value="">
+                    @if(auth()->user()->role === \App\Enums\UserRole::OPD)
+                        <div class="form-control bg-light text-secondary fw-medium">
+                            {{ auth()->user()->opd?->nama ?? 'Instansi Tidak Ditemukan' }}
+                        </div>
+                        <input type="hidden" name="opd_id" value="{{ auth()->user()->opd_id }}">
+                        <input type="hidden" name="opd" id="add_opd_text" value="{{ auth()->user()->opd?->nama }}">
+                    @else
+                        <select name="opd_id" class="form-select" required onchange="document.getElementById('add_opd_text').value = this.options[this.selectedIndex].text">
+                            <option value="">-- Pilih OPD --</option>
+                            @foreach($opds as $opd)
+                                <option value="{{ $opd->id }}">{{ $opd->nama }}</option>
+                            @endforeach
+                        </select>
+                        <input type="hidden" name="opd" id="add_opd_text" value="">
+                    @endif
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-semibold small text-uppercase">Pemegang <span class="text-danger">*</span></label>
@@ -368,13 +376,21 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-semibold small text-uppercase">OPD / Instansi <span class="text-danger">*</span></label>
-                    <select name="opd_id" id="edit_opd_id" class="form-select" required onchange="document.getElementById('edit_opd_text').value = this.options[this.selectedIndex].text">
-                        <option value="">-- Pilih OPD --</option>
-                        @foreach($opds as $opd)
-                            <option value="{{ $opd->id }}">{{ $opd->nama }}</option>
-                        @endforeach
-                    </select>
-                    <input type="hidden" name="opd" id="edit_opd_text" value="">
+                    @if(auth()->user()->role === \App\Enums\UserRole::OPD)
+                        <div class="form-control bg-light text-secondary fw-medium" id="edit_opd_display">
+                            {{ auth()->user()->opd?->nama ?? 'Instansi Tidak Ditemukan' }}
+                        </div>
+                        <input type="hidden" name="opd_id" id="edit_opd_id_locked" value="{{ auth()->user()->opd_id }}">
+                        <input type="hidden" name="opd" id="edit_opd_text" value="{{ auth()->user()->opd?->nama }}">
+                    @else
+                        <select name="opd_id" id="edit_opd_id" class="form-select" required onchange="document.getElementById('edit_opd_text').value = this.options[this.selectedIndex].text">
+                            <option value="">-- Pilih OPD --</option>
+                            @foreach($opds as $opd)
+                                <option value="{{ $opd->id }}">{{ $opd->nama }}</option>
+                            @endforeach
+                        </select>
+                        <input type="hidden" name="opd" id="edit_opd_text" value="">
+                    @endif
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-semibold small text-uppercase">Pemegang <span class="text-danger">*</span></label>
@@ -715,8 +731,21 @@
                 document.getElementById('edit_jenis_text').value = vehicle.jenis || '';
                 document.getElementById('edit_merk').value = vehicle.merk || '';
                 document.getElementById('edit_tipe').value = vehicle.tipe || '';
-                document.getElementById('edit_opd_id').value = vehicle.opd_id || '';
-                document.getElementById('edit_opd_text').value = vehicle.opd || '';
+                const editOpdSelect = document.getElementById('edit_opd_id');
+                const editOpdLocked = document.getElementById('edit_opd_id_locked');
+                const editOpdText = document.getElementById('edit_opd_text');
+
+                if (editOpdSelect) {
+                    editOpdSelect.value = vehicle.opd_id || '';
+                }
+                if (editOpdLocked) {
+                    editOpdLocked.value = @js(auth()->user()->opd_id);
+                }
+                if (editOpdText) {
+                    editOpdText.value = editOpdLocked
+                        ? @js(auth()->user()->opd?->nama)
+                        : (vehicle.opd || '');
+                }
                 document.getElementById('edit_pemegang').value = vehicle.pemegang || '';
                 document.getElementById('edit_kondisi').value = vehicle.kondisi || 'Baik';
                 document.getElementById('edit_status').value = vehicle.status || 'Tersedia';

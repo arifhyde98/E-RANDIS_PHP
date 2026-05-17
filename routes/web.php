@@ -11,6 +11,7 @@ use App\Http\Controllers\OpdController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -66,3 +67,9 @@ Route::resource('users', UserController::class)->except(['create', 'edit', 'show
 // Manajemen Aktivitas (Audit Log)
 Route::get('activities', [ActivityController::class, 'index'])->name('activities.index');
 Route::delete('activities/clear', [ActivityController::class, 'clear'])->name('activities.clear');
+
+// Modul Laporan Modular
+Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+Route::get('reports/preview', [ReportController::class, 'preview'])->name('reports.preview');
+Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
+Route::get('reports/print', [ReportController::class, 'print'])->name('reports.print');

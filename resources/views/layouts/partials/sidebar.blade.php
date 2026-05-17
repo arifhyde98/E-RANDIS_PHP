@@ -79,8 +79,8 @@
             <a href="#"><i class="bi bi-tools"></i> Maintenance</a>
         </li>
 
-        <li>
-            <a href="#"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
+        <li class="{{ Request::is('reports*') ? 'active' : '' }}">
+            <a href="{{ route('reports.index') }}"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
         </li>
 
         @if(auth()->user()->role === \App\Enums\UserRole::SUPERADMIN)

@@ -91,6 +91,16 @@ class VehicleService
             \Illuminate\Support\Facades\Cache::forget('dashboard.stats.superadmin.global');
             \Illuminate\Support\Facades\Cache::forget('dashboard.stats.admin.global');
         }
+
+        // 5. Selaraskan invalidasi cache summary laporan secara otomatis
+        try {
+            app(\App\Services\ReportService::class)->invalidateSummaryCache($opdId, $oldOpdId, $invalidateAllOpd);
+        } catch (\Throwable $e) {
+            // Safety fallback jika Service Container belum terikat sempurna, sertakan logging agar masalah terdeteksi
+            \Illuminate\Support\Facades\Log::warning('Gagal menghapus cache summary laporan.', [
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

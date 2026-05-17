@@ -27,7 +27,7 @@ Dokumen ini merupakan sumber kebenaran tunggal (*Single Source of Truth*) mengen
 *   **Data Isolation (Fail-Safe)**: Implementasi `App\Models\Scopes\TenantScope` pada model `Vehicle`. Admin OPD secara otomatis dibatasi aksesnya hanya pada `opd_id` miliknya. Jika `opd_id` hilang/null, sistem tetap mengunci akses (bukan membuka akses global) untuk keamanan maksimal.
 *   **Otomasi Akun (Observer Level)**: Logika pembuatan akun admin OPD dijalankan melalui `OpdObserver::created()`. Hal ini menjamin setiap OPD baru (lewat Form atau Import Excel) selalu memiliki akun admin secara otomatis.
 *   **Sistem Log Aktivitas (Audit Trail)**: Menggunakan tabel `activities` dan model `Activity`. Log dicatat secara otomatis melalui **Eloquent Observers** (`created`, `deleted`) pada model `Vehicle`, `Opd`, dan `User`.
-*   **Mekanisme Caching**: Statistik dashboard menggunakan *cache key* dinamis: `dashboard.stats.[role].[opd_id]`. Seluruh aksi CRUD pada kendaraan dan OPD kini menggunakan helper terpusat `invalidateDashboardStats()` di `VehicleService` untuk melakukan *targeted invalidation* (bukan `Cache::flush()` global), sehingga cache pengaturan sistem (`setting.{key}`) tetap terjaga dan performa lebih optimal.
+*   **Mekanisme Caching**: Statistik dashboard menggunakan *cache key* dinamis: `dashboard.stats.[role].[opd_id]`, sedangkan ringkasan Modul Laporan menggunakan `reports.summary.{role}.{scope}`. Seluruh aksi CRUD pada kendaraan dan OPD kini menggunakan helper terpusat `invalidateDashboardStats()` di `VehicleService` untuk melakukan *targeted invalidation* (bukan `Cache::flush()` global), sekaligus menyelaraskan pembersihan cache summary laporan agar cache pengaturan sistem (`setting.{key}`) tetap terjaga dan performa lebih optimal.
 *   **Integritas Data (Hardened)**: 
     *   Database: `onDelete('cascade')` pada relasi `opd_id` di tabel `users` (telah disinkronkan ke mesin database MariaDB/MySQL).
     *   Audit: `onDelete('set null')` pada `user_id` di tabel `activities` untuk menjaga riwayat log tetap utuh meski akun dihapus.
@@ -86,12 +86,23 @@ Telah diterapkan indeks lapis ganda melalui *migration* `2026_05_14_151900` untu
 ## 4. ⚙️ Backend Architecture & Aturan Validasi
 
 ### Lapisan Layanan (*Service Layer*)
-Logika bisnis dan kalkulasi diletakkan di dalam kelas *Service* (`VehicleService`).
+Logika bisnis dan kalkulasi diletakkan di dalam kelas *Service*:
+- `VehicleService`: statistik dashboard, helper cache kendaraan, pencarian, dan utilitas bisnis kendaraan.
+- `ReportService`: ringkasan laporan, orkestrasi preview terpaginasi, dan integrasi strategi laporan modular.
+
+### Arsitektur Modul Laporan (*Reporting Architecture*)
+Modul Laporan dibangun secara modular menggunakan kombinasi **Service Layer**, **Registry Pattern**, dan **Strategy Pattern**:
+- `ReportController`: menangani halaman laporan, preview AJAX, ekspor Excel, dan cetak browser.
+- `ReportService`: mengorkestrasi summary laporan serta pemanggilan strategy aktif.
+- `ReportRegistry`: memetakan tipe laporan ke strategy yang sesuai.
+- `ReportStrategy`: kontrak bersama untuk seluruh jenis laporan.
+- `VehicleStatusReport`, `OpdAssetReport`, `DocumentValidityReport`: strategy laporan awal.
+- `DynamicReportExport`: mesin ekspor Excel dinamis untuk seluruh strategy laporan.
 
 ### Validasi Kelas Permintaan (*Form Request Validation*)
 Penyimpanan dan pembaruan data wajib menggunakan kelas validasi terpisah demi menjaga keamanan dan kebersihan pengontrol:
-- `StoreVehicleRequest`: Menjamin `no_polisi` unik dan atribut wajib terisi saat penambahan kendaraan.
-- `UpdateVehicleRequest`: Memvalidasi keunikan `no_polisi` dengan mengecualikan ID kendaraan yang sedang diperbarui.
+- `StoreVehicleRequest`: Menjamin `no_polisi` unik, atribut wajib terisi, serta mengunci `opd_id` dan teks `opd` ke instansi milik user jika pembuatnya ber-role `OPD`.
+- `UpdateVehicleRequest`: Memvalidasi keunikan `no_polisi`, mengecualikan ID kendaraan yang sedang diperbarui, serta mencegah user OPD memindahkan kendaraan ke instansi lain melalui penguncian `opd_id` dan teks `opd`.
 - `StoreOpdRequest` / `UpdateOpdRequest`: Mengelola validasi master data OPD, termasuk keunikan nama instansi.
 - `StoreVehicleTypeRequest` / `UpdateVehicleTypeRequest`: Mengelola validasi master data jenis kendaraan.
 - `StoreUserRequest` / `UpdateUserRequest`: Mengelola validasi manajemen pengguna, termasuk validasi enum `UserRole` dan relasi `opd_id`.
@@ -101,6 +112,7 @@ Penyimpanan dan pembaruan data wajib menggunakan kelas validasi terpisah demi me
 - `ExecuteSmartImportRequest`: Memvalidasi eksekusi AI Smart Import, termasuk token sesi impor, struktur mapping, larangan mapping ganda, dan kewajiban kolom identitas minimum.
 - `ResolveDuplicateVehicleRequest`: Memvalidasi resolusi kendaraan ganda dan memastikan pasangan `original_id` / `duplicate_id` benar-benar pasangan duplikasi sah menurut hasil diagnosis sistem.
 - `ResolveDuplicateOpdRequest`: Memvalidasi penggabungan OPD ganda serta memastikan pasangan target/sumber memang pasangan OPD terindikasi ganda yang sah.
+- `ReportFilterRequest`: Memvalidasi filter laporan dan memaksa `opd_id` user OPD kembali ke instansinya sendiri agar parameter URL tidak dapat dipakai untuk mengintip data tenant lain.
 
 ### Konvensi Validasi & FormRequest
 - **Wajib FormRequest**: Dilarang menggunakan validasi inline `$request->validate()` di dalam Controller.
@@ -177,7 +189,8 @@ Sistem memiliki modul diagnosis duplikasi data untuk membantu membersihkan inkon
 
 ### Strategi Caching
 - **Statistik Dashboard**: Menggunakan cache key dinamis berbasis role dan instansi: `dashboard.stats.{role}.{opd_id}` dengan TTL 5 menit.
-- **Cache Invalidation**: Seluruh mutasi data kendaraan dan OPD (**Store, Update, Destroy, Import, Truncate**) wajib menggunakan helper terpusat `VehicleService::invalidateDashboardStats()` untuk *targeted invalidation* (global + OPD terdampak), bukan `Cache::flush()` global.
+- **Ringkasan Modul Laporan**: Menggunakan cache key `reports.summary.{role}.{scope}` dengan TTL 5 menit dan key berbeda untuk `superadmin`, `admin`, `guest`, user OPD valid, serta user OPD dengan `opd_id = null`.
+- **Cache Invalidation**: Seluruh mutasi data kendaraan dan OPD (**Store, Update, Destroy, Import, Truncate**) wajib menggunakan helper terpusat `VehicleService::invalidateDashboardStats()` untuk *targeted invalidation* (global + OPD terdampak), bukan `Cache::flush()` global. Helper ini juga menyelaraskan invalidasi cache summary laporan secara otomatis.
 - **Pengaturan Global**: Di-cache via `cache()->remember('setting.{key}', 3600)` (1 jam) dengan penghapusan otomatis (`cache()->forget`) saat data diperbarui.
 
 ---
@@ -207,6 +220,8 @@ Aplikasi **tidak menggunakan efek visual berlebihan** (*glassmorphism* pudar ata
 - **Paginasi Global**: Menggunakan `Paginator::useBootstrapFive()` di `AppServiceProvider` untuk memastikan template navigasi yang bersih dan konsisten.
 - **Penomoran Tabel**: Menggunakan `$loop->iteration` yang dikombinasikan dengan metadata paginasi: `($collection->currentPage() - 1) * $collection->perPage() + $loop->iteration`.
 - **Komponen Lainnya**: Menggunakan `x-modal` sebagai shell modal, `x-stat-card` untuk kartu statistik, dan `x-condition-badge` untuk label kondisi.
+- **Kepatuhan Tema**: Komponen baru, termasuk halaman laporan dan `.plate-number`, wajib memakai token tema (`var(--card-bg)`, `var(--text-color)`, `var(--card-border)`) agar konsisten pada mode terang dan gelap.
+- **Field OPD Admin OPD**: Pada antarmuka kendaraan, user OPD hanya melihat OPD miliknya dalam bentuk read-only; dropdown OPD hanya tersedia untuk Admin/Superadmin.
 
 ### Standar Komponen Blade (Wajib Dipakai)
 Dilarang keras menulis elemen mentah berulang. Gunakan komponen Blade berikut:
@@ -247,6 +262,16 @@ Komponen modal untuk CRUD *Single Page Interaction*, mendukung perilaku *mobile-
   - **Resolusi Hapus Kendaraan (`resolveDuplicateVehicle`):** Menghapus salah satu data ganda hanya jika pasangan duplikatnya tervalidasi sah oleh sistem.
   - **Deteksi & Gabung OPD Ganda (`mergeOpds`):** Mendeteksi instansi OPD dengan nama yang mirip/sama persis akibat kesalahan ketik saat impor. Menggabungkan instansi tersebut secara atomik, memindahkan seluruh kendaraan dari OPD duplikat ke OPD utama, menyinkronkan `opd_id` dan teks `opd`, lalu menghapus OPD duplikat secara aman.
   - **Robust OPD Relation & Fallback Mapping:** Mendukung pembacaan nama OPD yang tangguh menggunakan kombinasi relasi Eloquent `opdRelation` dengan fallback kolom string `opd` (`$original->opdRelation?->nama ?? $original->opd ?? 'BELUM DIKETAHUI'`), menjamin data OPD tidak pernah hilang atau tertulis kosong/belum diketahui.
+
+### Modul Laporan Modular (`ReportController`)
+- Menyediakan tiga jenis laporan awal:
+  - **Status dan Kondisi Fisik Kendaraan**
+  - **Distribusi Aset per OPD**
+  - **Masa Berlaku Dokumen/STNK**
+- Mendukung ringkasan cepat berbasis cache, pratinjau HTML parsial via AJAX, ekspor Excel modular, dan cetak browser ramah printer.
+- Seluruh query strategy dibangun dari `Vehicle::query()` agar otomatis tunduk pada `TenantScope`.
+- Pengguna OPD tidak melihat filter OPD lain, dan `ReportFilterRequest` tetap mengunci `opd_id` di backend sebagai pertahanan berlapis.
+- Pengujian keamanan laporan mencakup isolasi tenant, perlindungan cache lintas-role, invalidasi cache pasca CRUD, serta pencegahan pemindahan kendaraan lintas OPD saat update.
 
 ### Manajemen Master Data (Hub)
 - Rute terpusat (`/master-data`) untuk mengelola **Jenis Kendaraan** (`VehicleTypeController`) dan **OPD / Dinas** (`OpdController`).
@@ -292,6 +317,10 @@ Komponen modal untuk CRUD *Single Page Interaction*, mendukung perilaku *mobile-
 | Resource | `/users` | `UserController` | Superadmin | CRUD data pengguna |
 | DELETE | `/activities/clear` | `ActivityController@clear` | Superadmin | Bersihkan seluruh log |
 | DELETE | `/opds/truncate` | `OpdController@truncate` | Superadmin | Reset seluruh data OPD |
+| GET | `/reports` | `ReportController@index` | Auth | Dashboard Modul Laporan |
+| GET | `/reports/preview` | `ReportController@preview` | Auth | Preview laporan via AJAX HTML partial |
+| GET | `/reports/export` | `ReportController@export` | Auth | Ekspor Excel laporan dinamis |
+| GET | `/reports/print` | `ReportController@print` | Auth | Halaman cetak laporan ramah browser |
 
 ---
 
