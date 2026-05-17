@@ -14,23 +14,25 @@ class LoginController extends Controller implements HasMiddleware
     | Login Controller
     |--------------------------------------------------------------------------
     |
-    | This controller handles authenticating users for the application and
-    | redirecting them to your home screen. The controller uses a trait
-    | to conveniently provide its functionality to your applications.
+    | Controller ini menangani otentikasi pengguna untuk aplikasi dan
+    | mengarahkan mereka ke halaman utama dashboard. Controller ini menggunakan
+    | trait untuk menyediakan fungsionalitas ini secara instan dan efisien.
     |
     */
 
     use AuthenticatesUsers;
 
     /**
-     * Where to redirect users after login.
+     * Tujuan pengalihan pengguna setelah berhasil masuk.
      *
      * @var string
      */
     protected $redirectTo = '/home';
 
     /**
-     * Get the middleware that should be assigned to the controller.
+     * Mendapatkan middleware yang ditugaskan ke controller ini.
+     * 
+     * @return array
      */
     public static function middleware(): array
     {

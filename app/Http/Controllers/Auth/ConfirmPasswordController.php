@@ -14,23 +14,26 @@ class ConfirmPasswordController extends Controller implements HasMiddleware
     | Confirm Password Controller
     |--------------------------------------------------------------------------
     |
-    | This controller is responsible for handling password confirmations and
-    | uses a simple trait to include the behavior. You're free to explore
-    | this trait and override any functions that require customization.
+    | Controller ini bertanggung jawab untuk menangani konfirmasi kata sandi
+    | dan menggunakan trait sederhana untuk menyertakan perilaku tersebut. Anda
+    | bebas untuk menjelajahi trait ini dan menimpa fungsi apa pun yang
+    | memerlukan penyesuaian.
     |
     */
 
     use ConfirmsPasswords;
 
     /**
-     * Where to redirect users when the intended url fails.
+     * Tujuan pengalihan pengguna ketika URL yang dituju gagal.
      *
      * @var string
      */
     protected $redirectTo = '/home';
 
     /**
-     * Get the middleware that should be assigned to the controller.
+     * Mendapatkan middleware yang ditugaskan ke controller ini.
+     * 
+     * @return array
      */
     public static function middleware(): array
     {

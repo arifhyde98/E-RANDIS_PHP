@@ -14,7 +14,9 @@ use Illuminate\Routing\Controllers\Middleware;
 class VehicleTypeController extends Controller implements HasMiddleware
 {
     /**
-     * Get the middleware that should be assigned to the controller.
+     * Mendapatkan middleware yang ditugaskan ke controller ini.
+     * 
+     * @return array
      */
     public static function middleware(): array
     {

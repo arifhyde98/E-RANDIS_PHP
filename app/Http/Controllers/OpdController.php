@@ -16,7 +16,9 @@ use Illuminate\Routing\Controllers\Middleware;
 class OpdController extends Controller implements HasMiddleware
 {
     /**
-     * Get the middleware that should be assigned to the controller.
+     * Mendapatkan middleware yang ditugaskan ke controller ini.
+     * 
+     * @return array
      */
     public static function middleware(): array
     {
@@ -39,7 +41,7 @@ class OpdController extends Controller implements HasMiddleware
     /**
      * Menampilkan daftar semua OPD dengan fitur pencarian dan paginasi.
      * 
-     * @param StoreOpdRequest $request
+     * @param \Illuminate\Http\Request $request
      * @return \Illuminate\View\View
      */
     public function index(Request $request): \Illuminate\View\View
@@ -59,7 +61,7 @@ class OpdController extends Controller implements HasMiddleware
     /**
      * Menyimpan data OPD baru ke database.
      * 
-     * @param UpdateOpdRequest $request
+     * @param StoreOpdRequest $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StoreOpdRequest $request): \Illuminate\Http\RedirectResponse
@@ -74,7 +76,7 @@ class OpdController extends Controller implements HasMiddleware
     /**
      * Memperbarui data OPD di database.
      * 
-     * @param Request $request
+     * @param UpdateOpdRequest $request
      * @param Opd $opd
      * @return \Illuminate\Http\RedirectResponse
      */
@@ -106,6 +108,8 @@ class OpdController extends Controller implements HasMiddleware
 
     /**
      * Mengosongkan seluruh data OPD (Master Data).
+     * 
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function truncate(): \Illuminate\Http\RedirectResponse
     {

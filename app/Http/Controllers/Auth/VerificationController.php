@@ -14,23 +14,25 @@ class VerificationController extends Controller implements HasMiddleware
     | Email Verification Controller
     |--------------------------------------------------------------------------
     |
-    | This controller is responsible for handling email verification for any
-    | user that recently registered with the application. Emails may also
-    | be re-sent if the user didn't receive the original email message.
+    | Controller ini bertanggung jawab untuk menangani verifikasi email untuk
+    | setiap pengguna yang baru mendaftar pada aplikasi. Email juga dapat
+    | dikirim ulang jika pengguna tidak menerima pesan email asli.
     |
     */
 
     use VerifiesEmails;
 
     /**
-     * Where to redirect users after verification.
+     * Tujuan pengalihan pengguna setelah berhasil verifikasi.
      *
      * @var string
      */
     protected $redirectTo = '/home';
 
     /**
-     * Get the middleware that should be assigned to the controller.
+     * Mendapatkan middleware yang ditugaskan ke controller ini.
+     * 
+     * @return array
      */
     public static function middleware(): array
     {

@@ -9,7 +9,9 @@ use Illuminate\Routing\Controllers\Middleware;
 class ActivityController extends Controller implements HasMiddleware
 {
     /**
-     * Get the middleware that should be assigned to the controller.
+     * Mendapatkan middleware yang ditugaskan ke controller ini.
+     * 
+     * @return array
      */
     public static function middleware(): array
     {
@@ -34,7 +36,9 @@ class ActivityController extends Controller implements HasMiddleware
     }
 
     /**
-     * Menghapus seluruh riwayat aktivitas.
+     * Menghapus seluruh riwayat aktivitas dari database (Truncate).
+     * 
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function clear()
     {

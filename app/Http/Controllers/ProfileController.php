@@ -13,7 +13,9 @@ use Illuminate\Routing\Controllers\Middleware;
 class ProfileController extends Controller implements HasMiddleware
 {
     /**
-     * Get the middleware that should be assigned to the controller.
+     * Mendapatkan middleware yang ditugaskan ke controller ini.
+     * 
+     * @return array
      */
     public static function middleware(): array
     {
@@ -24,6 +26,8 @@ class ProfileController extends Controller implements HasMiddleware
 
     /**
      * Menampilkan halaman profil.
+     * 
+     * @return \Illuminate\View\View
      */
     public function index()
     {
@@ -34,6 +38,9 @@ class ProfileController extends Controller implements HasMiddleware
 
     /**
      * Memperbarui profil pengguna.
+     * 
+     * @param UpdateProfileRequest $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(UpdateProfileRequest $request)
     {

@@ -17,7 +17,9 @@ use Illuminate\Routing\Controllers\Middleware;
 class UserController extends Controller implements HasMiddleware
 {
     /**
-     * Get the middleware that should be assigned to the controller.
+     * Mendapatkan middleware yang ditugaskan ke controller ini.
+     * 
+     * @return array
      */
     public static function middleware(): array
     {
@@ -29,6 +31,9 @@ class UserController extends Controller implements HasMiddleware
 
     /**
      * Menampilkan daftar pengguna dengan filter role.
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
@@ -54,6 +59,9 @@ class UserController extends Controller implements HasMiddleware
 
     /**
      * Menyimpan pengguna baru.
+     * 
+     * @param StoreUserRequest $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StoreUserRequest $request)
     {
@@ -66,6 +74,10 @@ class UserController extends Controller implements HasMiddleware
 
     /**
      * Memperbarui data pengguna.
+     * 
+     * @param UpdateUserRequest $request
+     * @param User $user
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(UpdateUserRequest $request, User $user)
     {
@@ -82,6 +94,9 @@ class UserController extends Controller implements HasMiddleware
 
     /**
      * Menghapus pengguna.
+     * 
+     * @param User $user
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(User $user)
     {
@@ -97,6 +112,9 @@ class UserController extends Controller implements HasMiddleware
 
     /**
      * Generate akun otomatis untuk semua OPD yang belum memiliki akun.
+     * 
+     * @param \App\Services\AccountService $accountService
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function generateAllOpdAccounts(\App\Services\AccountService $accountService)
     {
@@ -119,6 +137,9 @@ class UserController extends Controller implements HasMiddleware
 
     /**
      * Reset password user ke password acak baru.
+     * 
+     * @param User $user
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function resetPassword(User $user)
     {
