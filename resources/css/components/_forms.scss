@@ -1,0 +1,22 @@
+.form-control, .form-select {
+    background-color: var(--card-bg);
+    border-color: var(--card-border);
+    color: var(--text-color);
+    
+    &:focus {
+        background-color: var(--card-bg);
+        color: var(--text-color);
+        border-color: $primary;
+        box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.12);
+    }
+
+    &::placeholder {
+        color: #94a3b8;
+    }
+}
+
+.search-section {
+    margin-top: -70px;
+    position: relative;
+    z-index: 10;
+}

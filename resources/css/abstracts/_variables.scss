@@ -1,0 +1,30 @@
+// Variables Modification (Reference Image Theme)
+$family-sans-serif: 'Plus Jakarta Sans', sans-serif;
+$primary: #1E40AF; // Bright Government Blue
+$primary-dark: #1E3A8A; // Deep Navy
+$accent: #3B82F6;
+
+:root {
+    --bg-color: #ffffff;
+    --text-color: #1F2937;
+    --card-bg: #ffffff;
+    --card-border: #e2e8f0;
+    --sidebar-bg: #1E40AF;
+    --navbar-bg: #ffffff;
+    --navbar-bg-rgb: 255, 255, 255;
+}
+
+// Dark Theme Variables - Unified for better inheritance
+[data-theme="dark"] {
+    --bg-color: #0f172a;
+    --text-color: #f1f5f9;
+    --card-bg: #1e293b;
+    --card-border: #334155;
+    --sidebar-bg: #020617;
+    --navbar-bg: #1e293b;
+    --navbar-bg-rgb: 30, 41, 59;
+}
+
+// Use static colors for Bootstrap Sass functions to avoid compilation errors
+$body-bg: #ffffff;
+$body-color: #1F2937;

@@ -1,0 +1,82 @@
+[data-theme="dark"] {
+    // Layout Overrides
+    body, #content {
+        background-color: var(--bg-color) !important;
+        color: var(--text-color);
+    }
+
+    .navbar-admin {
+        background-color: rgba(30, 41, 59, 0.85) !important;
+        border-color: var(--card-border) !important;
+    }
+
+    // Components
+    .table {
+        thead th {
+            background-color: rgba(255, 255, 255, 0.03) !important;
+            color: #94a3b8;
+        }
+        tbody tr:hover td {
+            background-color: rgba(255, 255, 255, 0.03) !important;
+        }
+    }
+
+    .text-dark {
+        color: #f1f5f9 !important;
+    }
+    
+    .text-secondary, .text-muted {
+        color: #94a3b8 !important;
+    }
+
+    .text-navy {
+        color: #60a5fa !important; // Lighter blue for dark mode headings
+    }
+    
+    a:not(.btn) {
+        color: #60a5fa;
+        &:hover { color: #93c5fd; }
+    }
+
+    // Breadcrumb Separator Fix
+    .breadcrumb-item::before {
+        color: #94a3b8 !important;
+    }
+
+    .action-toolbar {
+        .btn-action {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2) !important;
+
+            &:hover {
+                border-color: rgba(96, 165, 250, 0.45);
+                box-shadow: 0 14px 28px rgba(0, 0, 0, 0.3) !important;
+            }
+        }
+    }
+
+    .btn-light {
+        background-color: var(--card-bg) !important;
+        border-color: var(--card-border) !important;
+        color: var(--text-color) !important;
+    }
+
+    .badge {
+        &.bg-success { background-color: rgba(16, 185, 129, 0.2) !important; filter: brightness(1.2); }
+        &.bg-danger { background-color: rgba(239, 68, 68, 0.2) !important; filter: brightness(1.2); }
+        &.bg-warning { background-color: rgba(245, 158, 11, 0.2) !important; filter: brightness(1.2); }
+        &.bg-primary { background-color: rgba(59, 130, 246, 0.2) !important; filter: brightness(1.2); }
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.15);
+    }
+
+    // Utility Overrides (Ensure they work inside dark mode)
+    .bg-white, .bg-light {
+        background-color: var(--bg-color) !important;
+    }
+
+    .card.bg-white, .admin-card.bg-white {
+        background-color: var(--card-bg) !important;
+    }
+}

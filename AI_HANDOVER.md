@@ -167,6 +167,10 @@ Aplikasi **tidak menggunakan efek visual berlebihan** (*glassmorphism* pudar ata
   - Di Blade: `number_format($val, 0, ',', '.')`.
   - Di JavaScript (Modal): `.toLocaleString('id-ID')`.
 - **Bahasa Antarmuka**: Seluruh notifikasi, pesan kesalahan (validation errors), peringatan (warnings), dan label UI **WAJIB** menggunakan Bahasa Indonesia yang profesional dan mudah dimengerti.
+- **Arsitektur SCSS Modular (7-1 Pattern)**: 
+  - Gaya kustom diatur secara terorganisir dalam folder `resources/css/` (abstracts, base, components, layout, pages, themes).
+  - **DILARANG** menulis gaya langsung di `app.scss`. File tersebut hanya sebagai pusat impor modul.
+  - Setiap penambahan gaya baru wajib diletakkan pada modul yang sesuai agar tidak menumpuk.
 
 ### Standar Responsivitas Tabel Seluler (*Mobile-First UX*)
 - **Sticky First Column:** Kolom pertama tabel dikunci menggunakan CSS `position: sticky` agar tidak hilang saat digeser horizontal di layar HP.
@@ -279,7 +283,7 @@ Seluruh kode backend (Models, Controllers, Services, Enums, dll) wajib memiliki 
 ## 9. 🚨 Aturan Kritis untuk Sesi AI Berikutnya
 1. **Jangan asumsikan konteks:** Selalu gunakan `view_file` untuk membaca berkas sebelum memodifikasi.
 2. **Kepatuhan Desain:** Dilarang mengembalikan efek *glassmorphism* atau warna mencolok. Pertahankan gaya formal pemerintah (Navy/Putih/Gray).
-3. **Penyusunan Aset:** Selalu jalankan `npm run dev` saat mengedit file SCSS atau JS.
+3. **Penyusunan Aset:** Selalu jalankan `npm run dev` atau `npm run build` saat mengedit file SCSS atau JS. Pastikan penambahan CSS mengikuti struktur **SCSS Modular** yang sudah ditetapkan (jangan menulis langsung di `app.scss`).
 4. **Bahasa Indonesia Wajib:** Seluruh dokumentasi kode (PHPDoc, komentar inline, pesan commit) dan komunikasi pengembangan wajib menggunakan **Bahasa Indonesia** secara konsisten.
 5. **Jangan eksekusi tanpa persetujuan:** Jika user meminta perubahan pada area spesifik, jangan memperluas cakupan ke file lain tanpa konfirmasi terlebih dahulu.
 6. **Konsistensi Validasi:** Untuk endpoint `store` dan `update`, utamakan `FormRequest` khusus dibanding validasi inline di controller, kecuali ada alasan teknis yang jelas untuk tidak melakukannya.

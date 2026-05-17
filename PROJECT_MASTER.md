@@ -53,7 +53,14 @@ app/
  └── Services/     # Logika bisnis inti dan Helper Cache.
 
 resources/
- ├── css/          # app.scss (Pusat desain sistem Bootstrap kustom).
+ ├── css/          # Arsitektur Modular (7-1 Pattern):
+ │    ├── abstracts/ # Variabel & Mixins.
+ │    ├── base/      # Tipografi, Ikon, Scrollbar.
+ │    ├── components/# Tombol, Kartu, Tabel, Badge, Statistik, Carousel.
+ │    ├── layout/    # Navbar, Sidebar.
+ │    ├── pages/     # Halaman Landing.
+ │    ├── themes/    # Penimpaan (overrides) Mode Gelap.
+ │    └── app.scss   # Titik Masuk Utama (Pusat Impor).
  ├── js/           # app.js (Pusat inisiasi library JS).
  └── views/
       ├── components/ # Blade Components yang dapat digunakan ulang.
@@ -94,7 +101,11 @@ resources/
 
 ## 8. AI Development Rules
 Aturan sangat ketat bagi asisten AI yang akan membaca dan mengedit sistem ini:
-1. **DILARANG membuat duplikat komponen**. Jika butuh tabel, gunakan `<x-table-card>`. Jika butuh modal CRUD, gunakan `<x-modal>`. Jika butuh kartu metrik, gunakan `<x-stat-card>`.
+- **Frontend Rules (Modular SCSS)**:
+  - **DILARANG** menulis gaya kustom langsung di `app.scss`. File ini hanya untuk impor.
+  - **WAJIB** menaruh gaya baru ke dalam modul yang sesuai (misal: tombol ke `_buttons.scss`, variabel ke `_variables.scss`).
+  - Jika membuat halaman baru, buat partial SCSS baru di folder `pages/` dan impor di `app.scss`.
+- **DILARANG membuat duplikat komponen**. Jika butuh tabel, gunakan `<x-table-card>`. Jika butuh modal CRUD, gunakan `<x-modal>`. Jika butuh kartu metrik, gunakan `<x-stat-card>`.
 2. **WAJIB membaca file sebelum eksekusi**. Gunakan perintah membaca berkas (*view_file*) sebelum melakukan *update* kode.
 3. **Standar Bahasa**: Seluruh interaksi, anotasi kode, pesan *commit*, dan UI wajib menggunakan **Bahasa Indonesia**.
 4. **Validasi CRUD**: Seluruh operasi penambahan dan pembaruan database **WAJIB** dikawal oleh `FormRequest` terpisah.

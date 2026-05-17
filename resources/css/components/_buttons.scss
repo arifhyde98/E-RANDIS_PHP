@@ -1,0 +1,99 @@
+.btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    &:active {
+        transform: scale(0.95);
+    }
+}
+
+.btn-primary {
+    background-color: #0256c4;
+    border: none;
+    font-weight: 600;
+    padding: 0.6rem 1.5rem;
+    border-radius: 0.5rem;
+    position: relative;
+    overflow: hidden;
+
+    &:hover {
+        background-color: darken(#0256c4, 5%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(2, 86, 196, 0.3);
+    }
+}
+
+.btn-outline-white {
+    background-color: rgba(255,255,255,0.15);
+    color: #ffffff;
+    border: 1px solid rgba(255,255,255,0.25);
+    font-weight: 600;
+    transition: all 0.2s;
+
+    &:hover {
+        background-color: rgba(255,255,255,0.25);
+        color: #ffffff;
+    }
+}
+
+.action-toolbar {
+    .btn-action {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        color: var(--text-color);
+        min-height: 42px;
+        border-radius: 0.75rem;
+        position: relative;
+
+        .btn-action-icon {
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.65rem;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        &:hover {
+            background: var(--navbar-bg);
+            border-color: rgba(59, 130, 246, 0.35);
+            color: var(--text-color);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12) !important;
+
+            .btn-action-icon {
+                transform: translateY(-1px) scale(1.08);
+            }
+        }
+
+        &.is-loading {
+            pointer-events: none;
+            opacity: 0.8;
+
+            .btn-action-icon i {
+                animation: pulse 1s infinite;
+            }
+        }
+    }
+
+    .btn-action-success .btn-action-icon {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+    }
+
+    .btn-action-primary .btn-action-icon {
+        background: rgba(59, 130, 246, 0.12);
+        color: #3b82f6;
+    }
+}
+
+@media (max-width: 768px) {
+    .action-toolbar {
+        width: 100%;
+        .btn {
+            flex: 1 1 auto;
+            justify-content: center;
+            font-size: 0.85rem;
+            padding: 0.5rem;
+        }
+    }
+}
