@@ -2,7 +2,6 @@
 
 namespace App\Exports;
 
-use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -10,18 +9,13 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 /**
- * Mesin Ekspor Laporan Dinamis (Modular Excel Exporter)
+ * Kelas Induk Ekspor Laporan Dinamis (Abstract Base Excel Exporter)
  * 
- * Mengekspor data kueri dari strategi laporan apa pun secara dinamis,
- * menata header kolom, menyelaraskan tipe data, dan menerapkan gaya visual Navy khas E-RANDIS.
+ * Menyediakan kerangka kerja pemetaan kolom, penataan judul header,
+ * dan gaya visual Navy khas E-RANDIS. Diturunkan oleh implementasi ekspor spesifik.
  */
-class DynamicReportExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
+abstract class DynamicReportExport implements WithHeadings, WithMapping, ShouldAutoSize, WithStyles
 {
-    /**
-     * Objek Kueri Pembangun Eloquent.
-     */
-    protected $query;
-
     /**
      * Pemetaan header kolom laporan.
      * 
@@ -30,25 +24,13 @@ class DynamicReportExport implements FromQuery, WithHeadings, WithMapping, Shoul
     protected array $headers;
 
     /**
-     * Inisiasi ekspor dinamis dengan kueri ter-eager load dan pemetaan header.
+     * Inisiasi ekspor dinamis dengan pemetaan header.
      * 
-     * @param \Illuminate\Database\Eloquent\Builder $query
      * @param array<string, string> $headers
      */
-    public function __construct($query, array $headers)
+    public function __construct(array $headers)
     {
-        $this->query = $query;
         $this->headers = $headers;
-    }
-
-    /**
-     * Menyediakan kueri basis data untuk dialirkan langsung ke file Excel (menghindari memory limit).
-     *
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function query()
-    {
-        return $this->query;
     }
 
     /**

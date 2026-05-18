@@ -21,7 +21,19 @@ class ReportFilterRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check();
+        if (!auth()->check()) {
+            return false;
+        }
+
+        $type = $this->input('type');
+        $user = auth()->user();
+
+        // Laporan duplikasi hanya boleh diakses oleh Admin BMD dan Super Admin
+        if ($type === 'duplicate' && $user && $user->role === \App\Enums\UserRole::OPD) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -32,7 +44,7 @@ class ReportFilterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type'    => ['required', 'string', Rule::in(['status', 'opd', 'document'])],
+            'type'    => ['required', 'string', Rule::in(['status', 'opd', 'document', 'duplicate'])],
             'kondisi' => ['nullable', 'string', Rule::enum(VehicleCondition::class)],
             'opd_id'  => ['nullable', 'integer', 'exists:opds,id'],
             'tahun'   => ['nullable', 'integer', 'min:1950', 'max:' . (now()->year + 1)],

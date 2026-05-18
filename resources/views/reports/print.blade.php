@@ -84,6 +84,12 @@
             vertical-align: middle;
         }
 
+        tr.dup-highlight td {
+            background-color: rgba(30, 64, 175, 0.07) !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
         .table-print th {
             background-color: #f1f5f9 !important;
             color: #000000 !important;
@@ -186,8 +192,26 @@
             </tr>
         </thead>
         <tbody>
+            @php
+                $groupColors = [];
+                $colorIndex = 0;
+            @endphp
             @forelse($data as $index => $row)
-                <tr>
+                @php
+                    $rowClass = '';
+                    $type = $filters['type'] ?? 'status';
+                    if ($type === 'duplicate') {
+                        $groupKey = $row->duplicate_group_key;
+                        if (!isset($groupColors[$groupKey])) {
+                            $groupColors[$groupKey] = ($colorIndex++ % 2 === 0);
+                        }
+                        
+                        if ($groupColors[$groupKey] && !str_starts_with($groupKey, 'none_')) {
+                            $rowClass = 'class="dup-highlight"';
+                        }
+                    }
+                @endphp
+                <tr {!! $rowClass !!}>
                     <td class="text-center">{{ $index + 1 }}</td>
                     @foreach($headers as $key => $label)
                         <td>

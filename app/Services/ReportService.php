@@ -117,6 +117,11 @@ class ReportService
         // Eksekusi query dengan paginasi (15 baris per halaman)
         $paginatedData = $queryBuilder->paginate(15)->withQueryString();
 
+        // Jalankan pengayaan data in-memory jika strategi mengimplementasikan PostProcessesReportRows
+        if ($strategy instanceof \App\Reports\Contracts\PostProcessesReportRows) {
+            $strategy->postProcess($paginatedData->getCollection());
+        }
+
         return [
             'data'    => $paginatedData,
             'headers' => $strategy->headers(),

@@ -1,6 +1,11 @@
 @php
     $empty = $data->isEmpty();
+    
+    // Inisialisasi variabel bantu untuk pewarnaan grup ganda cerdas
+    $groupColors = [];
+    $colorIndex = 0;
 @endphp
+
 
 <x-table-card
     title="Hasil Pratinjau Laporan"
@@ -38,7 +43,21 @@
 
     <!-- Daftar Isi Data -->
     @foreach($data as $index => $row)
-        <tr>
+        @php
+            $rowClass = '';
+            if (isset($type) && $type === 'duplicate') {
+                $groupKey = $row->duplicate_group_key;
+                if (!isset($groupColors[$groupKey])) {
+                    $groupColors[$groupKey] = ($colorIndex++ % 2 === 0);
+                }
+                
+                // Gunakan class dup-highlight jika bernilai true dan merupakan grup ganda riil
+                if ($groupColors[$groupKey] && !str_starts_with($groupKey, 'none_')) {
+                    $rowClass = 'class="dup-highlight"';
+                }
+            }
+        @endphp
+        <tr {!! $rowClass !!}>
             <td class="text-center text-secondary small fw-medium">
                 {{ $data->firstItem() + $index }}
             </td>

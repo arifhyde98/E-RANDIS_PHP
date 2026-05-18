@@ -7,10 +7,11 @@ use App\Enums\UserRole;
 use App\Reports\ReportRegistry;
 use App\Services\ReportService;
 use App\Http\Requests\ReportFilterRequest;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use App\Exports\DynamicReportExport;
+use App\Exports\DynamicQueryReportExport;
+use App\Exports\DynamicCollectionReportExport;
+use App\Reports\Contracts\PostProcessesReportRows;
 use Maatwebsite\Excel\Facades\Excel;
 
 /**
@@ -112,15 +113,23 @@ class ReportController extends Controller implements HasMiddleware
         // 1. Selesaikan strategi laporan via registry
         $strategy = $this->registry->resolve($type);
 
-        // 2. Bangun kueri
-        $queryBuilder = $strategy->query($filters);
-
-        // 3. Susun nama berkas unduhan yang bersih
+        // 2. Susun nama berkas unduhan yang bersih
         $filename = 'laporan_' . $type . '_' . date('Ymd_His') . '.xlsx';
 
-        // 4. Stream ekspor menggunakan Laravel Excel
+        // 3. Jika strategi mengimplementasikan pengayaan data (PostProcessesReportRows), gunakan ekspor berbasis Koleksi
+        if ($strategy instanceof PostProcessesReportRows) {
+            $data = $strategy->query($filters)->get();
+            $strategy->postProcess($data);
+
+            return Excel::download(
+                new DynamicCollectionReportExport($data, $strategy->headers()),
+                $filename
+            );
+        }
+
+        // 4. Jika strategi standar, gunakan kueri streaming (FromQuery) hemat memori untuk data besar
         return Excel::download(
-            new DynamicReportExport($queryBuilder, $strategy->headers()),
+            new DynamicQueryReportExport($strategy->query($filters), $strategy->headers()),
             $filename
         );
     }
@@ -142,7 +151,12 @@ class ReportController extends Controller implements HasMiddleware
         // 2. Tarik data (tanpa paginasi untuk cetak, agar seluruh data keluar di kertas)
         $data = $strategy->query($filters)->get();
 
-        // 3. Deskripsi tipe laporan
+        // 3. Jalankan pengayaan data jika strategi mengimplementasikan PostProcessesReportRows
+        if ($strategy instanceof PostProcessesReportRows) {
+            $strategy->postProcess($data);
+        }
+
+        // 4. Deskripsi tipe laporan
         $reportTitle = $this->registry->getSupportedTypes()[$type] ?? 'Laporan Kendaraan';
 
         return view('reports.print', [

@@ -6,6 +6,7 @@ use App\Reports\Contracts\ReportStrategy;
 use App\Reports\Strategies\VehicleStatusReport;
 use App\Reports\Strategies\OpdAssetReport;
 use App\Reports\Strategies\DocumentValidityReport;
+use App\Reports\Strategies\DuplicateVehicleReport;
 use InvalidArgumentException;
 
 /**
@@ -24,6 +25,7 @@ class ReportRegistry
         'status'   => VehicleStatusReport::class,
         'opd'      => OpdAssetReport::class,
         'document' => DocumentValidityReport::class,
+        'duplicate'=> DuplicateVehicleReport::class,
     ];
 
     /**
@@ -51,10 +53,18 @@ class ReportRegistry
      */
     public function getSupportedTypes(): array
     {
-        return [
+        $types = [
             'status'   => 'Status dan Kondisi Fisik Kendaraan',
             'opd'      => 'Distribusi Aset Per Instansi (OPD)',
             'document' => 'Masa Berlaku Dokumen/STNK',
         ];
+
+        // Hanya tampilkan laporan ganda untuk Admin BMD & Superadmin
+        $user = auth()->user();
+        if ($user && in_array($user->role, [\App\Enums\UserRole::SUPERADMIN, \App\Enums\UserRole::ADMIN])) {
+            $types['duplicate'] = 'Identifikasi Data Kendaraan Ganda/Identik';
+        }
+
+        return $types;
     }
 }

@@ -52,7 +52,7 @@ class VehicleDuplicationTest extends TestCase
     public function test_opd_user_cannot_access_duplication_endpoints()
     {
         // Buat OPD agar user OPD tidak null opd_id-nya
-        $opd = Opd::create(['nama' => 'DINAS KESEHATAN']);
+        $opd = Opd::create(['nama' => 'DINAS KESEHATAN ' . rand(1000, 9999)]);
         $user = User::factory()->create([
             'role'   => UserRole::OPD,
             'opd_id' => $opd->id
@@ -199,14 +199,17 @@ class VehicleDuplicationTest extends TestCase
             'role' => UserRole::ADMIN
         ]);
 
+        $targetName = 'DINAS KESEHATAN ' . rand(1000, 9999);
+        $sourceName = $targetName . ' KAB';
+
         // Buat dua OPD yang terindikasi mirip secara manual
-        $targetOpd = Opd::create(['nama' => 'DINAS KESEHATAN']);
-        $sourceOpd = Opd::create(['nama' => 'DINAS KESEHATAN KAB']);
+        $targetOpd = Opd::create(['nama' => $targetName]);
+        $sourceOpd = Opd::create(['nama' => $sourceName]);
 
         // Buat kendaraan pada OPD sumber
         $vehicle = $this->createVehicle([
             'opd_id' => $sourceOpd->id,
-            'opd'    => 'DINAS KESEHATAN KAB'
+            'opd'    => $sourceName
         ]);
 
         // Kirim request merge OPD
@@ -220,7 +223,7 @@ class VehicleDuplicationTest extends TestCase
         // Pastikan kendaraan sekarang terikat dengan OPD Utama & teks 'opd' tersinkronisasi
         $vehicle->refresh();
         $this->assertEquals($targetOpd->id, $vehicle->opd_id);
-        $this->assertEquals('DINAS KESEHATAN', $vehicle->opd);
+        $this->assertEquals($targetName, $vehicle->opd);
 
         // Pastikan OPD sumber (duplikat) yang kosong sudah terhapus bersih
         $this->assertDatabaseMissing('opds', ['id' => $sourceOpd->id]);

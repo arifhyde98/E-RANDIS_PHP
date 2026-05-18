@@ -31,7 +31,7 @@
 - **Arsitektur Umum**: Monolith (MVC Laravel) yang teroptimasi.
 - **Pola Desain Utama**:
   - **Service Layer**: Logika bisnis kompleks dan kalkulasi *cache* diletakkan di dalam *Service* (contoh: `VehicleService`), bukan di *Controller*.
-  - **Reporting Architecture**: Modul Laporan memakai kombinasi *Service Layer*, *Registry Pattern*, dan *Strategy Pattern* melalui `ReportService`, `ReportRegistry`, dan strategy laporan modular agar jenis laporan baru dapat ditambahkan tanpa merombak controller inti.
+  - **Reporting Architecture**: Modul Laporan memakai kombinasi *Service Layer*, *Registry Pattern*, dan *Strategy Pattern* melalui `ReportService`, `ReportRegistry`, dan strategy laporan modular agar jenis laporan baru dapat ditambahkan tanpa merombak controller inti. Laporan duplikasi (`duplicate`) dilindungi secara ketat di tingkat `ReportFilterRequest` (HTTP 403 Forbidden) dan registry untuk mencegah akses gelap oleh tenant OPD.
   - **Observer Pattern**: Automasi sistem dan pencatatan riwayat (Audit Log) dikendalikan penuh oleh *Eloquent Observers* (`VehicleObserver`, `OpdObserver`, `UserObserver`).
   - **Multi-Tenancy (Data Isolation)**: Menggunakan `TenantScope` (Global Scope) pada model `Vehicle` untuk mengunci data pengguna OPD agar hanya bisa melihat aset instansinya sendiri. *Fail-safe*: Jika `opd_id` null, akses otomatis terkunci total.
 - **Auth & Permission Flow**: 
@@ -129,7 +129,7 @@ Status implementasi fitur utama sistem.
 | Audit Trail (Log Sistem) | DONE | Hanya dapat diakses Superadmin |
 | CMS Pengaturan Global | DONE | Tersimpan di *Cache* |
 | Cek & Resolusi Duplikasi | DONE | Analisis ganda cerdas (plat & mesin) & merge OPD |
-| Modul Laporan | DONE | Strategy modular, preview AJAX, ekspor Excel, cetak browser, dan isolasi tenant |
+| Modul Laporan | DONE | Strategy modular (4 tipe), otorisasi ketat (403 untuk OPD pada laporan ganda), preview AJAX, ekspor Excel, cetak browser, dan isolasi tenant |
 
 ---
 
@@ -140,7 +140,7 @@ Status implementasi fitur utama sistem.
 ### Phase 3: Future Expansion (Selesai)
 - **AI Smart Import**: Pemetaan dinamis header Excel berbasis AI semantik agar pengguna dapat mengunggah format file Excel bebas dan memetakan kolom secara visual. Fitur ini didukung oleh kecocokan sinonim otomatis dan fallback kemiripan teks (similar text) > 65%.
 - **Diagnosis & Resolusi Duplikasi**: Modul pendeteksi plat ganda hasil impor serta pencocokan mesin ganda secara global. Dilengkapi fitur resolusi gabung (*merge*) kendaraan dan penggabungan instansi OPD dengan kemiripan nama untuk mencegah inkonsistensi data.
-- **Modul Laporan Modular**: Menyediakan laporan status kendaraan, distribusi aset OPD, dan masa berlaku dokumen melalui arsitektur strategy modular, preview HTML AJAX, ekspor Excel, serta cetak browser dengan isolasi tenant yang tervalidasi.
+- **Modul Laporan Modular**: Menyediakan laporan status kendaraan, distribusi aset OPD, masa berlaku dokumen, serta laporan kendaraan ganda/identik melalui arsitektur strategy modular, preview HTML AJAX, ekspor Excel berbasis kueri streaming atau koleksi ter-enrich, cetak browser, dengan otorisasi ketat (HTTP 403 bagi OPD) serta isolasi data multi-tenant yang kokoh.
 
 ---
 

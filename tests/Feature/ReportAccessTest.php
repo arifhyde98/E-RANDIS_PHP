@@ -7,6 +7,7 @@ use App\Models\Opd;
 use App\Models\Vehicle;
 use App\Enums\UserRole;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
 
 /**
@@ -17,6 +18,12 @@ use Tests\TestCase;
 class ReportAccessTest extends TestCase
 {
     use DatabaseTransactions;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        cache()->flush();
+    }
 
     /**
      * Helper untuk membuat objek kendaraan dengan data default valid tanpa menggunakan factory.
@@ -329,7 +336,8 @@ class ReportAccessTest extends TestCase
             'role' => UserRole::ADMIN
         ]);
 
-        $opd = Opd::create(['nama' => 'DINAS KESEHATAN', 'singkatan' => 'DK']);
+        $opdName = 'DINAS KESEHATAN ' . rand(10000, 99999);
+        $opd = Opd::create(['nama' => $opdName, 'singkatan' => 'DK']);
 
         // Cek summary awal (harus 0)
         $this->actingAs($admin);
@@ -344,7 +352,7 @@ class ReportAccessTest extends TestCase
             'jenis' => 'Mobil',
             'stnk_ada' => 'Ada',
             'bpkb_ada' => 'Ada',
-            'opd' => 'DINAS KESEHATAN',
+            'opd' => $opdName,
             'opd_id' => $opd->id,
             'pemegang' => 'Budi',
             'status' => \App\Enums\VehicleStatus::TERSEDIA->value,
@@ -368,7 +376,8 @@ class ReportAccessTest extends TestCase
             'role' => UserRole::ADMIN
         ]);
 
-        $opd = Opd::create(['nama' => 'DINAS KESEHATAN', 'singkatan' => 'DK']);
+        $opdName = 'DINAS KESEHATAN ' . rand(10000, 99999);
+        $opd = Opd::create(['nama' => $opdName, 'singkatan' => 'DK']);
 
         // Buat kendaraan awal
         $vehicle = $this->createVehicle([
@@ -392,7 +401,7 @@ class ReportAccessTest extends TestCase
             'jenis' => 'Mobil',
             'stnk_ada' => 'Ada',
             'bpkb_ada' => 'Ada',
-            'opd' => 'DINAS KESEHATAN',
+            'opd' => $opdName,
             'opd_id' => $opd->id,
             'pemegang' => 'Budi Baru',
             'status' => \App\Enums\VehicleStatus::TERSEDIA->value,
@@ -417,13 +426,14 @@ class ReportAccessTest extends TestCase
             'role' => UserRole::ADMIN
         ]);
 
-        $opd = Opd::create(['nama' => 'DINAS KESEHATAN', 'singkatan' => 'DK']);
+        $opdName = 'DINAS KESEHATAN ' . rand(10000, 99999);
+        $opd = Opd::create(['nama' => $opdName, 'singkatan' => 'DK']);
 
         // Buat kendaraan awal
         $vehicle = $this->createVehicle([
             'no_polisi' => 'DN 5555 EE',
             'opd_id'    => $opd->id,
-            'opd'       => $opd->nama,
+            'opd'       => $opdName,
             'kondisi'   => \App\Enums\VehicleCondition::BAIK->value,
         ]);
 
@@ -440,5 +450,137 @@ class ReportAccessTest extends TestCase
         $this->actingAs($admin);
         $summaryNew = app(\App\Services\ReportService::class)->getQuickSummary();
         $this->assertEquals(0, $summaryNew['total_unit'], 'Gagal meng-invalidasi cache summary laporan setelah data kendaraan dihapus via DELETE request.');
+    }
+
+    /**
+     * Test 11: Pengguna OPD tidak diperbolehkan mengakses pratinjau (preview) laporan duplikasi (403 Forbidden).
+     */
+    public function test_opd_user_cannot_access_duplicate_report_preview()
+    {
+        $opd = Opd::create(['nama' => 'Dinas A ' . rand(10000, 99999), 'singkatan' => 'DA']);
+        $userOpd = User::factory()->create([
+            'role'   => UserRole::OPD,
+            'opd_id' => $opd->id
+        ]);
+
+        $response = $this->actingAs($userOpd)
+            ->getJson(route('reports.preview', [
+                'type' => 'duplicate'
+            ]));
+
+        $response->assertStatus(403);
+    }
+
+    /**
+     * Test 12: Pengguna OPD tidak diperbolehkan mencetak (print) laporan duplikasi (403 Forbidden).
+     */
+    public function test_opd_user_cannot_access_duplicate_report_print()
+    {
+        $opd = Opd::create(['nama' => 'Dinas A ' . rand(10000, 99999), 'singkatan' => 'DA']);
+        $userOpd = User::factory()->create([
+            'role'   => UserRole::OPD,
+            'opd_id' => $opd->id
+        ]);
+
+        $response = $this->actingAs($userOpd)
+            ->get(route('reports.print', [
+                'type' => 'duplicate'
+            ]));
+
+        $response->assertStatus(403);
+    }
+
+    /**
+     * Test 13: Pengguna OPD tidak diperbolehkan mengekspor (export) laporan duplikasi (403 Forbidden).
+     */
+    public function test_opd_user_cannot_access_duplicate_report_export()
+    {
+        $opd = Opd::create(['nama' => 'Dinas A ' . rand(10000, 99999), 'singkatan' => 'DA']);
+        $userOpd = User::factory()->create([
+            'role'   => UserRole::OPD,
+            'opd_id' => $opd->id
+        ]);
+
+        $response = $this->actingAs($userOpd)
+            ->get(route('reports.export', [
+                'type' => 'duplicate'
+            ]));
+
+        $response->assertStatus(403);
+    }
+
+    /**
+     * Test 14: Admin dapat mengakses pratinjau laporan duplikasi dengan sukses.
+     */
+    public function test_admin_user_can_access_duplicate_report_preview()
+    {
+        $admin = User::factory()->create([
+            'role' => UserRole::ADMIN
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('reports.preview', [
+                'type' => 'duplicate'
+            ]), ['HTTP_X-Requested-With' => 'XMLHttpRequest']);
+
+        $response->assertStatus(200);
+        $response->assertSee('Hasil Pratinjau Laporan');
+        $response->assertSee('Analisis Identik');
+    }
+
+    /**
+     * Test 15: Memastikan laporan biasa (standard report) diekspor menggunakan DynamicQueryReportExport (Streaming).
+     */
+    public function test_standard_report_uses_query_based_exporter()
+    {
+        Excel::fake();
+        \Carbon\Carbon::setTestNow(now());
+
+        $admin = User::factory()->create([
+            'role' => UserRole::ADMIN
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('reports.export', [
+                'type' => 'status'
+            ]));
+
+        $response->assertStatus(200);
+
+        $filename = 'laporan_status_' . date('Ymd_His') . '.xlsx';
+
+        Excel::assertDownloaded($filename, function (\App\Exports\DynamicQueryReportExport $export) {
+            return true;
+        });
+
+        \Carbon\Carbon::setTestNow(); // Reset
+    }
+
+    /**
+     * Test 16: Memastikan laporan duplikasi diekspor menggunakan DynamicCollectionReportExport (Collection).
+     */
+    public function test_duplicate_report_uses_collection_based_exporter()
+    {
+        Excel::fake();
+        \Carbon\Carbon::setTestNow(now());
+
+        $admin = User::factory()->create([
+            'role' => UserRole::ADMIN
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('reports.export', [
+                'type' => 'duplicate'
+            ]));
+
+        $response->assertStatus(200);
+
+        $filename = 'laporan_duplicate_' . date('Ymd_His') . '.xlsx';
+
+        Excel::assertDownloaded($filename, function (\App\Exports\DynamicCollectionReportExport $export) {
+            return true;
+        });
+
+        \Carbon\Carbon::setTestNow(); // Reset
     }
 }

@@ -43,7 +43,11 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
+}
+
+/* Gaya Baris Kendaraan Ganda/Identik Ter-highlight */
+tr.dup-highlight td {
+    background-color: var(--dup-highlight-bg) !important;
 }
 
 /* 🖨️ CSS KHUSUS PRINT (Bawaan Browser Print Ramah Tinta) */

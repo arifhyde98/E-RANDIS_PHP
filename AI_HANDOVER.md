@@ -96,8 +96,9 @@ Modul Laporan dibangun secara modular menggunakan kombinasi **Service Layer**, *
 - `ReportService`: mengorkestrasi summary laporan serta pemanggilan strategy aktif.
 - `ReportRegistry`: memetakan tipe laporan ke strategy yang sesuai.
 - `ReportStrategy`: kontrak bersama untuk seluruh jenis laporan.
-- `VehicleStatusReport`, `OpdAssetReport`, `DocumentValidityReport`: strategy laporan awal.
-- `DynamicReportExport`: mesin ekspor Excel dinamis untuk seluruh strategy laporan.
+- `VehicleStatusReport`, `OpdAssetReport`, `DocumentValidityReport`, `DuplicateVehicleReport`: empat strategy laporan modular.
+- `DynamicReportExport`: kelas induk abstrak untuk penataan dan pemetaan kolom Excel.
+- `DynamicQueryReportExport` & `DynamicCollectionReportExport`: dua subclass yang membedakan kueri streaming hemat memori (`FromQuery`) untuk laporan standar dan ekspor berbasis koleksi (`FromCollection`) untuk laporan dengan pengayaan data.
 
 ### Validasi Kelas Permintaan (*Form Request Validation*)
 Penyimpanan dan pembaruan data wajib menggunakan kelas validasi terpisah demi menjaga keamanan dan kebersihan pengontrol:
@@ -264,14 +265,17 @@ Komponen modal untuk CRUD *Single Page Interaction*, mendukung perilaku *mobile-
   - **Robust OPD Relation & Fallback Mapping:** Mendukung pembacaan nama OPD yang tangguh menggunakan kombinasi relasi Eloquent `opdRelation` dengan fallback kolom string `opd` (`$original->opdRelation?->nama ?? $original->opd ?? 'BELUM DIKETAHUI'`), menjamin data OPD tidak pernah hilang atau tertulis kosong/belum diketahui.
 
 ### Modul Laporan Modular (`ReportController`)
-- Menyediakan tiga jenis laporan awal:
+- Menyediakan empat jenis laporan ter-optimasi:
   - **Status dan Kondisi Fisik Kendaraan**
   - **Distribusi Aset per OPD**
   - **Masa Berlaku Dokumen/STNK**
+  - **Identifikasi Data Kendaraan Ganda/Identik** (Laporan khusus Admin/Superadmin dengan analisis visual in-memory bebas kueri per baris / anti-N+1 menggunakan satu kueri referensi tunggal).
+- **Otorisasi Ketat Laporan Duplikasi**: Laporan tipe `duplicate` dilindungi secara berlapis. Di `ReportRegistry`, tipe laporan ini otomatis disembunyikan dari user OPD. Di `ReportFilterRequest`, akses ditolak secara keras dengan melempar HTTP 403 Forbidden bagi OPD (aman untuk preview, export, dan print).
+- **Pembersihan Kebocoran Tenant**: Menghapus seluruh accessor duplikasi dari model `Vehicle.php`. Logika analisis duplikasi dipindahkan seutuhnya ke method `postProcess()` di dalam strategy `DuplicateVehicleReport.php` sehingga data global tidak pernah bocor ke konteks tenant OPD biasa.
 - Mendukung ringkasan cepat berbasis cache, pratinjau HTML parsial via AJAX, ekspor Excel modular, dan cetak browser ramah printer.
-- Seluruh query strategy dibangun dari `Vehicle::query()` agar otomatis tunduk pada `TenantScope`.
+- Seluruh query strategy dibangun dari `Vehicle::query()` agar otomatis tunduk pada `TenantScope` (kecuali strategy duplikasi khusus admin global).
 - Pengguna OPD tidak melihat filter OPD lain, dan `ReportFilterRequest` tetap mengunci `opd_id` di backend sebagai pertahanan berlapis.
-- Pengujian keamanan laporan mencakup isolasi tenant, perlindungan cache lintas-role, invalidasi cache pasca CRUD, serta pencegahan pemindahan kendaraan lintas OPD saat update.
+- Pengujian keamanan laporan mencakup isolasi tenant, perlindungan cache lintas-role, invalidasi cache pasca CRUD, otorisasi ketat laporan duplikasi (403 untuk OPD), serta pencegahan pemindahan kendaraan lintas OPD saat update.
 
 ### Manajemen Master Data (Hub)
 - Rute terpusat (`/master-data`) untuk mengelola **Jenis Kendaraan** (`VehicleTypeController`) dan **OPD / Dinas** (`OpdController`).
