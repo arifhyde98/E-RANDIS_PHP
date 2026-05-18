@@ -73,3 +73,9 @@ Route::get('reports', [ReportController::class, 'index'])->name('reports.index')
 Route::get('reports/preview', [ReportController::class, 'preview'])->name('reports.preview');
 Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
 Route::get('reports/print', [ReportController::class, 'print'])->name('reports.print');
+
+// Modul Maintenance Placeholder (Akan Datang)
+Route::get('maintenance', function () {
+    return view('maintenance.index');
+})->name('maintenance.index');
+

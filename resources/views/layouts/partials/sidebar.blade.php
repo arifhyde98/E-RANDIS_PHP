@@ -75,8 +75,8 @@
         </li>
         @endif
         
-        <li>
-            <a href="#"><i class="bi bi-tools"></i> Maintenance</a>
+        <li class="{{ Request::is('maintenance*') ? 'active' : '' }}">
+            <a href="{{ route('maintenance.index') }}"><i class="bi bi-tools"></i> Maintenance</a>
         </li>
 
         <li class="{{ Request::is('reports*') ? 'active' : '' }}">
