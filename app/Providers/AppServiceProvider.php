@@ -21,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+        \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
 
         // Register Observers
         \App\Models\Vehicle::observe(\App\Observers\VehicleObserver::class);
