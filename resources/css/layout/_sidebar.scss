@@ -15,11 +15,20 @@
     background: var(--sidebar-bg); /* Navy Blue */
     color: #ffffff;
     transition: all 0.3s;
-    min-height: 100vh;
+    height: 100vh;
+    max-height: 100vh;
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox: Hide scrollbar */
+    -ms-overflow-style: none; /* IE/Edge: Hide scrollbar */
     z-index: 1000;
     position: fixed;
     top: 0;
     left: 0;
+
+    /* Hide scrollbar in Chrome, Safari, and Opera */
+    &::-webkit-scrollbar {
+        display: none;
+    }
 }
 
 #sidebar.active {
@@ -164,6 +173,41 @@
         
         &.show {
             display: block;
+        }
+    }
+}
+
+/* Compact style for short screen heights (e.g. older monitors) */
+@media (max-height: 850px) {
+    #sidebar {
+        .sidebar-header {
+            padding: 1rem !important;
+        }
+        ul.components {
+            padding: 0.5rem 0 !important;
+        }
+        ul li {
+            margin-bottom: 0.15rem !important;
+            
+            // Override Bootstrap spacing classes in sidebar list
+            &.mt-4 {
+                margin-top: 0.75rem !important;
+            }
+            &.mb-2 {
+                margin-bottom: 0.15rem !important;
+            }
+        }
+        ul li a {
+            padding: 0.5rem 0.75rem !important;
+            font-size: 0.88rem !important;
+            
+            i {
+                margin-right: 8px !important;
+                font-size: 1rem !important;
+            }
+        }
+        ul.collapse li a {
+            padding-left: 2.25rem !important;
         }
     }
 }
