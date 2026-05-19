@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             SettingSeeder::class,
             OpdSeeder::class,
             VehicleTypeSeeder::class,
+            ReportSettingSeeder::class,
         ]);
 
         // 2. Buat Akun Superadmin Utama agar Terhindar dari Lock Mode

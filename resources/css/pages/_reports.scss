@@ -50,6 +50,107 @@ tr.dup-highlight td {
     background-color: var(--dup-highlight-bg) !important;
 }
 
+/*
+ * Pengaturan dokumen laporan: light/dark theme-aware surfaces.
+ */
+.report-settings-page {
+    .report-settings-card,
+    .report-export-card {
+        background-color: var(--card-bg);
+        border-color: var(--card-border) !important;
+        color: var(--text-color);
+    }
+
+    .report-settings-card > .card-body,
+    .report-export-card > .card-body {
+        background-color: var(--card-bg);
+        color: var(--text-color);
+    }
+
+    .report-settings-tabs {
+        background-color: var(--card-bg) !important;
+        border-color: var(--card-border) !important;
+
+        .nav-tabs {
+            border-color: var(--card-border);
+        }
+
+        .nav-link {
+            color: var(--text-color);
+            border-color: transparent;
+
+            &:hover {
+                background-color: rgba(59, 130, 246, 0.08);
+                border-color: transparent;
+                color: #2563eb;
+            }
+
+            &.active {
+                background-color: var(--card-bg);
+                border-color: var(--card-border) var(--card-border) var(--card-bg);
+                color: #1e40af;
+            }
+        }
+    }
+
+    .report-settings-side-panel {
+        border-color: var(--card-border) !important;
+    }
+
+    .report-preview-paper,
+    .report-signature-preview {
+        background-color: var(--card-bg);
+        border-color: var(--card-border) !important;
+        color: var(--text-color);
+    }
+
+    .report-preview-paper {
+        .border-bottom {
+            border-color: var(--card-border) !important;
+        }
+    }
+
+    .report-preview-divider {
+        height: 3px;
+        border-bottom: 3px double #1e40af;
+    }
+
+    .report-settings-note {
+        background-color: rgba(59, 130, 246, 0.12);
+        color: var(--text-color);
+    }
+}
+
+[data-theme="dark"] {
+    .report-settings-page {
+        .report-settings-tabs {
+            .nav-link {
+                color: #cbd5e1;
+
+                &:hover {
+                    background-color: rgba(96, 165, 250, 0.13);
+                    color: #93c5fd;
+                }
+
+                &.active {
+                    background-color: var(--card-bg);
+                    border-color: var(--card-border) var(--card-border) var(--card-bg);
+                    color: #93c5fd;
+                }
+            }
+        }
+
+        .report-preview-divider {
+            border-bottom-color: #60a5fa;
+        }
+
+        .report-settings-note {
+            background-color: rgba(96, 165, 250, 0.16);
+            color: #dbeafe;
+        }
+    }
+}
+
 /* 🖨️ CSS KHUSUS PRINT (Bawaan Browser Print Ramah Tinta) */
 @media print {
     /* Sembunyikan elemen navigasi, tombol, dan sidebar secara mutlak */

@@ -73,6 +73,13 @@ Route::get('reports', [ReportController::class, 'index'])->name('reports.index')
 Route::get('reports/preview', [ReportController::class, 'preview'])->name('reports.preview');
 Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
 Route::get('reports/print', [ReportController::class, 'print'])->name('reports.print');
+Route::get('reports/pdf', [ReportController::class, 'pdf'])->name('reports.pdf');
+
+// Pengaturan Cetak & Dokumen Laporan (Kop & TTD)
+Route::get('reports/settings', [\App\Http\Controllers\ReportSettingController::class, 'index'])->name('reports.settings.index');
+Route::post('reports/settings/letterhead', [\App\Http\Controllers\ReportSettingController::class, 'updateLetterhead'])->name('reports.settings.letterhead');
+Route::post('reports/settings/signatory', [\App\Http\Controllers\ReportSettingController::class, 'updateSignatory'])->name('reports.settings.signatory');
+Route::post('reports/settings/export', [\App\Http\Controllers\ReportSettingController::class, 'updateExportSetting'])->name('reports.settings.export');
 
 // Modul Maintenance Placeholder (Akan Datang)
 Route::get('maintenance', function () {

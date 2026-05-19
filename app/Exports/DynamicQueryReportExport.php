@@ -23,10 +23,13 @@ class DynamicQueryReportExport extends DynamicReportExport implements FromQuery
      * 
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @param array<string, string> $headers
+     * @param array $filters
+     * @param string $reportTitle
+     * @param array $docSettings
      */
-    public function __construct(Builder $query, array $headers)
+    public function __construct(Builder $query, array $headers, array $filters = [], string $reportTitle = 'Laporan Kendaraan Dinas', array $docSettings = [])
     {
-        parent::__construct($headers);
+        parent::__construct($headers, $filters, $reportTitle, $docSettings);
         $this->query = $query;
     }
 

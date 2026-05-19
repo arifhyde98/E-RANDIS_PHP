@@ -16,6 +16,13 @@
             </nav>
             <h3 class="fw-bold text-navy mb-0">Laporan & Rekapitulasi Aset</h3>
         </div>
+        @if(auth()->user()->role->value === 'superadmin')
+            <div class="mt-2 mt-md-0">
+                <a href="{{ route('reports.settings.index') }}" class="btn btn-sm btn-outline-primary px-3 fw-semibold">
+                    <i class="bi bi-gear-fill me-1"></i> Pengaturan Cetak
+                </a>
+            </div>
+        @endif
     </div>
 
     <!-- AREA RINGKASAN METRIK (3 STAT CARDS RESMI) -->
@@ -261,6 +268,17 @@
         const params = new URLSearchParams(formData).toString();
         
         window.location.href = "{{ route('reports.export') }}?" + params;
+    }
+
+    /**
+     * Aksi pemicu Ekspor PDF (Server-Side mPDF).
+     */
+    function exportPdf() {
+        const form = document.getElementById('filter-form');
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData).toString();
+        
+        window.open("{{ route('reports.pdf') }}?" + params, '_blank');
     }
 
     /**

@@ -115,9 +115,16 @@ class ReportController extends Controller implements HasMiddleware
         $strategy = $this->registry->resolve($type);
 
         // 2. Susun nama berkas unduhan yang bersih
-        $filename = 'laporan_' . $type . '_' . date('Ymd_His') . '.xlsx';
+        $filename = 'laporan_' . $type . '_' . now()->format('Ymd_His') . '.xlsx';
 
-        // 3. Jika strategi mengimplementasikan pengayaan data (PostProcessesReportRows), gunakan ekspor berbasis Koleksi
+        // 3. Ambil judul laporan pendukung
+        $reportTitle = $this->registry->getSupportedTypes()[$type] ?? 'Laporan Kendaraan';
+
+        // 4. Muat konfigurasi dokumen dinamis dari database
+        $docSettingService = app(\App\Services\ReportDocumentSettingService::class);
+        $docSettings = $docSettingService->getSettingsForReportType($type);
+
+        // 5. Jika strategi mengimplementasikan pengayaan data (PostProcessesReportRows), gunakan ekspor berbasis Koleksi
         if ($strategy instanceof PostProcessesReportRows) {
             $data = $strategy->query($filters)->get();
 
@@ -128,14 +135,14 @@ class ReportController extends Controller implements HasMiddleware
             $strategy->postProcess($data, $referenceRows);
 
             return Excel::download(
-                new DynamicCollectionReportExport($data, $strategy->headers()),
+                new DynamicCollectionReportExport($data, $strategy->headers(), $filters, $reportTitle, $docSettings),
                 $filename
             );
         }
 
-        // 4. Jika strategi standar, gunakan kueri streaming (FromQuery) hemat memori untuk data besar
+        // 6. Jika strategi standar, gunakan kueri streaming (FromQuery) hemat memori untuk data besar
         return Excel::download(
-            new DynamicQueryReportExport($strategy->query($filters), $strategy->headers()),
+            new DynamicQueryReportExport($strategy->query($filters), $strategy->headers(), $filters, $reportTitle, $docSettings),
             $filename
         );
     }
@@ -169,11 +176,106 @@ class ReportController extends Controller implements HasMiddleware
         // 4. Deskripsi tipe laporan
         $reportTitle = $this->registry->getSupportedTypes()[$type] ?? 'Laporan Kendaraan';
 
+        // 5. Muat konfigurasi dokumen dinamis
+        $docSettingService = app(\App\Services\ReportDocumentSettingService::class);
+        $docSettings = $docSettingService->getSettingsForReportType($type);
+
         return view('reports.print', [
             'data'        => $data,
             'headers'     => $strategy->headers(),
             'reportTitle' => $reportTitle,
             'filters'     => $filters,
+            'docSettings' => $docSettings,
+        ]);
+    }
+
+    /**
+     * Mengunduh berkas laporan dalam format PDF menggunakan mPDF (Server-Side).
+     *
+     * @param \App\Http\Requests\ReportFilterRequest $request
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\RedirectResponse
+     */
+    public function pdf(ReportFilterRequest $request)
+    {
+        $filters = $request->validated();
+        $type = $filters['type'] ?? 'status';
+
+        // 1. Selesaikan strategi
+        $strategy = $this->registry->resolve($type);
+
+        // 2. Mencegah overload memori produksi (Data Guard > 1000 baris)
+        $count = $strategy->query($filters)->count();
+        if ($count > 1000) {
+            return redirect()->route('reports.index')->with('error', 'Jumlah data mencapai ' . number_format($count) . ' baris. Demi menjaga stabilitas server, ekspor lebih dari 1.000 data wajib menggunakan format Excel.');
+        }
+
+        // 3. Tarik data kueri
+        $data = $strategy->query($filters)->get();
+
+        // 4. Jalankan pengayaan data jika strategi mengimplementasikan PostProcessesReportRows
+        if ($strategy instanceof PostProcessesReportRows) {
+            $referenceRows = method_exists($strategy, 'referenceQuery')
+                ? $strategy->referenceQuery($filters)->get()
+                : $data;
+
+            $strategy->postProcess($data, $referenceRows);
+        }
+
+        // 5. Deskripsi tipe laporan
+        $reportTitle = $this->registry->getSupportedTypes()[$type] ?? 'Laporan Kendaraan';
+
+        // 6. Muat konfigurasi dokumen dinamis dari database
+        $docSettingService = app(\App\Services\ReportDocumentSettingService::class);
+        $docSettings = $docSettingService->getSettingsForReportType($type);
+
+        // 7. Alokasi memori dinamis dan batas waktu untuk keamanan proses mPDF
+        ini_set('memory_limit', '512M');
+        set_time_limit(120);
+        ini_set('pcre.backtrack_limit', '10000000');
+
+        // 8. Siapkan berkas temporer mPDF
+        $tempDir = storage_path('app/public/mpdf_temp');
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        // 9. Inisiasi Engine mPDF dengan optimasi RAM produksi
+        $paperSize = $docSettings['settings']['paper_size'] ?? 'A4';
+        $orientation = $docSettings['settings']['orientation'] ?? 'L';
+        $mpdfPaperSize = $paperSize === 'F4' ? 'FOLIO' : $paperSize;
+        $mpdfFormat = $mpdfPaperSize . ($orientation === 'L' ? '-L' : '');
+
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => $mpdfFormat,
+            'margin_top' => 12,
+            'margin_bottom' => 12,
+            'margin_left' => 12,
+            'margin_right' => 12,
+            'tempDir' => $tempDir,
+            'simpleTables' => true,
+            'packTableData' => true,
+        ]);
+
+        // 10. Render tampilan Blade khusus PDF menjadi HTML string
+        $html = view('reports.pdf', [
+            'data'        => $data,
+            'headers'     => $strategy->headers(),
+            'reportTitle' => $reportTitle,
+            'filters'     => $filters,
+            'docSettings' => $docSettings,
+        ])->render();
+
+        // 11. Konversi HTML ke dokumen PDF
+        $mpdf->WriteHTML($html);
+
+        // 12. Susun nama file
+        $filename = 'laporan_' . $type . '_' . now()->format('Ymd_His') . '.pdf';
+
+        // 13. Tampilkan PDF secara inline di browser (untuk pratinjau sebelum diunduh/dicetak)
+        return response($mpdf->Output('', 'S'), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
         ]);
     }
 }

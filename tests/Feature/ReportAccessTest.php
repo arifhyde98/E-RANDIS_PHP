@@ -657,5 +657,48 @@ class ReportAccessTest extends TestCase
         $this->assertStringContainsString('DN 8000 AA (2)', $rows->first()->keterangan_duplikat);
         $this->assertStringNotContainsString('Tidak terdeteksi duplikasi', $rows->first()->keterangan_duplikat);
     }
+
+    /**
+     * Test 19: Pengguna OPD tidak diperbolehkan mengunduh PDF laporan duplikasi (403 Forbidden).
+     */
+    public function test_opd_user_cannot_access_duplicate_report_pdf()
+    {
+        $opd = Opd::create(['nama' => 'Dinas A ' . rand(10000, 99999), 'singkatan' => 'DA']);
+        $userOpd = User::factory()->create([
+            'role'   => UserRole::OPD,
+            'opd_id' => $opd->id
+        ]);
+
+        $response = $this->actingAs($userOpd)
+            ->get(route('reports.pdf', [
+                'type' => 'duplicate'
+            ]));
+
+        $response->assertStatus(403);
+    }
+
+    /**
+     * Test 20: Ekspor PDF berhasil diproduksi (Status 200 & Header PDF) untuk data di bawah batas pengaman RAM.
+     */
+    public function test_pdf_export_produces_downloadable_pdf()
+    {
+        $admin = User::factory()->create([
+            'role' => UserRole::ADMIN
+        ]);
+
+        $this->createVehicle([
+            'no_polisi' => 'DN 1234 XX',
+            'kondisi' => 'Baik',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('reports.pdf', [
+                'type' => 'status'
+            ]));
+
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'application/pdf');
+    }
 }
+
 

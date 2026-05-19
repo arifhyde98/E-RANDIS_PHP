@@ -33,6 +33,10 @@
                     <span class="btn-action-icon"><i class="bi bi-file-earmark-excel"></i></span>
                     <span>Excel</span>
                 </button>
+                <button type="button" onclick="exportPdf()" class="btn btn-action btn-action-danger btn-sm shadow-sm fw-semibold d-inline-flex align-items-center gap-2">
+                    <span class="btn-action-icon"><i class="bi bi-file-earmark-pdf"></i></span>
+                    <span>Unduh PDF</span>
+                </button>
                 <button type="button" onclick="printReport()" class="btn btn-action btn-action-primary btn-sm shadow-sm fw-semibold d-inline-flex align-items-center gap-2">
                     <span class="btn-action-icon"><i class="bi bi-printer"></i></span>
                     <span>Cetak</span>

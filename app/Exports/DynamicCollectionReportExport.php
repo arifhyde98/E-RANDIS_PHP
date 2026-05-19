@@ -23,10 +23,13 @@ class DynamicCollectionReportExport extends DynamicReportExport implements FromC
      * 
      * @param \Illuminate\Support\Collection $collection
      * @param array<string, string> $headers
+     * @param array $filters
+     * @param string $reportTitle
+     * @param array $docSettings
      */
-    public function __construct(Collection $collection, array $headers)
+    public function __construct(Collection $collection, array $headers, array $filters = [], string $reportTitle = 'Laporan Kendaraan Dinas', array $docSettings = [])
     {
-        parent::__construct($headers);
+        parent::__construct($headers, $filters, $reportTitle, $docSettings);
         $this->collection = $collection;
     }
 

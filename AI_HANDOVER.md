@@ -17,7 +17,7 @@ Dokumen ini merupakan sumber kebenaran tunggal (*Single Source of Truth*) mengen
   - **Iconography:** Bootstrap Icons (Local via NPM/Vite)
   - **Notifications:** SweetAlert2 (Local via NPM/Vite) untuk peringatan, validasi *real-time*, & konfirmasi aksi
   - **Typography:** Plus Jakarta Sans (Local via @fontsource)
-- **Data Engine:** Laravel Excel (Maatwebsite/Excel) sebagai mesin utama pengolahan Impor & Ekspor data massal.
+- **Data Engine:** Laravel Excel (Maatwebsite/Excel) sebagai mesin utama pengolahan Impor & Ekspor data massal, serta mPDF sebagai mesin render PDF formal server-side pada Modul Laporan.
 - **Infrastruktur / Deployment:** Mendukung eksekusi lokal berbasis **Laragon** serta telah disiapkan konfigurasi **Docker** (`Dockerfile` & `compose.yaml`) untuk kemudahan kontainerisasi.
 
 ---
@@ -76,6 +76,32 @@ Konfigurasi CMS yang dapat diubah melalui antarmuka admin:
 - `type` (String, Default: 'text') — Tipe input: `text`, `image`, `textarea`.
 - `group` (String, Default: 'general') — Grup pengelompokan: `general`, `landing`, `login`.
 
+### Tabel `report_letterheads`
+Konfigurasi kop surat untuk dokumen resmi Modul Laporan:
+- `id` (PK, BigInt)
+- `nama_pemerintah`, `nama_instansi` (String) - Identitas utama kop surat.
+- `nama_unit`, `alamat`, `telepon`, `email`, `website` - Detail kontak dan unit kerja.
+- `logo_path` (String, Nullable) - Path logo publik, default fallback ke `images/logo-sulteng.png`.
+- `is_active`, `is_default` (Boolean) - Penanda konfigurasi aktif/default.
+
+### Tabel `report_signatories`
+Konfigurasi pejabat penanda tangan laporan:
+- `id` (PK, BigInt)
+- `nama`, `jabatan`, `kota_ttd` (String) - Identitas wajib pejabat dan kota tanda tangan.
+- `nip`, `pangkat_golongan` (String, Nullable) - Detail kepegawaian.
+- `signature_image_path` (String, Nullable) - Path gambar tanda tangan publik.
+- `is_active`, `is_default` (Boolean) - Penanda konfigurasi aktif/default.
+
+### Tabel `report_export_settings`
+Aturan ekspor per tipe laporan:
+- `id` (PK, BigInt)
+- `report_type` (String, Unique) - Kode tipe laporan dari `ReportRegistry`.
+- `letterhead_id` (FK Nullable) - Relasi ke `report_letterheads`, `nullOnDelete()`.
+- `signatory_id` (FK Nullable) - Relasi ke `report_signatories`, `nullOnDelete()`.
+- `paper_size` (String) - `A4`, `F4`, `Letter`, atau `Legal`.
+- `orientation` (String) - `L` untuk landscape, `P` untuk portrait.
+- `show_summary`, `show_signature` (Boolean) - Kontrol tampilan ringkasan dan blok tanda tangan PDF.
+
 ### Strategi Indeksasi Database (*Query Optimization*)
 Telah diterapkan indeks lapis ganda melalui *migration* `2026_05_14_151900` untuk mencegah *Full Table Scan*:
 - **B-tree Index:** Pada kolom `status`, `opd_id`, dan `vehicle_type_id`.
@@ -94,11 +120,14 @@ Logika bisnis dan kalkulasi diletakkan di dalam kelas *Service*:
 Modul Laporan dibangun secara modular menggunakan kombinasi **Service Layer**, **Registry Pattern**, dan **Strategy Pattern**:
 - `ReportController`: menangani halaman laporan, preview AJAX, ekspor Excel, dan cetak browser.
 - `ReportService`: mengorkestrasi summary laporan serta pemanggilan strategy aktif.
+- `ReportSettingController`: menangani halaman pengaturan dokumen laporan khusus superadmin, termasuk kop surat, pejabat penanda tangan, dan aturan ekspor per tipe laporan.
+- `ReportDocumentSettingService`: membaca konfigurasi dokumen per tipe laporan, menghubungkan `ReportExportSetting` dengan kop/pejabat aktif, dan menyediakan hardcoded fallback agar ekspor PDF tidak gagal ketika database kosong/bermasalah.
 - `ReportRegistry`: memetakan tipe laporan ke strategy yang sesuai.
 - `ReportStrategy`: kontrak bersama untuk seluruh jenis laporan, mendukung `referenceQuery` opsional untuk kueri referensi kustom global lintas OPD.
 - `VehicleStatusReport`, `OpdAssetReport`, `DocumentValidityReport`, `DuplicateVehicleReport`: empat strategy laporan modular.
 - `DynamicReportExport`: kelas induk abstrak untuk penataan dan pemetaan kolom Excel.
 - `DynamicQueryReportExport` & `DynamicCollectionReportExport`: dua subclass yang membedakan kueri streaming hemat memori (`FromQuery`) untuk laporan standar dan ekspor berbasis koleksi (`FromCollection`) untuk laporan dengan pengayaan data.
+- `ReportLetterhead`, `ReportSignatory`, dan `ReportExportSetting`: model konfigurasi dokumen resmi laporan. Ketiganya dipakai oleh PDF mPDF dan halaman `/reports/settings`.
 
 ### Validasi Kelas Permintaan (*Form Request Validation*)
 Penyimpanan dan pembaruan data wajib menggunakan kelas validasi terpisah demi menjaga keamanan dan kebersihan pengontrol:
@@ -272,10 +301,21 @@ Komponen modal untuk CRUD *Single Page Interaction*, mendukung perilaku *mobile-
   - **Identifikasi Data Kendaraan Ganda/Identik** (Laporan khusus Admin/Superadmin dengan analisis visual in-memory bebas kueri per baris / anti-N+1 menggunakan dataset referensi eksplisit secara global lintas OPD bahkan ketika laporan difilter berdasarkan OPD tertentu, untuk menjamin akurasi tinggi pada seluruh jalur preview, export, dan print).
 - **Otorisasi Ketat Laporan Duplikasi**: Laporan tipe `duplicate` dilindungi secara berlapis. Di `ReportRegistry`, tipe laporan ini otomatis disembunyikan dari user OPD. Di `ReportFilterRequest`, akses ditolak secara keras dengan melempar HTTP 403 Forbidden bagi OPD (aman untuk preview, export, dan print).
 - **Pembersihan Kebocoran Tenant**: Menghapus seluruh accessor duplikasi dari model `Vehicle.php`. Logika analisis duplikasi dipindahkan seutuhnya ke method `postProcess()` di dalam strategy `DuplicateVehicleReport.php` sehingga data global tidak pernah bocor ke konteks tenant OPD biasa.
-- Mendukung ringkasan cepat berbasis cache, pratinjau HTML parsial via AJAX, ekspor Excel modular, dan cetak browser ramah printer.
+- Mendukung ringkasan cepat berbasis cache, pratinjau HTML parsial via AJAX, ekspor Excel modular, cetak browser ramah printer, dan unduhan PDF formal server-side via mPDF.
 - Seluruh query strategy dibangun dari `Vehicle::query()` agar otomatis tunduk pada `TenantScope` (kecuali strategy duplikasi khusus admin global).
 - Pengguna OPD tidak melihat filter OPD lain, dan `ReportFilterRequest` tetap mengunci `opd_id` di backend sebagai pertahanan berlapis.
 - Pengujian keamanan laporan mencakup isolasi tenant, perlindungan cache lintas-role, invalidasi cache pasca CRUD, otorisasi ketat laporan duplikasi (403 untuk OPD), serta pencegahan pemindahan kendaraan lintas OPD saat update.
+- **PDF mPDF & Data Guard**: Endpoint `/reports/pdf` menghasilkan berkas PDF fisik. Untuk menjaga RAM server, sistem menolak ekspor PDF saat hasil laporan melebihi 1.000 baris dan mengarahkan pengguna memakai Excel.
+- **Template PDF**: `resources/views/reports/pdf.blade.php` memakai konfigurasi dari `ReportDocumentSettingService`: kop surat, logo, ukuran kertas, orientasi, ringkasan, dan blok tanda tangan.
+- **Pengaturan Dokumen Laporan**: Halaman `/reports/settings` hanya untuk `superadmin`. Berkas logo disimpan ke `public/uploads/report/logo`, sedangkan gambar tanda tangan ke `public/uploads/report/signature`. Saat unggahan baru masuk, berkas lama dihapus agar storage tidak menumpuk.
+- **Seeder Wajib**: `ReportSettingSeeder` mengisi konfigurasi awal. Pastikan dipanggil dari `DatabaseSeeder` setelah migration `2026_05_19_100810_create_report_settings_tables.php`.
+
+### Pengaturan Dokumen Laporan (`ReportSettingController`)
+- **Akses**: `auth` + `role:superadmin`.
+- **Kop Surat**: Mengelola nama pemerintah, nama instansi, unit, alamat, telepon, email, website, dan logo.
+- **Pejabat Penanda Tangan**: Mengelola nama, jabatan, NIP, pangkat/golongan, kota tanda tangan, serta gambar tanda tangan.
+- **Aturan Ekspor per Tipe Laporan**: Mengelola `paper_size`, `orientation`, `show_summary`, dan `show_signature` berdasarkan tipe yang tersedia di `ReportRegistry`.
+- **Fallback Kritis**: Jangan hapus fallback pada `ReportDocumentSettingService`; fallback tersebut sengaja dibuat agar `/reports/pdf` tetap hidup saat konfigurasi database belum tersedia.
 
 ### Manajemen Master Data (Hub)
 - Rute terpusat (`/master-data`) untuk mengelola **Jenis Kendaraan** (`VehicleTypeController`) dan **OPD / Dinas** (`OpdController`).
@@ -325,6 +365,11 @@ Komponen modal untuk CRUD *Single Page Interaction*, mendukung perilaku *mobile-
 | GET | `/reports/preview` | `ReportController@preview` | Auth | Preview laporan via AJAX HTML partial |
 | GET | `/reports/export` | `ReportController@export` | Auth | Ekspor Excel laporan dinamis |
 | GET | `/reports/print` | `ReportController@print` | Auth | Halaman cetak laporan ramah browser |
+| GET | `/reports/pdf` | `ReportController@pdf` | Auth | Unduh PDF formal mPDF dengan Data Guard |
+| GET | `/reports/settings` | `ReportSettingController@index` | Superadmin | Pengaturan kop, TTD, dan ekspor laporan |
+| POST | `/reports/settings/letterhead` | `ReportSettingController@updateLetterhead` | Superadmin | Simpan kop surat laporan |
+| POST | `/reports/settings/signatory` | `ReportSettingController@updateSignatory` | Superadmin | Simpan pejabat penanda tangan |
+| POST | `/reports/settings/export` | `ReportSettingController@updateExportSetting` | Superadmin | Simpan aturan ekspor per tipe laporan |
 
 ---
 
@@ -358,3 +403,4 @@ Seluruh kode backend (Models, Controllers, Services, Enums, dll) wajib memiliki 
 6. **Konsistensi Validasi:** Untuk endpoint `store` dan `update`, utamakan `FormRequest` khusus dibanding validasi inline di controller, kecuali ada alasan teknis yang jelas untuk tidak melakukannya.
 7. **Sinkronisasi Status:** Gunakan `AI_HANDOVER.md`, `PROJECT_MASTER.md`, dan dokumen fitur terbaru sebagai referensi utama sebelum memulai perubahan. Jangan mengandalkan dokumen status lama yang tidak lagi dipelihara.
 8. **⚠️ WAJIB: Penambahan Fitur Baru:** Setiap penambahan fitur baru **HARUS** mengikuti prosedur yang tercantum dalam file `ATURAN_PENAMBAHAN_FITUR.md`. Dokumen tersebut berisi checklist lengkap mulai dari perencanaan, analisis dampak (multi-tenancy, cache, observer), implementasi teknis, testing, hingga deployment. **DILARANG KERAS** menambahkan fitur tanpa melalui checklist ini karena sistem memiliki arsitektur kompleks dengan risiko error 60-80% jika tidak mengikuti aturan. Baca dan ikuti `ATURAN_PENAMBAHAN_FITUR.md` sebelum memulai development fitur baru.
+9. **Konteks Kritis Modul Laporan:** PDF formal sekarang bergantung pada tabel `report_letterheads`, `report_signatories`, `report_export_settings`, service `ReportDocumentSettingService`, dan folder publik `public/uploads/report/`. Saat deploy, jalankan migration + seeder pengaturan laporan sebelum menguji `/reports/pdf` dan `/reports/settings`.

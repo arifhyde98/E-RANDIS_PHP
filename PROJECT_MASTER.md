@@ -21,6 +21,7 @@
 - **UI Framework**: Bootstrap 5 (Customized via SCSS)
 - **Package Penting**: 
   - `Maatwebsite/Excel` (Laravel Excel untuk Import/Export)
+  - `mPDF` (Render PDF formal server-side untuk Modul Laporan)
   - `SweetAlert2` (Notifikasi interaktif)
   - `Bootstrap Icons` (Ikonografi)
 - **Deployment Target**: Server lokal (Laragon) atau Container (Docker ready via `compose.yaml`).
@@ -31,7 +32,7 @@
 - **Arsitektur Umum**: Monolith (MVC Laravel) yang teroptimasi.
 - **Pola Desain Utama**:
   - **Service Layer**: Logika bisnis kompleks dan kalkulasi *cache* diletakkan di dalam *Service* (contoh: `VehicleService`), bukan di *Controller*.
-  - **Reporting Architecture**: Modul Laporan memakai kombinasi *Service Layer*, *Registry Pattern*, dan *Strategy Pattern* melalui `ReportService`, `ReportRegistry`, dan strategy laporan modular agar jenis laporan baru dapat ditambahkan tanpa merombak controller inti. Laporan duplikasi (`duplicate`) dilindungi secara ketat di tingkat `ReportFilterRequest` (HTTP 403 Forbidden) dan registry untuk mencegah akses gelap oleh tenant OPD.
+  - **Reporting Architecture**: Modul Laporan memakai kombinasi *Service Layer*, *Registry Pattern*, dan *Strategy Pattern* melalui `ReportService`, `ReportRegistry`, dan strategy laporan modular agar jenis laporan baru dapat ditambahkan tanpa merombak controller inti. Laporan duplikasi (`duplicate`) dilindungi secara ketat di tingkat `ReportFilterRequest` (HTTP 403 Forbidden) dan registry untuk mencegah akses gelap oleh tenant OPD. PDF formal dibangun via mPDF dan membaca konfigurasi kop/tanda tangan dari `ReportDocumentSettingService`.
   - **Observer Pattern**: Automasi sistem dan pencatatan riwayat (Audit Log) dikendalikan penuh oleh *Eloquent Observers* (`VehicleObserver`, `OpdObserver`, `UserObserver`).
   - **Multi-Tenancy (Data Isolation)**: Menggunakan `TenantScope` (Global Scope) pada model `Vehicle` untuk mengunci data pengguna OPD agar hanya bisa melihat aset instansinya sendiri. *Fail-safe*: Jika `opd_id` null, akses otomatis terkunci total.
 - **Auth & Permission Flow**: 
@@ -77,6 +78,8 @@ resources/
   - `vehicles` (M) -- (1) `opds` (Kendaraan dimiliki oleh 1 OPD).
   - `vehicles` (M) -- (1) `vehicle_types` (Kendaraan memiliki 1 Tipe).
   - `activities` (M) -- (1) `users` (Riwayat log yang dilakukan User).
+  - `report_export_settings` (M) -- (1) `report_letterheads` (Aturan ekspor memakai kop surat aktif/default).
+  - `report_export_settings` (M) -- (1) `report_signatories` (Aturan ekspor memakai pejabat penanda tangan aktif/default).
 - **Migration & Constraint Strategy**:
   - Relasi Instansi: `opd_id` pada `users` menggunakan `onDelete('cascade')`.
   - Relasi Log/Audit: `user_id` pada `activities` menggunakan `onDelete('set null')` untuk mempertahankan riwayat meski user telah dihapus.
@@ -129,7 +132,8 @@ Status implementasi fitur utama sistem.
 | Audit Trail (Log Sistem) | DONE | Hanya dapat diakses Superadmin |
 | CMS Pengaturan Global | DONE | Tersimpan di *Cache* |
 | Cek & Resolusi Duplikasi | DONE | Analisis ganda cerdas (plat & mesin) & merge OPD |
-| Modul Laporan | DONE | Strategy modular (4 tipe), otorisasi ketat (403 untuk OPD pada laporan ganda), preview AJAX, ekspor Excel, cetak browser, dan isolasi tenant |
+| Modul Laporan | DONE | Strategy modular (4 tipe), otorisasi ketat (403 untuk OPD pada laporan ganda), preview AJAX, ekspor Excel, cetak browser, PDF mPDF, dan isolasi tenant |
+| Pengaturan Dokumen Laporan | DONE | Kop surat, logo, pejabat TTD, ukuran/orientasi kertas, ringkasan, dan tanda tangan per tipe laporan khusus superadmin |
 
 ---
 
@@ -140,7 +144,8 @@ Status implementasi fitur utama sistem.
 ### Phase 3: Future Expansion (Selesai)
 - **AI Smart Import**: Pemetaan dinamis header Excel berbasis AI semantik agar pengguna dapat mengunggah format file Excel bebas dan memetakan kolom secara visual. Fitur ini didukung oleh kecocokan sinonim otomatis dan fallback kemiripan teks (similar text) > 65%.
 - **Diagnosis & Resolusi Duplikasi**: Modul pendeteksi plat ganda hasil impor serta pencocokan mesin ganda secara global. Dilengkapi fitur resolusi gabung (*merge*) kendaraan dan penggabungan instansi OPD dengan kemiripan nama untuk mencegah inkonsistensi data.
-- **Modul Laporan Modular**: Menyediakan laporan status kendaraan, distribusi aset OPD, masa berlaku dokumen, serta laporan kendaraan ganda/identik melalui arsitektur strategy modular, preview HTML AJAX, ekspor Excel berbasis kueri streaming atau koleksi ter-enrich, cetak browser, dengan otorisasi ketat (HTTP 403 bagi OPD) serta isolasi data multi-tenant yang kokoh. Didukung oleh analisis duplikasi global lintas OPD meskipun laporan difilter berdasarkan instansi tertentu.
+- **Modul Laporan Modular**: Menyediakan laporan status kendaraan, distribusi aset OPD, masa berlaku dokumen, serta laporan kendaraan ganda/identik melalui arsitektur strategy modular, preview HTML AJAX, ekspor Excel berbasis kueri streaming atau koleksi ter-enrich, cetak browser, dan PDF formal mPDF dengan otorisasi ketat (HTTP 403 bagi OPD) serta isolasi data multi-tenant yang kokoh. Didukung oleh analisis duplikasi global lintas OPD meskipun laporan difilter berdasarkan instansi tertentu.
+- **Pengaturan Dokumen Laporan**: Superadmin dapat mengatur kop surat, logo, pejabat penanda tangan, gambar tanda tangan, ukuran kertas, orientasi, ringkasan, dan blok tanda tangan per tipe laporan. Data disimpan pada `report_letterheads`, `report_signatories`, dan `report_export_settings`; file publik berada di `public/uploads/report/`.
 
 ---
 
@@ -152,11 +157,15 @@ Status implementasi fitur utama sistem.
 ## 12. Deployment
 - **Environment**: Konfigurasi kunci ada di `.env` (pastikan DB terkoneksi).
 - **Storage**: Wajib menjalankan `php artisan storage:link` agar foto tampil.
+- **Storage Laporan**: Pastikan `public/uploads/report/logo` dan `public/uploads/report/signature` dapat ditulis oleh aplikasi karena dipakai untuk logo kop surat dan gambar tanda tangan PDF.
 - **Build Command**: Wajib menjalankan `npm run build` setelah mengubah SCSS.
 - **Cache**: Setelah pembaruan *production*, jalankan `php artisan optimize:clear` untuk me-reset cache `dashboard.stats` dan `setting`.
+- **Migrasi/Seeder Laporan**: Jalankan migration pengaturan laporan dan `ReportSettingSeeder` sebelum memakai `/reports/pdf` serta `/reports/settings`.
 
 ---
 
 ## 13. AI Context Summary
 **TL;DR for AI Agents**: 
 Sistem ini adalah **E-RANDIS**, aplikasi manajemen aset kendaraan berbasis **Laravel 12**. Aplikasi ini mengedepankan keamanan berlapis (*Multi-tenant* dengan `TenantScope`), logika otomatisasi via **Observer**, dan memisahkan logika bisnis melalui **Service Layer**. Antarmuka dibangun dengan **Bootstrap 5 + Custom SCSS** bernuansa formal (Navy/Putih). Seluruh kode backend **wajib dikomentari menggunakan Bahasa Indonesia**. Saat melakukan *coding*, pastikan selalu menggunakan kembali komponen Blade (seperti `<x-modal>`) dan `FormRequest` untuk validasi. Patuhi standar ini demi keberlangsungan sistem.
+
+**Konteks penting Modul Laporan**: `/reports` sekarang memiliki ekspor Excel, cetak browser, PDF mPDF, dan halaman `/reports/settings` khusus superadmin. Jangan menghapus `ReportDocumentSettingService` atau fallback dokumen karena itu menjaga ekspor PDF tetap berjalan saat konfigurasi database belum lengkap.
