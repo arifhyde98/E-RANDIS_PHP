@@ -583,4 +583,39 @@ class ReportAccessTest extends TestCase
 
         \Carbon\Carbon::setTestNow(); // Reset
     }
+
+    /**
+     * Test 17: Laporan duplikasi wajib memakai referensi eksplisit yang segar pada setiap pemanggilan.
+     */
+    public function test_duplicate_report_does_not_reuse_stale_reference_rows()
+    {
+        $admin = User::factory()->create([
+            'role' => UserRole::ADMIN
+        ]);
+
+        $oldOriginal = $this->createVehicle(['no_polisi' => 'DN 7100 AA']);
+        $oldDuplicate = $this->createVehicle(['no_polisi' => 'DN 7100 AA (2)']);
+
+        $this->actingAs($admin);
+        $firstPreview = app(\App\Services\ReportService::class)->generatePreview([
+            'type' => 'duplicate',
+        ]);
+
+        $firstAnalysis = $firstPreview['data']->getCollection()->pluck('keterangan_duplikat')->implode(' | ');
+        $this->assertStringContainsString('DN 7100 AA', $firstAnalysis);
+
+        $oldDuplicate->delete();
+        $oldOriginal->delete();
+
+        $this->createVehicle(['no_polisi' => 'DN 7200 BB']);
+        $this->createVehicle(['no_polisi' => 'DN 7200 BB (2)']);
+
+        $secondPreview = app(\App\Services\ReportService::class)->generatePreview([
+            'type' => 'duplicate',
+        ]);
+
+        $secondAnalysis = $secondPreview['data']->getCollection()->pluck('keterangan_duplikat')->implode(' | ');
+        $this->assertStringContainsString('DN 7200 BB', $secondAnalysis);
+        $this->assertStringNotContainsString('DN 7100 AA', $secondAnalysis);
+    }
 }

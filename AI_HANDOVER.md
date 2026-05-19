@@ -269,7 +269,7 @@ Komponen modal untuk CRUD *Single Page Interaction*, mendukung perilaku *mobile-
   - **Status dan Kondisi Fisik Kendaraan**
   - **Distribusi Aset per OPD**
   - **Masa Berlaku Dokumen/STNK**
-  - **Identifikasi Data Kendaraan Ganda/Identik** (Laporan khusus Admin/Superadmin dengan analisis visual in-memory bebas kueri per baris / anti-N+1 menggunakan satu kueri referensi tunggal).
+  - **Identifikasi Data Kendaraan Ganda/Identik** (Laporan khusus Admin/Superadmin dengan analisis visual in-memory bebas kueri per baris / anti-N+1 menggunakan dataset referensi eksplisit untuk setiap jalur preview, export, dan print).
 - **Otorisasi Ketat Laporan Duplikasi**: Laporan tipe `duplicate` dilindungi secara berlapis. Di `ReportRegistry`, tipe laporan ini otomatis disembunyikan dari user OPD. Di `ReportFilterRequest`, akses ditolak secara keras dengan melempar HTTP 403 Forbidden bagi OPD (aman untuk preview, export, dan print).
 - **Pembersihan Kebocoran Tenant**: Menghapus seluruh accessor duplikasi dari model `Vehicle.php`. Logika analisis duplikasi dipindahkan seutuhnya ke method `postProcess()` di dalam strategy `DuplicateVehicleReport.php` sehingga data global tidak pernah bocor ke konteks tenant OPD biasa.
 - Mendukung ringkasan cepat berbasis cache, pratinjau HTML parsial via AJAX, ekspor Excel modular, dan cetak browser ramah printer.

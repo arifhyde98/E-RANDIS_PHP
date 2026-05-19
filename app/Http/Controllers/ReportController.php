@@ -12,6 +12,7 @@ use Illuminate\Routing\Controllers\Middleware;
 use App\Exports\DynamicQueryReportExport;
 use App\Exports\DynamicCollectionReportExport;
 use App\Reports\Contracts\PostProcessesReportRows;
+use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
 /**
@@ -119,7 +120,7 @@ class ReportController extends Controller implements HasMiddleware
         // 3. Jika strategi mengimplementasikan pengayaan data (PostProcessesReportRows), gunakan ekspor berbasis Koleksi
         if ($strategy instanceof PostProcessesReportRows) {
             $data = $strategy->query($filters)->get();
-            $strategy->postProcess($data);
+            $strategy->postProcess($data, $data);
 
             return Excel::download(
                 new DynamicCollectionReportExport($data, $strategy->headers()),
@@ -153,7 +154,7 @@ class ReportController extends Controller implements HasMiddleware
 
         // 3. Jalankan pengayaan data jika strategi mengimplementasikan PostProcessesReportRows
         if ($strategy instanceof PostProcessesReportRows) {
-            $strategy->postProcess($data);
+            $strategy->postProcess($data, $data);
         }
 
         // 4. Deskripsi tipe laporan

@@ -16,11 +16,6 @@ use Illuminate\Support\Collection;
 class DuplicateVehicleReport implements ReportStrategy, PostProcessesReportRows
 {
     /**
-     * Cache in-memory static untuk menghindari pemanggilan kueri referensi ganda berulang kali.
-     */
-    protected static ?Collection $cachedDuplicates = null;
-
-    /**
      * Membangun kueri basis data untuk mendeteksi kendaraan ganda/identik.
      *
      * @param array<string, mixed> $filters Kumpulan filter pencarian (opd_id)
@@ -118,27 +113,18 @@ class DuplicateVehicleReport implements ReportStrategy, PostProcessesReportRows
      * Melakukan pengayaan data dinamis (keterangan_duplikat & duplicate_group_key) secara in-memory (0% N+1).
      *
      * @param \Illuminate\Support\Collection $vehicles Koleksi kendaraan dinas hasil kueri
+     * @param \Illuminate\Support\Collection|null $referenceRows Koleksi referensi penuh untuk menemukan pasangan duplikat
      * @return void
      */
-    public function postProcess(Collection $vehicles): void
+    public function postProcess(Collection $vehicles, ?Collection $referenceRows = null): void
     {
         if ($vehicles->isEmpty()) {
             return;
         }
 
-        // Optimasi Performa Tinggi (Single-Query Footprint untuk Export/Print):
-        // Jika $vehicles adalah seluruh baris laporan (jumlahnya melebihi limit paginasi biasa yaitu 15),
-        // kita dapat langsung menggunakannya sebagai dataset referensi penuh tanpa kueri tambahan apa pun.
-        // Jika data terpaginasi (preview), kueri referensi penuh dipanggil sekali dan disimpan di static cache.
-        if (self::$cachedDuplicates === null) {
-            if ($vehicles->count() > 15) {
-                self::$cachedDuplicates = $vehicles;
-            } else {
-                self::$cachedDuplicates = $this->query([])->get();
-            }
-        }
-
-        $allDuplicates = self::$cachedDuplicates;
+        // Dataset referensi dikirim eksplisit oleh pemanggil:
+        // preview memakai seluruh hasil query terfilter, sedangkan export/print memakai koleksi penuh yang sama.
+        $allDuplicates = $referenceRows ?? $vehicles;
 
         foreach ($vehicles as $vehicle) {
             $plate = $vehicle->no_polisi;

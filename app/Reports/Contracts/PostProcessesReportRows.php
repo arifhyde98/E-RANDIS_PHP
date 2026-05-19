@@ -16,7 +16,8 @@ interface PostProcessesReportRows
      * Melakukan pengayaan atau modifikasi data kustom in-memory pada koleksi baris laporan.
      *
      * @param \Illuminate\Support\Collection $vehicles Koleksi data kendaraan yang akan diperkaya
+     * @param \Illuminate\Support\Collection|null $referenceRows Koleksi referensi penuh untuk analisis lintas baris
      * @return void
      */
-    public function postProcess(Collection $vehicles): void;
+    public function postProcess(Collection $vehicles, ?Collection $referenceRows = null): void;
 }
