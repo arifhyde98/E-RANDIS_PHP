@@ -95,7 +95,7 @@ Modul Laporan dibangun secara modular menggunakan kombinasi **Service Layer**, *
 - `ReportController`: menangani halaman laporan, preview AJAX, ekspor Excel, dan cetak browser.
 - `ReportService`: mengorkestrasi summary laporan serta pemanggilan strategy aktif.
 - `ReportRegistry`: memetakan tipe laporan ke strategy yang sesuai.
-- `ReportStrategy`: kontrak bersama untuk seluruh jenis laporan.
+- `ReportStrategy`: kontrak bersama untuk seluruh jenis laporan, mendukung `referenceQuery` opsional untuk kueri referensi kustom global lintas OPD.
 - `VehicleStatusReport`, `OpdAssetReport`, `DocumentValidityReport`, `DuplicateVehicleReport`: empat strategy laporan modular.
 - `DynamicReportExport`: kelas induk abstrak untuk penataan dan pemetaan kolom Excel.
 - `DynamicQueryReportExport` & `DynamicCollectionReportExport`: dua subclass yang membedakan kueri streaming hemat memori (`FromQuery`) untuk laporan standar dan ekspor berbasis koleksi (`FromCollection`) untuk laporan dengan pengayaan data.
@@ -269,7 +269,7 @@ Komponen modal untuk CRUD *Single Page Interaction*, mendukung perilaku *mobile-
   - **Status dan Kondisi Fisik Kendaraan**
   - **Distribusi Aset per OPD**
   - **Masa Berlaku Dokumen/STNK**
-  - **Identifikasi Data Kendaraan Ganda/Identik** (Laporan khusus Admin/Superadmin dengan analisis visual in-memory bebas kueri per baris / anti-N+1 menggunakan dataset referensi eksplisit untuk setiap jalur preview, export, dan print).
+  - **Identifikasi Data Kendaraan Ganda/Identik** (Laporan khusus Admin/Superadmin dengan analisis visual in-memory bebas kueri per baris / anti-N+1 menggunakan dataset referensi eksplisit secara global lintas OPD bahkan ketika laporan difilter berdasarkan OPD tertentu, untuk menjamin akurasi tinggi pada seluruh jalur preview, export, dan print).
 - **Otorisasi Ketat Laporan Duplikasi**: Laporan tipe `duplicate` dilindungi secara berlapis. Di `ReportRegistry`, tipe laporan ini otomatis disembunyikan dari user OPD. Di `ReportFilterRequest`, akses ditolak secara keras dengan melempar HTTP 403 Forbidden bagi OPD (aman untuk preview, export, dan print).
 - **Pembersihan Kebocoran Tenant**: Menghapus seluruh accessor duplikasi dari model `Vehicle.php`. Logika analisis duplikasi dipindahkan seutuhnya ke method `postProcess()` di dalam strategy `DuplicateVehicleReport.php` sehingga data global tidak pernah bocor ke konteks tenant OPD biasa.
 - Mendukung ringkasan cepat berbasis cache, pratinjau HTML parsial via AJAX, ekspor Excel modular, dan cetak browser ramah printer.

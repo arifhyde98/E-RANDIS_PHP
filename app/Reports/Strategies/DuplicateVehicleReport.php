@@ -110,6 +110,21 @@ class DuplicateVehicleReport implements ReportStrategy, PostProcessesReportRows
     }
 
     /**
+     * Membangun kueri referensi global (tanpa filter OPD) untuk mendeteksi pasangan duplikat lintas OPD.
+     *
+     * @param array<string, mixed> $filters Kumpulan filter pencarian
+     * @return Builder
+     */
+    public function referenceQuery(array $filters): Builder
+    {
+        $referenceFilters = $filters;
+        unset($referenceFilters['opd_id']);
+
+        return $this->query($referenceFilters);
+    }
+
+
+    /**
      * Melakukan pengayaan data dinamis (keterangan_duplikat & duplicate_group_key) secara in-memory (0% N+1).
      *
      * @param \Illuminate\Support\Collection $vehicles Koleksi kendaraan dinas hasil kueri
@@ -195,7 +210,10 @@ class DuplicateVehicleReport implements ReportStrategy, PostProcessesReportRows
                 }
 
                 if (!empty($identicalFields)) {
-                    $opdName = $dup->opdRelation->nama_singkat ?? $dup->opd ?? 'Tanpa OPD';
+                    $opdName = $dup->opdRelation?->singkatan
+                        ?? $dup->opdRelation?->nama
+                        ?? $dup->opd
+                        ?? 'Tanpa OPD';
                     $matchesList[] = implode(' & ', $identicalFields) . ' dengan ' . $dup->no_polisi . ' (' . $opdName . ')';
                 }
             }

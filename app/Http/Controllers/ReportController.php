@@ -120,7 +120,12 @@ class ReportController extends Controller implements HasMiddleware
         // 3. Jika strategi mengimplementasikan pengayaan data (PostProcessesReportRows), gunakan ekspor berbasis Koleksi
         if ($strategy instanceof PostProcessesReportRows) {
             $data = $strategy->query($filters)->get();
-            $strategy->postProcess($data, $data);
+
+            $referenceRows = method_exists($strategy, 'referenceQuery')
+                ? $strategy->referenceQuery($filters)->get()
+                : $data;
+
+            $strategy->postProcess($data, $referenceRows);
 
             return Excel::download(
                 new DynamicCollectionReportExport($data, $strategy->headers()),
@@ -154,7 +159,11 @@ class ReportController extends Controller implements HasMiddleware
 
         // 3. Jalankan pengayaan data jika strategi mengimplementasikan PostProcessesReportRows
         if ($strategy instanceof PostProcessesReportRows) {
-            $strategy->postProcess($data, $data);
+            $referenceRows = method_exists($strategy, 'referenceQuery')
+                ? $strategy->referenceQuery($filters)->get()
+                : $data;
+
+            $strategy->postProcess($data, $referenceRows);
         }
 
         // 4. Deskripsi tipe laporan

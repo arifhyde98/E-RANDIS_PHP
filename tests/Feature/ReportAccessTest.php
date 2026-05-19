@@ -618,4 +618,44 @@ class ReportAccessTest extends TestCase
         $this->assertStringContainsString('DN 7200 BB', $secondAnalysis);
         $this->assertStringNotContainsString('DN 7100 AA', $secondAnalysis);
     }
+
+    /**
+     * Test 18: Laporan duplikasi dengan filter OPD wajib mencocokkan data referensi secara global lintas OPD.
+     */
+    public function test_duplicate_report_opd_filter_uses_global_reference_rows()
+    {
+        $admin = User::factory()->create([
+            'role' => UserRole::ADMIN,
+        ]);
+
+        $opdA = Opd::create(['nama' => 'Dinas A', 'singkatan' => 'DA']);
+        $opdB = Opd::create(['nama' => 'Dinas B', 'singkatan' => 'DB']);
+
+        $this->createVehicle([
+            'no_polisi' => 'DN 8000 AA',
+            'opd_id'    => $opdA->id,
+            'opd'       => $opdA->nama,
+        ]);
+
+        $this->createVehicle([
+            'no_polisi' => 'DN 8000 AA (2)',
+            'opd_id'    => $opdB->id,
+            'opd'       => $opdB->nama,
+        ]);
+
+        $this->actingAs($admin);
+
+        $preview = app(\App\Services\ReportService::class)->generatePreview([
+            'type'   => 'duplicate',
+            'opd_id' => $opdA->id,
+        ]);
+
+        $rows = $preview['data']->getCollection();
+
+        $this->assertCount(1, $rows);
+        $this->assertSame('DN 8000 AA', $rows->first()->no_polisi);
+        $this->assertStringContainsString('DN 8000 AA (2)', $rows->first()->keterangan_duplikat);
+        $this->assertStringNotContainsString('Tidak terdeteksi duplikasi', $rows->first()->keterangan_duplikat);
+    }
 }
+

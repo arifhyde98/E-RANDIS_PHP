@@ -119,7 +119,9 @@ class ReportService
 
         // Jalankan pengayaan data in-memory jika strategi mengimplementasikan PostProcessesReportRows
         if ($strategy instanceof \App\Reports\Contracts\PostProcessesReportRows) {
-            $referenceRows = $strategy->query($filters)->get();
+            $referenceRows = method_exists($strategy, 'referenceQuery')
+                ? $strategy->referenceQuery($filters)->get()
+                : $strategy->query($filters)->get();
             $strategy->postProcess($paginatedData->getCollection(), $referenceRows);
         }
 
