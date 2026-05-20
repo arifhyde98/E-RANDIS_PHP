@@ -76,7 +76,7 @@
                         {{ $settings['hero_subtitle'] }}
                     </p>
                     <div class="d-flex flex-wrap gap-3">
-                        <a href="#search-section" class="btn btn-primary px-4 py-2 fs-6 fw-semibold">Cek Kendaraan</a>
+                        <a href="#search-section" class="btn btn-primary btn-premium-glow px-4 py-2 fs-6 fw-semibold">Cek Kendaraan</a>
                         <a href="#feature-section" class="btn btn-outline-white px-4 py-2 fs-6 fw-semibold">Pelajari Sistem</a>
                     </div>
                 </div>
@@ -118,7 +118,7 @@
                                     <input type="text" name="q" class="form-control form-control-lg border py-3 px-4 shadow-none fs-6" placeholder="Masukkan Nomor Polisi" value="{{ $query ?? '' }}" required style="text-transform: uppercase;">
                                 </div>
                                 <div>
-                                    <button class="btn btn-primary px-5 py-3 fw-bold h-100 w-100" type="submit" style="background-color: #0256c4;">Cari</button>
+                                    <button class="btn btn-primary btn-premium-glow px-5 py-3 fw-bold h-100 w-100" type="submit" style="background-color: #0256c4;">Cari</button>
                                 </div>
                             </div>
                             <div class="form-text mt-2 text-secondary text-start ps-1 small">
@@ -147,9 +147,27 @@
                     <button type="button" id="vehicleSearchModalClose" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4" id="vehicleSearchModalBody">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
-                        <div class="fw-semibold text-dark">Mencari data kendaraan...</div>
+                    <div class="d-flex flex-column gap-3">
+                        <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4 pb-3 border-bottom">
+                            <div>
+                                <div class="skeleton-block skeleton-shimmer title"></div>
+                                <div class="skeleton-block skeleton-shimmer" style="width: 150px; height: 16px;"></div>
+                            </div>
+                            <div>
+                                <div class="skeleton-block skeleton-shimmer badge"></div>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="skeleton-block skeleton-shimmer box"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="skeleton-block skeleton-shimmer box"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="skeleton-block skeleton-shimmer box"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4 pt-0">
@@ -309,9 +327,27 @@
                 setHeaderState(true);
                 modalTitle.textContent = 'Memuat...';
                 modalBody.innerHTML = `
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
-                        <div class="fw-semibold text-dark">Mencari data kendaraan...</div>
+                    <div class="d-flex flex-column gap-3">
+                        <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4 pb-3 border-bottom">
+                            <div>
+                                <div class="skeleton-block skeleton-shimmer title"></div>
+                                <div class="skeleton-block skeleton-shimmer" style="width: 150px; height: 16px;"></div>
+                            </div>
+                            <div>
+                                <div class="skeleton-block skeleton-shimmer badge"></div>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="skeleton-block skeleton-shimmer box"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="skeleton-block skeleton-shimmer box"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="skeleton-block skeleton-shimmer box"></div>
+                            </div>
+                        </div>
                     </div>
                 `;
                 resultModal.show();

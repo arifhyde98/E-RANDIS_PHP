@@ -96,8 +96,15 @@ resources/
 ---
 
 ## 7. Frontend Rules
-- **Design System**: Gaya formal instansi pemerintah.
-- **Warna Utama**: Navy (`#1E40AF`), Putih, dan Abu-abu (Gray). Hindari gradien mencolok atau efek *glassmorphism* berlebihan.
+- **Design System & Animasi Mikro Premium**: Aplikasi mengusung gaya formal instansi pemerintah yang ditingkatkan dengan sentuhan visual premium & animasi mikro kustom secara terisolasi di `_vanilla-touches.scss`.
+- **Warna Utama**: Navy (`#1E40AF`), Putih, dan Abu-abu (Gray) yang stabil dan profesional.
+- **Efek Visual & Animasi Kustom**:
+  - *Elevasi Kartu (`.hover-elevate`)*: Transisi melayang halus (`translateY(-5px)`) dibarengi bayangan lembut dinamis saat diarahkan oleh kursor.
+  - *Dropdown Liquid Smooth (`.dropdown-menu`)*: Efek dropdown Bootstrap meluncur ke bawah dan memudar transparan secara anggun saat dibuka.
+  - *Sapuan Kilat Premium (`.btn-premium-glow`)*: Efek kilatan logam menyapu permukaan tombol utama saat kursor melintas.
+  - *Skeleton Shimmer (`.skeleton-shimmer`)*: Kerangka bayangan visual berkilau dinamis yang menggantikan pemutar spinner kaku saat proses pemuatan asinkron/AJAX.
+  - *Bouncy Liquid Modal (`.modal`)*: Transisi masuk modal elastis sekelas antarmuka premium (`scale(0.96)` ke `scale(1)` menggunakan kurva `cubic-bezier(0.34, 1.56, 0.64, 1)`).
+  - *Glassmorphism Navbar (`#navbar-main`)*: Transisi mulus navbar landing page menjadi kaca semi-transparan (`backdrop-filter: blur(12px)`) saat halaman digulir (`.scrolled`).
 - **Table Style**: Batas tabel wajib tegas (sharp borders). Kolom pertama wajib *sticky* di mode responsif. Penomoran otomatis berbasis paginasi.
 - **Form Style**: Menggunakan antarmuka interaksi halaman tunggal (*Single Page Interaction*) dengan komponen `<x-modal>`.
 - **Format Akuntansi**: Mata uang wajib berformat titik ribuan (`Rp 150.000.000`). Plat nomor wajib monospace (`.plate-number`).
@@ -107,9 +114,10 @@ resources/
 
 ## 8. AI Development Rules
 Aturan sangat ketat bagi asisten AI yang akan membaca dan mengedit sistem ini:
-- **Frontend Rules (Modular SCSS)**:
+- **Frontend Rules (Modular SCSS & Animasi Mikro)**:
   - **DILARANG** menulis gaya kustom langsung di `app.scss`. File ini hanya untuk impor.
   - **WAJIB** menaruh gaya baru ke dalam modul yang sesuai (misal: tombol ke `_buttons.scss`, variabel ke `_variables.scss`).
+  - **WAJIB** menempatkan seluruh pemolesan visual kustom/efek animasi mikro kustom secara terisolasi di dalam `_vanilla-touches.scss` agar tidak mengotori modul SCSS bawaan lainnya.
   - Jika membuat halaman baru, buat partial SCSS baru di folder `pages/` dan impor di `app.scss`.
 - **DILARANG membuat duplikat komponen**. Jika butuh tabel, gunakan `<x-table-card>`. Jika butuh modal CRUD, gunakan `<x-modal>`. Jika butuh kartu metrik, gunakan `<x-stat-card>`.
 2. **WAJIB membaca file sebelum eksekusi**. Gunakan perintah membaca berkas (*view_file*) sebelum melakukan *update* kode.
@@ -134,6 +142,7 @@ Status implementasi fitur utama sistem.
 | Cek & Resolusi Duplikasi | DONE | Analisis ganda cerdas (plat & mesin) & merge OPD |
 | Modul Laporan | DONE | Strategy modular (4 tipe), otorisasi ketat (403 untuk OPD pada laporan ganda), preview AJAX, ekspor Excel, cetak browser, PDF mPDF, dan isolasi tenant |
 | Pengaturan Dokumen Laporan | DONE | Kop surat, logo, pejabat TTD, ukuran/orientasi kertas, ringkasan, dan tanda tangan per tipe laporan khusus superadmin |
+| Visual & Animasi Mikro Premium (Vanilla CSS) | DONE | Transisi modal bouncy, skeleton shimmer loading, glassmorphism navbar scroll, efek hover elevate, dan tombol premium glow |
 
 ---
 
@@ -146,6 +155,7 @@ Status implementasi fitur utama sistem.
 - **Diagnosis & Resolusi Duplikasi**: Modul pendeteksi plat ganda hasil impor serta pencocokan mesin ganda secara global. Dilengkapi fitur resolusi gabung (*merge*) kendaraan dan penggabungan instansi OPD dengan kemiripan nama untuk mencegah inkonsistensi data.
 - **Modul Laporan Modular**: Menyediakan laporan status kendaraan, distribusi aset OPD, masa berlaku dokumen, serta laporan kendaraan ganda/identik melalui arsitektur strategy modular, preview HTML AJAX, ekspor Excel berbasis kueri streaming atau koleksi ter-enrich, cetak browser, dan PDF formal mPDF dengan otorisasi ketat (HTTP 403 bagi OPD) serta isolasi data multi-tenant yang kokoh. Didukung oleh analisis duplikasi global lintas OPD meskipun laporan difilter berdasarkan instansi tertentu.
 - **Pengaturan Dokumen Laporan**: Superadmin dapat mengatur kop surat, logo, pejabat penanda tangan, gambar tanda tangan, ukuran kertas, orientasi, ringkasan, dan blok tanda tangan per tipe laporan. Data disimpan pada `report_letterheads`, `report_signatories`, dan `report_export_settings`; file publik berada di `public/uploads/report/`.
+- **Sentuhan Visual & Animasi Mikro Premium (Vanilla CSS)**: Penambahan visual premium dan animasi mikro kustom yang terisolasi sepenuhnya di `_vanilla-touches.scss`. Meliputi bouncy transition pada seluruh modal, glassmorphism navbar saat di-scroll, skeleton shimmer loading, hover elevate card, dan efek sapuan kilat premium glow pada tombol aksi utama. Kompilasi aset bersih via Vite menjamin visual premium tanpa merusak fungsionalitas core Laravel 12.
 
 ---
 

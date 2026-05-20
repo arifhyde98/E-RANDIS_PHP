@@ -14,7 +14,7 @@
             </p>
         </div>
         <div>
-            <button class="btn btn-primary rounded-3 shadow-sm d-flex align-items-center gap-2">
+            <button class="btn btn-primary btn-premium-glow rounded-3 shadow-sm d-flex align-items-center gap-2">
                 <i class="bi bi-download"></i> Unduh Laporan
             </button>
         </div>
@@ -103,7 +103,7 @@
         <div class="col-xl-4 d-flex flex-column gap-4">
             
             <!-- SECTION 3: Quick Monitoring -->
-            <div class="admin-card p-4">
+            <div class="admin-card p-4 hover-elevate">
                 <h6 class="fw-bold text-navy mb-3"><i class="bi bi-radar text-primary me-2"></i> Monitor Cepat</h6>
                 
                 <ul class="list-group list-group-flush">
@@ -140,7 +140,7 @@
 
             @if(auth()->user()->role === \App\Enums\UserRole::SUPERADMIN)
             <!-- RIGHT PANEL: Aktivitas Terbaru -->
-            <div class="admin-card p-4 flex-grow-1">
+            <div class="admin-card p-4 flex-grow-1 hover-elevate">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h6 class="fw-bold text-navy mb-0"><i class="bi bi-activity text-primary me-2"></i> Aktivitas Terbaru</h6>
                     @if(!$activities->isEmpty())

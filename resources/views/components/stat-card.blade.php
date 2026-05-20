@@ -6,7 +6,7 @@
     'subtitle' => null
 ])
 
-<div {{ $attributes->merge(['class' => "card stat-card bg-gradient-$gradient p-3"]) }}>
+<div {{ $attributes->merge(['class' => "card stat-card bg-gradient-$gradient p-3 hover-elevate"]) }}>
     <i class="bi bi-{{ $icon }} stat-icon" style="z-index: 1;"></i>
     <div class="position-relative z-2">
         <div class="text-white-50 fw-semibold small text-uppercase mb-1">{{ $title }}</div>

@@ -34,6 +34,9 @@
 // 7. Themes
 @import 'themes/dark';
 
+// 8. Vanilla Touches (Premium Enhancements)
+@import 'components/vanilla-touches';
+
 // Utilities
 .bg-white {
     background-color: var(--card-bg) !important;

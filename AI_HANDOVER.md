@@ -226,10 +226,17 @@ Sistem memiliki modul diagnosis duplikasi data untuk membantu membersihkan inkon
 ---
 
 ## 5. 🎨 Design System, Estetika & Standar UI
-Aplikasi **tidak menggunakan efek visual berlebihan** (*glassmorphism* pudar atau gradien mencolok) demi mengutamakan kecepatan muat, kejelasan data, dan identitas formal instansi pemerintah.
+Aplikasi **menggunakan sentuhan visual premium & animasi mikro kustom** secara bijak (tanpa merusak nuansa formal pemerintahan) demi mengutamakan kenyamanan interaksi, kejelasan data, dan identitas formal instansi pemerintah.
 
 ### Palet & Gaya Visual
 - **Skema Warna Formal:** Memprioritaskan **Navy, Putih, dan Abu-abu (Gray)** yang stabil dan profesional.
+- **Sentuhan Vanilla CSS & Animasi Mikro Premium:** Seluruh peningkatan visual kustom wajib diletakkan di dalam modul terisolasi [_vanilla-touches.scss](file:///d:/arif/laragon/www/E-RANDIS_PHP/resources/css/components/_vanilla-touches.scss) dan tidak boleh mengotori berkas SCSS bawaan lainnya. Peningkatan ini meliputi:
+  1. **Elevasi Kartu (`.hover-elevate`):** Kartu statistik dashboard (`stat-card.blade.php`), monitor cepat, dan aktivitas terbaru terangkat secara organik (`translateY(-5px)`) dibarengi bayangan halus yang melebar saat didekati kursor, dengan transisi kurva *bezier* yang meluncur halus.
+  2. **Dropdown Liquid Smooth (`.dropdown-menu`):** Dropdown Bootstrap bertransisi anggun meluncur dari atas (`translateY(12px)`) sembari memudar transparan saat dibuka.
+  3. **Efek Sapuan Kilat (`.btn-premium-glow`):** Tombol Call-To-Action utama (Unduh Laporan, tombol Cari nopol, dsb) memancarkan efek sapuan kilatan cahaya metalik dari kiri ke kanan saat disorot kursor.
+  4. **Skeleton Shimmer (`.skeleton-shimmer`):** Kerangka bayangan visual berkilau (efek loading shimmer) menggantikan pemutar spinner kaku saat proses pemuatan AJAX/pencarian data di halaman depan berlangsung.
+  5. **Bouncy Liquid Modal (`.modal`):** Seluruh modal dialog aplikasi muncul dengan efek mengembang elastis yang mewah (bouncing transition dari `scale(0.96)` ke `scale(1)` dengan kurva `cubic-bezier(0.34, 1.56, 0.64, 1)`).
+  6. **Glassmorphism Navbar (`#navbar-main`):** Navbar landing page bertransisi mulus menjadi kaca semi-transparan (`backdrop-filter: blur(12px)`) saat halaman digulir ke bawah (`.scrolled`).
 - **Batas Tabel Tajam:** Menggunakan pembatas (*border*) tabel yang tegas guna mempermudah pemindaian ribuan baris data.
 - **Plat Nomor Identik:** Nomor Polisi wajib dibungkus dengan kelas `.plate-number` (font **Monospace** tebal) agar konsisten secara visual.
 - **Format Akuntansi**: Seluruh tampilan mata uang (seperti `nilai_perolehan`) wajib menggunakan format titik ribuan (Contoh: Rp 150.000.000). 
@@ -396,8 +403,8 @@ Seluruh kode backend (Models, Controllers, Services, Enums, dll) wajib memiliki 
 
 ## 9. 🚨 Aturan Kritis untuk Sesi AI Berikutnya
 1. **Jangan asumsikan konteks:** Selalu gunakan `view_file` untuk membaca berkas sebelum memodifikasi.
-2. **Kepatuhan Desain:** Dilarang mengembalikan efek *glassmorphism* atau warna mencolok. Pertahankan gaya formal pemerintah (Navy/Putih/Gray).
-3. **Penyusunan Aset:** Selalu jalankan `npm run dev` atau `npm run build` saat mengedit file SCSS atau JS. Pastikan penambahan CSS mengikuti struktur **SCSS Modular** yang sudah ditetapkan (jangan menulis langsung di `app.scss`).
+2. **Kepatuhan Desain & Interaksi Mikro:** Seluruh pemolesan visual kustom wajib diletakkan secara terisolasi di dalam [_vanilla-touches.scss](file:///d:/arif/laragon/www/E-RANDIS_PHP/resources/css/components/_vanilla-touches.scss). Dilarang mengotori berkas SCSS bawaan di folder `components/` lainnya. Pertahankan harmoni warna formal pemerintah (Navy/Putih/Gray) dengan dukungan animasi mikro premium yang menggunakan kurva bezier yang presisi dan hardware-accelerated.
+3. **Penyusunan Aset:** Selalu jalankan `npm run build` setelah memodifikasi berkas SCSS atau Javascript agar aset terkompilasi bersih oleh Vite ke folder publik. Pastikan penambahan CSS mengikuti arsitektur SCSS Modular (7-1 Pattern) yang sudah ditetapkan.
 4. **Bahasa Indonesia Wajib:** Seluruh dokumentasi kode (PHPDoc, komentar inline, pesan commit) dan komunikasi pengembangan wajib menggunakan **Bahasa Indonesia** secara konsisten.
 5. **Jangan eksekusi tanpa persetujuan:** Jika user meminta perubahan pada area spesifik, jangan memperluas cakupan ke file lain tanpa konfirmasi terlebih dahulu.
 6. **Konsistensi Validasi:** Untuk endpoint `store` dan `update`, utamakan `FormRequest` khusus dibanding validasi inline di controller, kecuali ada alasan teknis yang jelas untuk tidak melakukannya.
